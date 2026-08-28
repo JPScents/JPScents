@@ -1,11 +1,9 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, PerfumeStatus } from "../src/db/generated/client";
 
-const databaseUrl = process.env.DATABASE_URL;
-
-if (!databaseUrl) {
-  throw new Error("DATABASE_URL is required to seed the local database.");
-}
+// The documented local Supabase database is safe for deterministic development seeds.
+// Deployed environments must provide DATABASE_URL explicitly.
+const databaseUrl = process.env.DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:56322/postgres";
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
 
@@ -36,6 +34,18 @@ const perfumes = [
     timesOfDay: ["NIGHT"] as const,
     image: { id: "31000000-0000-4000-8000-000000000002", path: "perfumes/amber-evening/primary.jpg", altText: "Placeholder for Amber Evening perfume bottle." },
     variants: [{ id: "32000000-0000-4000-8000-000000000003", sizeValue: "50", priceMinor: 210000, quantity: 6 }],
+  },
+  {
+    id: "30000000-0000-4000-8000-000000000003",
+    name: "Citrus Linen",
+    slug: "citrus-linen",
+    scentCue: "Bright citrus softened by clean woods.",
+    description: "A deterministic development placeholder for the catalogue foundation.",
+    scentCharacters: ["FRESH", "WOODY"] as const,
+    occasions: ["EVERYDAY", "WORK"] as const,
+    timesOfDay: ["DAY"] as const,
+    image: { id: "31000000-0000-4000-8000-000000000003", path: "perfumes/citrus-linen/primary.jpg", altText: "Placeholder for Citrus Linen perfume bottle." },
+    variants: [{ id: "32000000-0000-4000-8000-000000000004", sizeValue: "50", priceMinor: 165000, quantity: 10 }],
   },
 ] as const;
 
