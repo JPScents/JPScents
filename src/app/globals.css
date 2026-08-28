@@ -1,26 +1,158 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --font-sans: "Inter", "Inter Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", "Cormorant Garamond Fallback", ui-serif,
+    Georgia, serif;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-jp-canvas: var(--jp-public-canvas);
+  --color-jp-surface: var(--jp-public-surface);
+  --color-jp-stone: var(--jp-stone);
+  --color-jp-green-surface: var(--jp-green-surface);
+  --color-jp-text-primary: var(--jp-text-primary);
+  --color-jp-text-secondary: var(--jp-text-secondary);
+  --color-jp-olive: var(--jp-olive);
+  --color-jp-amber: var(--jp-amber);
+  --color-jp-border: var(--jp-border);
+  --color-jp-admin-canvas: var(--jp-admin-canvas);
+  --color-jp-admin-surface: var(--jp-admin-surface);
+  --color-jp-admin-sidebar: var(--jp-admin-sidebar);
+  --color-jp-admin-action: var(--jp-admin-action);
+  --color-jp-admin-border: var(--jp-admin-border);
+  --color-jp-overlay-mobile: var(--jp-overlay-mobile);
+  --color-jp-overlay-modal: var(--jp-overlay-modal);
+  --color-jp-modal-border: var(--jp-modal-border);
+  --color-jp-status-confirmed: var(--jp-status-confirmed);
+  --color-jp-status-confirmed-foreground: var(
+    --jp-status-confirmed-foreground
+  );
+  --color-jp-status-attention: var(--jp-status-attention);
+  --color-jp-status-attention-foreground: var(
+    --jp-status-attention-foreground
+  );
+
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-sheet: var(--jp-radius-sheet);
+
+  --spacing-public-container: var(--jp-public-container);
+  --spacing-public-gutter-desktop: var(--jp-public-gutter-desktop);
+  --spacing-public-gutter-mobile: var(--jp-public-gutter-mobile);
+  --spacing-admin-sidebar: var(--jp-admin-sidebar-width);
+  --spacing-admin-content: var(--jp-admin-content-padding);
+  --spacing-header-desktop: var(--jp-header-desktop-height);
+  --spacing-header-mobile: var(--jp-header-mobile-height);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  color-scheme: light;
+
+  --background: #f6f2e9;
+  --foreground: #24241f;
+  --card: #fffdf8;
+  --card-foreground: #24241f;
+  --popover: #fffdf8;
+  --popover-foreground: #24241f;
+  --primary: #24241f;
+  --primary-foreground: #fffdf8;
+  --secondary: #e8e1d5;
+  --secondary-foreground: #24241f;
+  --muted: #e8e1d5;
+  --muted-foreground: #5f5b53;
+  --accent: #e7eadb;
+  --accent-foreground: #24241f;
+  --destructive: #8a4138;
+  --border: #d8d0c3;
+  --input: #d8d0c3;
+  --ring: #66705f;
+  --radius: 0;
+
+  --sidebar: #20221e;
+  --sidebar-foreground: #fbf9f4;
+  --sidebar-primary: #fbf9f4;
+  --sidebar-primary-foreground: #20221e;
+  --sidebar-accent: #2d2c27;
+  --sidebar-accent-foreground: #fbf9f4;
+  --sidebar-border: #3c3d37;
+  --sidebar-ring: #d3ccc0;
+
+  --jp-public-canvas: #f6f2e9;
+  --jp-public-surface: #fffdf8;
+  --jp-stone: #e8e1d5;
+  --jp-green-surface: #e7eadb;
+  --jp-text-primary: #24241f;
+  --jp-text-secondary: #5f5b53;
+  --jp-olive: #66705f;
+  --jp-amber: #b8834b;
+  --jp-border: #d8d0c3;
+
+  --jp-admin-canvas: #f3f0ea;
+  --jp-admin-surface: #fbf9f4;
+  --jp-admin-sidebar: #20221e;
+  --jp-admin-action: #2d2c27;
+  --jp-admin-border: #d3ccc0;
+
+  --jp-overlay-mobile: #1819167a;
+  --jp-overlay-modal: #18191694;
+  --jp-modal-border: #8f887e;
+  --jp-status-confirmed: #dde4dd;
+  --jp-status-confirmed-foreground: #465849;
+  --jp-status-attention: #e9ddca;
+  --jp-status-attention-foreground: #66543f;
+
+  --jp-public-container: 81rem;
+  --jp-public-gutter-desktop: 4.5rem;
+  --jp-public-gutter-mobile: 1.25rem;
+  --jp-admin-sidebar-width: 15.5rem;
+  --jp-admin-content-padding: 2.125rem;
+  --jp-header-desktop-height: 5.5rem;
+  --jp-header-mobile-height: 4.5rem;
+  --jp-radius-sheet: 0.875rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  html {
+    @apply bg-background font-sans;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
 }
