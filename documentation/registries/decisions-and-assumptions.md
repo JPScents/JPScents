@@ -16,6 +16,7 @@
 - Local Supabase through Docker hosts development data/Auth/Storage; Prisma ORM 7 owns application schema, migrations, generated client, and database connection.
 - Supabase Auth protects Admin and Supabase Storage owns product images.
 - The only accepted Admin identity is the JPScents email preserved in the submitted client record, and it must also carry the trusted Supabase Admin role.
+- Admin sign-in is passwordless through a Supabase email magic link. Requests never create users; `/auth/confirm` rechecks the exact email and trusted role before entering Admin.
 - No client catalogue was supplied. Empty data is the launch baseline; placeholder products are opt-in local demo fixtures only.
 
 ## Assumptions requiring confirmation
@@ -29,7 +30,7 @@
 
 ## Open launch handoffs
 
-- production provisioning/password handoff for the already-confirmed Admin email;
+- production Auth-user provisioning, exact callback allowlist, and SMTP handoff for the already-confirmed Admin email;
 - image limits, ordering, and deletion/retirement rules;
 - deployment target;
 - exact reference format and collision strategy;

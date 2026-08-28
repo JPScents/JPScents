@@ -29,7 +29,7 @@ See [Prisma setup](prisma/README.md) and [local Supabase setup](supabase/README.
 - The application deliberately supports an empty catalogue. Public and Admin routes show clear preparation/zero states until confirmed products are added.
 - Configure the client-confirmed WhatsApp business number and final delivery-area policy.
 - Add confirmed catalogue, photography, logo, FAQ, and policy content; demo fixtures are never loaded by the normal reset.
-- Provision the submitted JPScents email through the trusted Supabase Auth Admin workflow. The exact email and trusted `app_metadata.role` must both match.
+- Provision the submitted JPScents email in Supabase Auth with trusted `app_metadata.role=admin`, configure the exact `/auth/confirm` redirect, and connect production SMTP. Admin sign-in is passwordless and never creates users.
 - Connect production Supabase and deployment environment variables; online payment remains intentionally out of scope.
 
 ## Project operating system

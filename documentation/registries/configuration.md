@@ -18,6 +18,7 @@
 | Recommendation enums | registry in `entities-and-models.md` | Mostly confirmed; wording issue open |
 | Order statuses | `NEW`, `CONFIRMED`, `AWAITING_PAYMENT`, `CANCELLED` | Confirmed from Admin design |
 | Trusted Admin identity | exact JPScents Tally-submitted email plus trusted Supabase `app_metadata.role=admin` | Confirmed from client record |
+| Admin sign-in | Supabase email magic link; pre-provisioned user only; `/auth/confirm` callback | Confirmed |
 | Initial data | empty catalogue and Orders; demo fixtures are explicit local opt-in only | Confirmed |
 
 Secrets and environment-specific credentials never belong in this registry or committed config. The trusted Admin email is an identity allowlist value, not a password or credential.

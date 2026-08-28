@@ -1,27 +1,69 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 
+import { adminConfig } from "@/config/admin";
+import { siteConfig } from "@/config/site";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getAdminIdentity } from "@/lib/auth/identity";
 
-export type LoginState = { error?: string };
+export type LoginState = {
+  status?: "error" | "sent";
+  message?: string;
+};
 
-export async function signIn(_: LoginState, formData: FormData): Promise<LoginState> {
-  const email = formData.get("email");
-  const password = formData.get("password");
-  if (typeof email !== "string" || typeof password !== "string") return { error: "Enter your email and password." };
+const sentMessage =
+  "If this address has Admin access, a secure sign-in link is on its way.";
+
+export async function requestMagicLink(
+  _: LoginState,
+  formData: FormData,
+): Promise<LoginState> {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+
+  if (!email || !email.includes("@")) {
+    return { status: "error", message: "Enter a valid email address." };
+  }
+
+  // Do not reveal the trusted address or ask Supabase to create other users.
+  if (email !== adminConfig.trustedEmail) {
+    return { status: "sent", message: sentMessage };
+  }
+
+  const origin = (await headers()).get("origin");
+  if (!origin) {
+    return {
+      status: "error",
+      message: "Sign-in is temporarily unavailable. Please try again.",
+    };
+  }
+
+  let callbackUrl: URL;
+  try {
+    callbackUrl = new URL(siteConfig.routes.authConfirm, origin);
+  } catch {
+    return {
+      status: "error",
+      message: "Sign-in is temporarily unavailable. Please try again.",
+    };
+  }
+
   let supabase;
   try {
     supabase = await createSupabaseServerClient();
   } catch {
-    return { error: "Admin authentication is not configured." };
+    return {
+      status: "error",
+      message: "Sign-in is temporarily unavailable. Please try again.",
+    };
   }
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { error: "Unable to sign in with those details." };
-  if (!getAdminIdentity(data.user)) {
-    await supabase.auth.signOut();
-    return { error: "Your account is not authorized to access Admin." };
-  }
-  redirect("/admin");
+
+  await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: callbackUrl.toString(),
+      shouldCreateUser: false,
+    },
+  });
+
+  return { status: "sent", message: sentMessage };
 }

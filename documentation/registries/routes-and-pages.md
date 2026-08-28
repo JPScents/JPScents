@@ -25,7 +25,14 @@ Help Me Choose results use route state/search parameters on `/help-me-choose`; t
 | `/admin/orders` | Order list | orders | Confirmed |
 | `/admin/orders/{reference}` | Order Detail | orders | Confirmed |
 
-An authentication provider may require `/admin/login`; its exact route and behaviour remain open because login is not designed.
+## Authentication routes
+
+| Route | Purpose | Access | Status |
+| --- | --- | --- | --- |
+| `/admin/login` | Request the trusted Admin magic link | Public; exact-email allowlist enforced server-side | Confirmed |
+| `/auth/confirm` | Exchange/verify the one-time link and establish the Admin session | Public callback; redirects immediately | Confirmed |
+
+The callback always lands on `/admin` after verifying both the exact trusted email and `app_metadata.role=admin`. It is not a page and accepts no caller-controlled destination.
 
 ## UI-only states
 

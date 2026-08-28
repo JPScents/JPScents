@@ -11,6 +11,8 @@ export const siteConfig = {
     checkoutConfirmation: "/checkout/confirm",
     helpMeChoose: "/help-me-choose",
     admin: "/admin",
+    adminLogin: "/admin/login",
+    authConfirm: "/auth/confirm",
     adminPerfumes: "/admin/perfumes",
     adminNewPerfume: "/admin/perfumes/new",
     adminPerfume: (id: string) => `/admin/perfumes/${id}` as const,
