@@ -37,6 +37,7 @@ const detailInclude = { images: { orderBy: { position: "asc" } }, variants: { or
 
 async function signedImageUrl(path?: string) {
   if (!path) return undefined;
+  if (path.startsWith("/")) return path;
   try {
     const supabase = await createSupabaseServerClient();
     const signed = await supabase.storage.from("perfume-images").createSignedUrl(path, 3600);
@@ -77,7 +78,7 @@ export async function getFeaturedPerfumes() {
   const rows = availabilityFirst(await publishedRows());
   const available = rows.filter((perfume) => perfume.variants.some((variant) => variant.quantity > 0));
   const hero = available.find((perfume) => perfume.isBestseller) ?? available.find((perfume) => perfume.isFeatured) ?? available[0];
-  const products = await Promise.all(available.filter((perfume) => perfume.id !== hero?.id).slice(0, 3).map(projectCard));
+  const products = await Promise.all(available.slice(0, 3).map(projectCard));
   return { hero: hero ? await projectCard(hero) : undefined, products };
 }
 

@@ -10,9 +10,10 @@ afterEach(cleanup);
 describe("PublicShell", () => {
   it("labels public navigation and footer routes", () => {
     render(<PublicShell><p>Page content</p></PublicShell>);
-    expect(screen.getByRole("navigation", { name: "Primary navigation" })).toHaveTextContent("PerfumesHelp me choose");
+    expect(screen.getByRole("navigation", { name: "Primary navigation" })).toHaveTextContent("PerfumesHelp Me Choose");
     expect(within(screen.getByRole("navigation", { name: "Primary navigation" })).getByRole("link", { name: "Perfumes" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("navigation", { name: "Footer navigation" })).toHaveTextContent("PerfumesHelp Me ChooseCart");
+    expect(screen.getAllByRole("navigation", { name: "Footer navigation" })).toHaveLength(2);
+    screen.getAllByRole("navigation", { name: "Footer navigation" }).forEach((footer) => expect(footer).toHaveTextContent("Perfumes·Help Me Choose·Cart"));
     expect(screen.getByRole("link", { name: "Open cart, 0 items" })).toHaveAttribute("href", "/cart");
   });
 

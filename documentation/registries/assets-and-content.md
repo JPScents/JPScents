@@ -6,9 +6,11 @@
 - `.design-imports/scent-warm-natural.png`
 - `.design-imports/scent-sweet-natural.png`
 - `.design-imports/scent-woody-natural.png`
-- bottle/product imagery used in Paper reference frames
+- `public/perfume-placeholders/santal-veil.svg`
+- `public/perfume-placeholders/amber-no-7.svg`
+- `public/perfume-placeholders/citrus-linen.svg`
 
-These are design assets or controlled placeholders, not confirmed client photography.
+These are design assets or controlled placeholders, not confirmed client photography. The bundled bottle artwork is used only by the opt-in local demo catalogue so design review can match the Paper reference.
 
 ## Client-dependent content
 

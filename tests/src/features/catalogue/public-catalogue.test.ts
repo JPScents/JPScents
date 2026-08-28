@@ -38,7 +38,7 @@ describe("public catalogue URL parsing", () => {
     vi.mocked(prisma.perfume.findMany).mockResolvedValueOnce([perfume({ id: "featured", isFeatured: true }), perfume({ id: "best", isBestseller: true, name: "Bestseller" })]);
     const featured = await getFeaturedPerfumes();
     expect(featured.hero?.id).toBe("best");
-    expect(featured.products.map((item) => item.id)).toEqual(["featured"]);
+    expect(featured.products.map((item) => item.id)).toEqual(["best", "featured"]);
   });
 
   it("serializes only a published detail and preserves ordered variants", async () => {

@@ -10,14 +10,14 @@ const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: data
 const perfumes = [
   {
     id: "30000000-0000-4000-8000-000000000001",
-    name: "Quiet Fig",
-    slug: "quiet-fig",
-    scentCue: "Green fig leaves softened by cedar.",
-    description: "A deterministic development placeholder for the catalogue foundation.",
-    scentCharacters: ["FRESH", "WOODY"] as const,
-    occasions: ["EVERYDAY", "WORK"] as const,
-    timesOfDay: ["DAY"] as const,
-    image: { id: "31000000-0000-4000-8000-000000000001", path: "perfumes/quiet-fig/primary.jpg", altText: "Placeholder for Quiet Fig perfume bottle." },
+    name: "Santal Veil",
+    slug: "santal-veil",
+    scentCue: "Woody · Warm · Evening",
+    description: "A warm, woody fragrance with a rich, grounded character.",
+    scentCharacters: ["WOODY", "WARM"] as const,
+    occasions: ["DATE_NIGHT", "SPECIAL_OCCASION"] as const,
+    timesOfDay: ["NIGHT"] as const,
+    image: { id: "31000000-0000-4000-8000-000000000001", path: "/perfume-placeholders/santal-veil.svg", altText: "Controlled placeholder artwork for Santal Veil perfume." },
     variants: [
       { id: "32000000-0000-4000-8000-000000000001", sizeValue: "30", priceMinor: 125000, quantity: 12 },
       { id: "32000000-0000-4000-8000-000000000002", sizeValue: "50", priceMinor: 185000, quantity: 8 },
@@ -25,26 +25,26 @@ const perfumes = [
   },
   {
     id: "30000000-0000-4000-8000-000000000002",
-    name: "Amber Evening",
-    slug: "amber-evening",
-    scentCue: "Soft amber with a warm, unhurried finish.",
-    description: "A deterministic development placeholder for the catalogue foundation.",
+    name: "Amber No. 7",
+    slug: "amber-no-7",
+    scentCue: "Warm · Sweet",
+    description: "A warm amber development placeholder for design review.",
     scentCharacters: ["WARM", "SWEET"] as const,
     occasions: ["DATE_NIGHT", "SPECIAL_OCCASION"] as const,
     timesOfDay: ["NIGHT"] as const,
-    image: { id: "31000000-0000-4000-8000-000000000002", path: "perfumes/amber-evening/primary.jpg", altText: "Placeholder for Amber Evening perfume bottle." },
+    image: { id: "31000000-0000-4000-8000-000000000002", path: "/perfume-placeholders/amber-no-7.svg", altText: "Controlled placeholder artwork for Amber No. 7 perfume." },
     variants: [{ id: "32000000-0000-4000-8000-000000000003", sizeValue: "50", priceMinor: 210000, quantity: 6 }],
   },
   {
     id: "30000000-0000-4000-8000-000000000003",
     name: "Citrus Linen",
     slug: "citrus-linen",
-    scentCue: "Bright citrus softened by clean woods.",
-    description: "A deterministic development placeholder for the catalogue foundation.",
+    scentCue: "Fresh · Clean",
+    description: "A bright citrus development placeholder for design review.",
     scentCharacters: ["FRESH", "WOODY"] as const,
     occasions: ["EVERYDAY", "WORK"] as const,
     timesOfDay: ["DAY"] as const,
-    image: { id: "31000000-0000-4000-8000-000000000003", path: "perfumes/citrus-linen/primary.jpg", altText: "Placeholder for Citrus Linen perfume bottle." },
+    image: { id: "31000000-0000-4000-8000-000000000003", path: "/perfume-placeholders/citrus-linen.svg", altText: "Controlled placeholder artwork for Citrus Linen perfume." },
     variants: [{ id: "32000000-0000-4000-8000-000000000004", sizeValue: "50", priceMinor: 165000, quantity: 10 }],
   },
 ] as const;
@@ -63,15 +63,26 @@ async function main() {
         scentCharacters: [...perfume.scentCharacters],
         occasions: [...perfume.occasions],
         timesOfDay: [...perfume.timesOfDay],
+        isFeatured: perfume.id.endsWith("001"),
         isBestseller: false,
       },
-      update: {},
+      update: {
+        name: perfume.name,
+        slug: perfume.slug,
+        scentCue: perfume.scentCue,
+        description: perfume.description,
+        scentCharacters: [...perfume.scentCharacters],
+        occasions: [...perfume.occasions],
+        timesOfDay: [...perfume.timesOfDay],
+        isFeatured: perfume.id.endsWith("001"),
+        isBestseller: false,
+      },
     });
 
     await prisma.perfumeImage.upsert({
       where: { id: perfume.image.id },
       create: { ...perfume.image, perfumeId: perfume.id, position: 0 },
-      update: {},
+      update: { path: perfume.image.path, altText: perfume.image.altText, position: 0 },
     });
 
     for (const variant of perfume.variants) {
@@ -79,13 +90,6 @@ async function main() {
         where: { id: variant.id },
         create: { ...variant, perfumeId: perfume.id, sizeUnit: "ML" },
         update: {},
-      });
-    }
-
-    if (perfume.id.endsWith("001")) {
-      await prisma.perfume.update({
-        where: { id: perfume.id },
-        data: { isBestseller: true },
       });
     }
   }
