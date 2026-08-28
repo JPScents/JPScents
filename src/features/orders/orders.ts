@@ -5,6 +5,7 @@ import { randomBytes } from "crypto";
 import { OrderStatus, Prisma } from "@/db/generated/client";
 import { prisma } from "@/db/prisma";
 import { commerceConfig } from "@/config/commerce";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type OrderCartLine = { perfumeVariantId: string; quantity: number };
 export type CheckoutInput = { customerName: string; whatsappNumber: string; email?: string; deliveryArea: string; deliveryAddress: string; orderNote?: string };
@@ -28,8 +29,8 @@ export function parseCheckoutInput(value: unknown): { input?: CheckoutInput; err
 
 export function normalizeWhatsappNumber(value: string): string {
   const digits = value.replace(/[^\d+]/g, "").replace(/^\+/, "");
-  const normalized = digits.startsWith("0") ? `234${digits.slice(1)}` : digits.startsWith("234") ? digits : "";
-  return /^234[7-9]\d{9}$/.test(normalized) ? normalized : "";
+  const normalized = /^0[7-9]\d{9}$/.test(digits) ? `234${digits.slice(1)}` : digits;
+  return /^\d{7,15}$/.test(normalized) ? normalized : "";
 }
 
 function parseLines(lines: unknown): OrderCartLine[] | null {
@@ -41,6 +42,7 @@ function parseLines(lines: unknown): OrderCartLine[] | null {
     if (typeof perfumeVariantId !== "string" || !UUID.test(perfumeVariantId) || !Number.isSafeInteger(quantity) || quantity === undefined || quantity < 1 || quantity > 99) return null;
     merged.set(perfumeVariantId, (merged.get(perfumeVariantId) ?? 0) + quantity);
   }
+  if ([...merged.values()].some((quantity) => quantity > 99)) return null;
   return [...merged].map(([perfumeVariantId, quantity]) => ({ perfumeVariantId, quantity }));
 }
 
@@ -48,8 +50,29 @@ function reference() { return `${commerceConfig.orderReference.prefix}${randomBy
 function token() { return randomBytes(32).toString("base64url"); }
 const orderInclude = { items: { include: { perfumeVariant: { include: { perfume: { include: { images: { orderBy: { position: "asc" }, take: 1 } } } } } } }, statusEvents: { orderBy: { createdAt: "asc" } } } satisfies Prisma.OrderInclude;
 
-function projectOrder(order: Prisma.OrderGetPayload<{ include: typeof orderInclude }>, includePrivate = false) {
-  const items = order.items.map((item) => ({ quantity: item.quantity, unitPriceMinor: item.unitPriceMinor, lineTotalMinor: item.quantity * item.unitPriceMinor, name: item.perfumeVariant.perfume.name, slug: item.perfumeVariant.perfume.slug, sizeLabel: `${item.perfumeVariant.sizeValue.toString()} mL`, imagePath: item.perfumeVariant.perfume.images[0]?.path }));
+class OrderConflict extends Error {}
+
+async function signedImageUrl(path?: string) {
+  if (!path) return undefined;
+  try {
+    const supabase = await createSupabaseServerClient();
+    const result = await supabase.storage.from("perfume-images").createSignedUrl(path, 3600);
+    return result.error ? undefined : result.data.signedUrl;
+  } catch {
+    return undefined;
+  }
+}
+
+async function projectOrder(order: Prisma.OrderGetPayload<{ include: typeof orderInclude }>, includePrivate = false) {
+  const items = await Promise.all(order.items.map(async (item) => ({
+    quantity: item.quantity,
+    unitPriceMinor: item.unitPriceMinor,
+    lineTotalMinor: item.quantity * item.unitPriceMinor,
+    name: item.perfumeVariant.perfume.name,
+    slug: item.perfumeVariant.perfume.slug,
+    sizeLabel: `${item.perfumeVariant.sizeValue.toString()} ${item.perfumeVariant.sizeUnit}`,
+    imageUrl: await signedImageUrl(item.perfumeVariant.perfume.images[0]?.path),
+  })));
   return { reference: order.reference, subtotalMinor: order.subtotalMinor, status: order.status, createdAt: order.createdAt, items, ...(includePrivate ? { customerName: order.customerName, whatsappNumber: order.whatsappNumber, email: order.email, deliveryArea: order.deliveryArea, deliveryAddress: order.deliveryAddress, orderNote: order.orderNote, events: order.statusEvents } : {}) };
 }
 
@@ -64,19 +87,19 @@ export async function createOrder(linesRaw: unknown, checkoutRaw: unknown, submi
       const duplicate = await tx.order.findUnique({ where: { submissionKey }, include: orderInclude });
       if (duplicate) return { order: duplicate, duplicate: true };
       const variants = await tx.perfumeVariant.findMany({ where: { id: { in: lines.map((line) => line.perfumeVariantId) }, perfume: { status: "PUBLISHED" } } });
-      if (variants.length !== lines.length) throw new Error("One or more perfumes are no longer available.");
+      if (variants.length !== lines.length) throw new OrderConflict("One or more perfumes are no longer available.");
       const byId = new Map(variants.map((variant) => [variant.id, variant]));
       for (const line of lines) {
-        const updated = await tx.perfumeVariant.updateMany({ where: { id: line.perfumeVariantId, quantity: { gte: line.quantity } }, data: { quantity: { decrement: line.quantity } } });
-        if (updated.count !== 1) throw new Error(`${byId.get(line.perfumeVariantId)?.sizeValue.toString() ?? "This"} mL is no longer available in the requested quantity.`);
+        const updated = await tx.perfumeVariant.updateMany({ where: { id: line.perfumeVariantId, quantity: { gte: line.quantity }, perfume: { status: "PUBLISHED" } }, data: { quantity: { decrement: line.quantity } } });
+        if (updated.count !== 1) throw new OrderConflict("One or more perfumes are no longer available in the requested quantity.");
       }
       const subtotalMinor = lines.reduce((total, line) => total + byId.get(line.perfumeVariantId)!.priceMinor * line.quantity, 0);
       const created = await tx.order.create({ data: { reference: reference(), confirmationToken: token(), submissionKey, ...input, subtotalMinor, items: { create: lines.map((line) => ({ perfumeVariantId: line.perfumeVariantId, quantity: line.quantity, unitPriceMinor: byId.get(line.perfumeVariantId)!.priceMinor })) }, statusEvents: { create: { toStatus: "NEW" } } } });
       const complete = await tx.order.findUniqueOrThrow({ where: { id: created.id }, include: orderInclude });
       return { order: complete, duplicate: false };
     });
-    return { order: projectOrder(result.order), confirmationToken: result.order.confirmationToken, duplicate: result.duplicate } as const;
-  } catch (error) { return { error: error instanceof Error ? error.message : "We could not create your order. Please try again." } as const; }
+    return { order: await projectOrder(result.order), confirmationToken: result.order.confirmationToken, duplicate: result.duplicate } as const;
+  } catch (error) { return { error: error instanceof OrderConflict ? error.message : "We could not create your order. Please try again." } as const; }
 }
 
 export async function getOrderConfirmation(confirmationToken: string | undefined) {
@@ -104,10 +127,4 @@ export async function getAdminOverview() {
     prisma.order.count({ where: { status: { in: ["NEW", "AWAITING_PAYMENT"] } } }), prisma.perfume.count({ where: { status: "PUBLISHED", variants: { some: { quantity: { gt: 0 } } } } }), prisma.perfumeVariant.count({ where: { quantity: 0 } }), prisma.order.count({ where: { createdAt: { gte: start } } }), listOrders(), prisma.perfume.findMany({ where: { OR: [{ status: "DRAFT" }, { variants: { none: { quantity: { gt: 0 } } } }] }, select: { id: true, name: true, status: true }, take: 5, orderBy: { updatedAt: "desc" } }), prisma.perfume.findFirst({ where: { isBestseller: true }, select: { id: true, name: true } }),
   ]);
   return { awaitingAction, availablePerfumes, zeroStockVariants, ordersThisWeek, recentOrders: recentOrders.slice(0, 3), attention, bestseller };
-}
-
-export function whatsappUrl(number: string | undefined, referenceValue: string, items: Array<{ name: string; sizeLabel: string; quantity: number }>) {
-  if (!number) return undefined;
-  const context = items.map((item) => `${item.name} ${item.sizeLabel} ×${item.quantity}`).join(", ");
-  return `https://wa.me/${number}?text=${encodeURIComponent(`Hello JPScents, I’m following up on order ${referenceValue} (${context}).`)}`;
 }
