@@ -70,7 +70,7 @@ async function projectOrder(order: Prisma.OrderGetPayload<{ include: typeof orde
     lineTotalMinor: item.quantity * item.unitPriceMinor,
     name: item.perfumeVariant.perfume.name,
     slug: item.perfumeVariant.perfume.slug,
-    sizeLabel: `${item.perfumeVariant.sizeValue.toString()} ${item.perfumeVariant.sizeUnit}`,
+    sizeLabel: `${item.perfumeVariant.sizeValue.toString()} ${item.perfumeVariant.sizeUnit === "ML" ? "mL" : item.perfumeVariant.sizeUnit || "unit"}`,
     imageUrl: await signedImageUrl(item.perfumeVariant.perfume.images[0]?.path),
   })));
   return { reference: order.reference, subtotalMinor: order.subtotalMinor, status: order.status, createdAt: order.createdAt, items, ...(includePrivate ? { customerName: order.customerName, whatsappNumber: order.whatsappNumber, email: order.email, deliveryArea: order.deliveryArea, deliveryAddress: order.deliveryAddress, orderNote: order.orderNote, events: order.statusEvents } : {}) };
