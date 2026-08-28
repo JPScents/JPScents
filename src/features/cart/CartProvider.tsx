@@ -19,6 +19,7 @@ type CartContextValue = {
   addItem: (perfumeVariantId: string, quantity: number, maximumQuantity?: number) => void;
   changeQuantity: (perfumeVariantId: string, quantity: number) => void;
   removeItem: (perfumeVariantId: string) => void;
+  clearCart: () => void;
   setOpen: (open: boolean) => void;
 };
 
@@ -74,7 +75,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items, persist]);
   const changeQuantity = useCallback((perfumeVariantId: string, quantity: number) => { if (!Number.isSafeInteger(quantity) || quantity < 1) return; persist(items.map((item) => item.perfumeVariantId === perfumeVariantId ? { ...item, quantity } : item)); }, [items, persist]);
   const removeItem = useCallback((perfumeVariantId: string) => persist(items.filter((item) => item.perfumeVariantId !== perfumeVariantId)), [items, persist]);
-  const value = useMemo(() => ({ items, lines, count: items.reduce((total, item) => total + item.quantity, 0), subtotalMinor: lines.reduce((total, line) => total + line.lineAmountMinor, 0), hasInvalidLines: resolutionState !== "idle" || lines.some((line) => !line.isValid) || (items.length > 0 && lines.length !== items.length), resolutionState, isOpen, addItem, changeQuantity, removeItem, setOpen }), [items, lines, resolutionState, isOpen, addItem, changeQuantity, removeItem]);
+  const clearCart = useCallback(() => persist([]), [persist]);
+  const value = useMemo(() => ({ items, lines, count: items.reduce((total, item) => total + item.quantity, 0), subtotalMinor: lines.reduce((total, line) => total + line.lineAmountMinor, 0), hasInvalidLines: resolutionState !== "idle" || lines.some((line) => !line.isValid) || (items.length > 0 && lines.length !== items.length), resolutionState, isOpen, addItem, changeQuantity, removeItem, clearCart, setOpen }), [items, lines, resolutionState, isOpen, addItem, changeQuantity, removeItem, clearCart]);
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 

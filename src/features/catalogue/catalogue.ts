@@ -91,6 +91,6 @@ export async function getEligibleBestsellerCandidates(query = "") {
     primaryImageUrl: await signedImageUrl(perfume.images[0]?.path),
     variantCount: perfume.variants.length,
     totalQuantity: perfume.variants.reduce((total, variant) => total + variant.quantity, 0),
-    orderCount: 0,
+    orderCount: await prisma.orderItem.count({ where: { perfumeVariant: { perfumeId: perfume.id } } }),
   })));
 }
