@@ -8,6 +8,15 @@
 - `src/components/ui` will own shadcn primitives; `src/components/shared` will contain only proven cross-feature application UI.
 - Server rendering is the default; interactive client islands remain narrow.
 
+## Platform
+
+- Supabase Postgres is the hosted database.
+- Prisma ORM 7 is the application schema, migration, generated-client, and database-connection authority.
+- Runtime database traffic uses Supavisor transaction pooling; Prisma CLI migrations use the direct/session connection.
+- Supabase Auth protects Admin; trusted `app_metadata` supplies authorization context.
+- Supabase Storage owns Admin-managed product images.
+- Browser code does not query application tables through the Supabase Data API.
+
 ## Feature boundaries
 
 | Feature | Owns | Does not own |
@@ -57,10 +66,9 @@ Features do not import another feature's internals. Route composition may combin
 - Product cards share one data projection but retain explicit Gallery and Catalogue presentations.
 - Page-only sections remain local even when visually substantial.
 
-## Infrastructure decisions still required before implementation
+## Infrastructure decisions still required
 
-- database/schema/migration authority;
-- Admin authentication provider and `/admin/login` treatment;
-- product-image storage and deletion rules;
+- final `/admin/login` presentation and the first Admin-user provisioning handoff;
+- product-image limits and deletion/retirement rules;
 - deployment target;
 - exact stock restoration behaviour when an Order is cancelled.

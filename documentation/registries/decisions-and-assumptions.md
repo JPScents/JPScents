@@ -13,6 +13,8 @@
 - PerfumeVariant stores quantity; availability is derived.
 - Recommendation attributes are controlled enum arrays with multiple selection.
 - Shared `ModalShell` standardises modal anatomy without becoming a configuration engine.
+- Supabase Postgres hosts application data; Prisma ORM 7 owns application schema, migrations, generated client, and database connection.
+- Supabase Auth protects Admin and Supabase Storage owns product images.
 
 ## Assumptions requiring confirmation
 
@@ -23,11 +25,10 @@
 - Featured may contain multiple Perfumes; Bestseller is at most one.
 - The designed Admin status set is sufficient for launch.
 
-## Open before implementation milestones
+## Open during implementation milestones
 
-- database/schema/migration authority;
-- Admin authentication provider and login experience;
-- image storage/provider, limits, ordering, and deletion rules;
+- Admin login presentation and first-user provisioning;
+- image limits, ordering, and deletion/retirement rules;
 - deployment target;
 - exact reference format and collision strategy;
 - allowed Order status transition matrix and whether cancellation restores quantity;

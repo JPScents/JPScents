@@ -45,3 +45,5 @@ Implementation tasks and milestones are created only after the extraction pass i
 ## Approval boundary
 
 The complete extraction may be produced in one pass. Freeman's approval applies to the consolidated foundation rather than requiring approval after each file. Only after that approval may `Run Active Milestone` be used to author and execute implementation milestones.
+
+The approved implementation sequence and ownership model live in `system/implementation-roadmap.md`.
