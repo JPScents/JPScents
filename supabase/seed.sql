@@ -1,0 +1,2 @@
+-- Application data is seeded through `npm run db:seed` so Prisma remains the
+-- only application schema/client authority. This file is intentionally empty.

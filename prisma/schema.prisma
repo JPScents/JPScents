@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/db/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PerfumeStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum ScentCharacter {
+  FRESH
+  WARM
+  SWEET
+  WOODY
+}
+
+enum Occasion {
+  EVERYDAY
+  WORK
+  DATE_NIGHT
+  SPECIAL_OCCASION
+}
+
+enum TimeOfDay {
+  DAY
+  NIGHT
+}
+
+enum OrderStatus {
+  NEW
+  CONFIRMED
+  AWAITING_PAYMENT
+  CANCELLED
+}
+
+model Perfume {
+  id              String           @id @default(uuid()) @db.Uuid
+  name            String
+  slug            String           @unique
+  scentCue        String
+  description     String
+  status          PerfumeStatus    @default(DRAFT)
+  scentCharacters ScentCharacter[]
+  occasions       Occasion[]
+  timesOfDay      TimeOfDay[]
+  isFeatured      Boolean          @default(false)
+  isBestseller    Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  images          PerfumeImage[]
+  variants        PerfumeVariant[]
+
+  @@index([status])
+  @@index([isFeatured])
+}
+
+model PerfumeImage {
+  id        String   @id @default(uuid()) @db.Uuid
+  perfumeId String   @db.Uuid
+  path      String   @unique
+  altText   String
+  position  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  perfume   Perfume  @relation(fields: [perfumeId], references: [id], onDelete: Cascade)
+
+  @@unique([perfumeId, position])
+  @@index([perfumeId, position])
+}
+
+model PerfumeVariant {
+  id         String      @id @default(uuid()) @db.Uuid
+  perfumeId  String      @db.Uuid
+  sizeValue  Decimal     @db.Decimal(8, 2)
+  sizeUnit   String
+  priceMinor Int
+  quantity   Int
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  perfume    Perfume     @relation(fields: [perfumeId], references: [id], onDelete: Restrict)
+  orderItems OrderItem[]
+
+  @@unique([perfumeId, sizeValue, sizeUnit])
+  @@index([perfumeId])
+}
+
+model Order {
+  id                String             @id @default(uuid()) @db.Uuid
+  reference         String             @unique
+  confirmationToken String             @unique
+  submissionKey     String             @unique
+  customerName      String
+  whatsappNumber    String
+  email             String?
+  deliveryArea      String
+  deliveryAddress   String
+  orderNote         String?
+  subtotalMinor     Int
+  status            OrderStatus        @default(NEW)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  items             OrderItem[]
+  statusEvents      OrderStatusEvent[]
+
+  @@index([status, createdAt])
+}
+
+model OrderItem {
+  id               String         @id @default(uuid()) @db.Uuid
+  orderId          String         @db.Uuid
+  perfumeVariantId String         @db.Uuid
+  quantity         Int
+  unitPriceMinor   Int
+  order            Order          @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  perfumeVariant   PerfumeVariant @relation(fields: [perfumeVariantId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([perfumeVariantId])
+}
+
+model OrderStatusEvent {
+  id         String       @id @default(uuid()) @db.Uuid
+  orderId    String       @db.Uuid
+  fromStatus OrderStatus?
+  toStatus   OrderStatus
+  createdAt  DateTime     @default(now())
+  order      Order        @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@index([orderId, createdAt])
+}

@@ -10,6 +10,10 @@ This repository is currently in the foundation and product-extraction phase. The
 - `npm run lint` — run ESLint
 - `npm run typecheck` — run TypeScript checks
 - `npm run build` — create a production build
+- `npm run test` — run focused foundation tests
+- `npm run supabase:start` / `npm run supabase:reset` — start and recreate the local Docker-backed platform
+
+See [Prisma setup](prisma/README.md) and [local Supabase setup](supabase/README.md) for the non-secret local configuration and Admin provisioning handoff.
 
 ## Project areas
 
