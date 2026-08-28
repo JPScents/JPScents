@@ -1,67 +1,60 @@
-# [Area name]
+# [Unit name]
 
-## Scope
+## Identity
 
-- **Type:** Page | UI state | Component family | Admin area | Foundation
-- **Route/access:** [route, parent route, overlay trigger, or admin-only access]
-- **Design references:** [Paper frames/source pages]
-- **Purpose:** [one sentence]
+| Field | Value |
+| --- | --- |
+| Type | Page / Component family / Foundation |
+| Sources | Paper frame names and product authority |
+| Route/access | Route, protected route, or UI-only trigger |
+| Purpose | One sentence |
 
-## Domain
+## Data and domain
 
-| Entity/concept | Used for | Relationship or constraint |
-| --- | --- | --- |
-|  |  |  |
+- **Entities:**
+- **Displayed:**
+- **Entered:**
+- **Derived:**
+- **Relationships/invariants:**
+- **Configuration:**
 
-## Data operations
-
-Capture requirements, not API contracts.
+## Operations
 
 | Kind | Requirement | Trigger/result |
 | --- | --- | --- |
-| Query |  |  |
-| Mutation |  |  |
+| Read |  |  |
+| Write |  |  |
+
+Record requirements, not endpoint contracts.
 
 ## Components
 
-| Component | Reused or new | Required variants/states |
-| --- | --- | --- |
-|  |  |  |
+- **Reused:**
+- **Local:**
+- **Variants/states:**
+- **Duplication review:**
 
-## Behaviour
+## Behaviour and presentation
 
-- [important action, state transition, or relationship]
+- **Actions/transitions/navigation:**
+- **Persistence/failure/empty:**
+- **Desktop:**
+- **Mobile:**
+- **Theme/assets/content:**
 
-## Responsive and UI states
+## Quality
 
-- [desktop/mobile difference, empty/error/loading/unavailable state]
-
-## Application-wide rules used
-
-- **Validation:** [only rules visible or implied]
-- **Accessibility:** [semantic or interaction requirement]
-- **Persistence:** [what survives navigation/session, if anything]
-
-## Dependencies
-
-- **Theme/tokens:** [existing token groups]
-- **Configuration:** [config keys or open config]
-- **Content/assets:** [confirmed assets and placeholders]
+- **Validation:**
+- **Accessibility:**
+- **Loading/feedback:**
+- **Security/privacy:**
 
 ## Decisions
 
-- **Confirmed:** [facts supported by source]
-- **Assumed:** [planning assumptions]
-- **Open:** [questions that materially change implementation]
-
-## Registry updates
-
-- **Routes:** [add/change/none]
-- **Domain:** [add/change/none]
-- **Components:** [add/change/none]
-- **Data operations:** [add/change/none]
-- **Configuration:** [add/change/none]
+- **Confirmed:**
+- **Assumed:**
+- **Open:**
 
 ## Approval
 
-- [ ] Approved by Freeman
+- [ ] Included in Freeman's consolidated foundation approval

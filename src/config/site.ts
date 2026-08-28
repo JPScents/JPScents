@@ -10,7 +10,13 @@ export const siteConfig = {
     checkout: "/checkout",
     checkoutConfirmation: "/checkout/confirm",
     helpMeChoose: "/help-me-choose",
-    helpMeChooseResults: "/help-me-choose/results",
+    admin: "/admin",
+    adminPerfumes: "/admin/perfumes",
+    adminNewPerfume: "/admin/perfumes/new",
+    adminPerfume: (id: string) => `/admin/perfumes/${id}` as const,
+    adminOrders: "/admin/orders",
+    adminOrder: (reference: string) =>
+      `/admin/orders/${reference}` as const,
   },
 } as const;
 

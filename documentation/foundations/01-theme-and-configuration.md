@@ -60,7 +60,10 @@ Amber is decorative/accent use only at its current value; it does not have suffi
 | Checkout path | `/checkout` | Confirmed |
 | Confirmation path | `/checkout/confirm` | Confirmed |
 | Help Me Choose path | `/help-me-choose` | Confirmed |
-| Help Me Choose results path | `/help-me-choose/results` | Assumed pending flow extraction |
+| Help Me Choose results | State/search parameters on `/help-me-choose` | Confirmed; not a separate route |
+| Admin overview | `/admin` | Confirmed |
+| Admin perfumes | `/admin/perfumes`, `/admin/perfumes/new`, `/admin/perfumes/{id}` | Confirmed |
+| Admin orders | `/admin/orders`, `/admin/orders/{reference}` | Confirmed |
 
 Route values are configuration references only; the routes do not exist yet.
 
@@ -74,7 +77,7 @@ Route values are configuration references only; the routes do not exist yet.
 ## Open decisions
 
 - Confirm locale, currency formatting, and whether prices always display without decimals.
-- Confirm the final order-reference format and collision strategy during order-domain extraction.
+- Confirm the final order-reference format and collision strategy before the Orders milestone.
 - Resolve the homepage header-height discrepancy when the navigation shell is extracted.
 - Confirm final logo/brand assets and product photography before production content work.
 - Define error/destructive colors from real designed states; the current destructive color is a provisional accessible foundation value.
