@@ -10,9 +10,9 @@
 
 ## Platform
 
-- Supabase Postgres is the hosted database.
+- Supabase CLI + Docker is the development database/Auth/Storage platform; remote hosting is deferred.
 - Prisma ORM 7 is the application schema, migration, generated-client, and database-connection authority.
-- Runtime database traffic uses Supavisor transaction pooling; Prisma CLI migrations use the direct/session connection.
+- Local runtime and Prisma CLI use the local Postgres connection. A pooled/direct split is introduced only when a serverless deployment target exists.
 - Supabase Auth protects Admin; trusted `app_metadata` supplies authorization context.
 - Supabase Storage owns Admin-managed product images.
 - Browser code does not query application tables through the Supabase Data API.
@@ -70,5 +70,5 @@ Features do not import another feature's internals. Route composition may combin
 
 - final `/admin/login` presentation and the first Admin-user provisioning handoff;
 - product-image limits and deletion/retirement rules;
-- deployment target;
+- production Supabase/deployment target;
 - exact stock restoration behaviour when an Order is cancelled.

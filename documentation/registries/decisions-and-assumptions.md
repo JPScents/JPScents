@@ -13,7 +13,7 @@
 - PerfumeVariant stores quantity; availability is derived.
 - Recommendation attributes are controlled enum arrays with multiple selection.
 - Shared `ModalShell` standardises modal anatomy without becoming a configuration engine.
-- Supabase Postgres hosts application data; Prisma ORM 7 owns application schema, migrations, generated client, and database connection.
+- Local Supabase through Docker hosts development data/Auth/Storage; Prisma ORM 7 owns application schema, migrations, generated client, and database connection.
 - Supabase Auth protects Admin and Supabase Storage owns product images.
 
 ## Assumptions requiring confirmation
