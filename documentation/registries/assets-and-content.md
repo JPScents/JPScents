@@ -23,6 +23,6 @@ These are design assets or controlled placeholders, not confirmed client photogr
 ## Rules
 
 - Store ordered image references and alt text on Perfume; do not copy them into CartItem or OrderItem.
-- Keep placeholder status explicit in seeds and review environments.
+- Keep placeholder status explicit in demo fixtures and review environments; normal resets and production start empty.
 - Product images follow the Paper crop/aspect-ratio conventions; Admin preview should use the same public projection.
 - Content strings that are genuinely operational/configurable belong in typed configuration or data, not scattered through components.

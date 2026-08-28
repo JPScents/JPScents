@@ -32,7 +32,7 @@
 ## Behaviour and presentation
 
 - Product imagery/name/CTA link to `/perfume/{slug}`; browse links `/perfumes`; guidance links `/help-me-choose`.
-- Missing merchandising selection falls back gracefully; empty catalogue shows guidance rather than broken hero.
+- Missing merchandising selection falls back gracefully. With no available catalogue, the hero shows a clear preparation state and hides catalogue-dependent browsing, recommendation, and closing actions.
 - FAQ answers must come from confirmed client policy, not placeholder copy.
 
 ## Quality

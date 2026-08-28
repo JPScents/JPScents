@@ -129,8 +129,8 @@ export async function updateOrderStatus(referenceValue: string, nextStatus: unkn
 
 export async function getAdminOverview() {
   const start = new Date(); start.setHours(0, 0, 0, 0); start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
-  const [awaitingAction, availablePerfumes, zeroStockVariants, ordersThisWeek, recentOrders, attention, bestseller] = await Promise.all([
-    prisma.order.count({ where: { status: { in: ["NEW", "AWAITING_PAYMENT"] } } }), prisma.perfume.count({ where: { status: "PUBLISHED", variants: { some: { quantity: { gt: 0 } } } } }), prisma.perfumeVariant.count({ where: { quantity: 0 } }), prisma.order.count({ where: { createdAt: { gte: start } } }), listOrders(), prisma.perfume.findMany({ where: { OR: [{ status: "DRAFT" }, { variants: { none: { quantity: { gt: 0 } } } }] }, select: { id: true, name: true, status: true }, take: 5, orderBy: { updatedAt: "desc" } }), prisma.perfume.findFirst({ where: { isBestseller: true }, select: { id: true, name: true } }),
+  const [awaitingAction, totalPerfumes, availablePerfumes, zeroStockVariants, ordersThisWeek, recentOrders, attention, bestseller] = await Promise.all([
+    prisma.order.count({ where: { status: { in: ["NEW", "AWAITING_PAYMENT"] } } }), prisma.perfume.count(), prisma.perfume.count({ where: { status: "PUBLISHED", variants: { some: { quantity: { gt: 0 } } } } }), prisma.perfumeVariant.count({ where: { quantity: 0 } }), prisma.order.count({ where: { createdAt: { gte: start } } }), listOrders(), prisma.perfume.findMany({ where: { OR: [{ status: "DRAFT" }, { variants: { none: { quantity: { gt: 0 } } } }] }, select: { id: true, name: true, status: true }, take: 5, orderBy: { updatedAt: "desc" } }), prisma.perfume.findFirst({ where: { isBestseller: true }, select: { id: true, name: true } }),
   ]);
-  return { awaitingAction, availablePerfumes, zeroStockVariants, ordersThisWeek, recentOrders: recentOrders.slice(0, 3), attention, bestseller };
+  return { awaitingAction, totalPerfumes, availablePerfumes, zeroStockVariants, ordersThisWeek, recentOrders: recentOrders.slice(0, 3), attention, bestseller };
 }

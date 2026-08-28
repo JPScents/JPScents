@@ -32,7 +32,7 @@
 
 - Add Perfume navigates `/admin/perfumes/new`; Edit navigates stable-ID route.
 - Search matches name; availability derives from stock; homepage filter covers Featured/Bestseller.
-- No results preserves filters and offers clear/reset.
+- Filtered no-results preserves filters and offers clear/reset; a genuine empty catalogue offers Add Perfume.
 
 ## Quality
 

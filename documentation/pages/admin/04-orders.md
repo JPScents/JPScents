@@ -33,6 +33,7 @@
 
 - Open navigates `/admin/orders/{reference}`.
 - Status choices reflect only the approved enum; unknown search/filter state is normalized.
+- A genuine empty Order list explains that Orders appear after customer checkout; filtered no-results offers Clear Filters.
 - Export, if implemented, exports only authorized fields and current filters; it is not a reporting subsystem.
 
 ## Quality

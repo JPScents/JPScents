@@ -23,6 +23,6 @@
 ## Privacy/security
 
 - Order confirmation requires an unguessable access token; a human-readable reference alone is insufficient.
-- Admin routes and writes are protected server-side.
+- Admin routes and writes require both the exact submitted JPScents email and trusted Supabase Admin app metadata.
 - Avoid customer details in URLs, logs, analytics, or WhatsApp links beyond the user-approved message content.
 - Upload validation and storage rules must be defined with the selected image provider.

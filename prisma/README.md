@@ -6,4 +6,4 @@ Prisma 7.9.1 owns the JPScents application schema, generated client, migration h
 2. Start Docker-backed Supabase with `npm run supabase:start`.
 3. Run `npm run db:generate` and `npm run supabase:reset`.
 
-`npm run db:seed` upserts only the fixed IDs owned by the deterministic placeholder catalogue. It neither deletes records nor changes unrelated data. Add another seed domain beside the existing direct seed only once it has real data to own; keep execution order explicit.
+The normal reset intentionally leaves the catalogue and Orders empty so local verification matches a launch before client content arrives. `npm run supabase:reset:demo` is an explicit design-review option that adds the deterministic placeholder catalogue after a reset. `npm run db:seed:demo` can add those fixtures without resetting existing data; it upserts only its fixed IDs and never represents client-supplied products.

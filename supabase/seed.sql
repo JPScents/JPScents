@@ -1,2 +1,2 @@
--- Application data is seeded through `npm run db:seed` so Prisma remains the
--- only application schema/client authority. This file is intentionally empty.
+-- Normal resets intentionally start without application data. Optional demo
+-- fixtures use `npm run db:seed:demo`; this file remains intentionally empty.

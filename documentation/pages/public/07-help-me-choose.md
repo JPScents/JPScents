@@ -35,6 +35,7 @@
 - Results stay on `/help-me-choose`; search parameters may preserve/share valid enum choices.
 - Rank by number/weight of exact matches, then merchandising tie-breaker; exclude unpublished and zero-stock Perfumes.
 - No match offers Adjust Preferences and Browse All Perfumes.
+- With no available catalogue, the flow stops before preferences and explains that recommendations begin once perfumes are published.
 
 ## Quality
 

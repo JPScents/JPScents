@@ -50,6 +50,13 @@ describe("public catalogue controls", () => {
     expect(screen.getByRole("heading", { name: /Perfumes chosen around/ })).toHaveFocus();
   });
 
+  it("does not offer recommendations before an available catalogue exists", () => {
+    render(<HelpMeChoose initial={{ scentCharacters: [], occasions: [] }} submitted={false} catalogueAvailable={false} />);
+    expect(screen.getByRole("heading", { name: "Recommendations will begin with the collection." })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Recommend perfumes" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Return home" })).toHaveAttribute("href", "/");
+  });
+
   it("renders a controlled bottle fallback when a product image is unavailable", () => {
     render(<CatalogueProductCard perfume={{ id: "p", slug: "quiet-fig", name: "Quiet Fig", scentCue: "Fresh fig", scentCharacters: ["FRESH"], primaryImageAlt: "", startingPrice: "From ₦1,000", isAvailable: true }} />);
     expect(screen.getByLabelText("Perfume bottle placeholder")).toBeInTheDocument();

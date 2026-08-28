@@ -33,7 +33,8 @@
 ## Behaviour and presentation
 
 - Default shows all published Perfumes; available Perfumes lead.
-- No results preserves filters and offers Clear Filters and Find My Scent.
+- A genuinely empty catalogue shows a client-content preparation state without misleading recovery actions.
+- A filtered no-result state preserves filters and offers Clear Filters and Find My Scent.
 - Unknown filter values are ignored or normalized safely.
 
 ## Quality

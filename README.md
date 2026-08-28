@@ -21,14 +21,15 @@ See [Prisma setup](prisma/README.md) and [local Supabase setup](supabase/README.
 - `src/features` — cohesive Catalogue, Cart, and Orders features
 - `src/config` — typed, non-secret application configuration
 - `src/lib` — shared foundation utilities
-- `prisma` — schema, migrations, and deterministic development seed
+- `prisma` — schema, migrations, and opt-in demo fixtures
 - `documentation` — product extraction, durable architecture, implementation rules, and cumulative registries
 
-## Remaining launch handoffs
+## Launch readiness and remaining handoffs
 
+- The application deliberately supports an empty catalogue. Public and Admin routes show clear preparation/zero states until confirmed products are added.
 - Configure the client-confirmed WhatsApp business number and final delivery-area policy.
-- Replace controlled catalogue, photography, logo, FAQ, and policy placeholders with confirmed client content.
-- Provision the first production Admin through the trusted Supabase Auth Admin workflow.
+- Add confirmed catalogue, photography, logo, FAQ, and policy content; demo fixtures are never loaded by the normal reset.
+- Provision the submitted JPScents email through the trusted Supabase Auth Admin workflow. The exact email and trusted `app_metadata.role` must both match.
 - Connect production Supabase and deployment environment variables; online payment remains intentionally out of scope.
 
 ## Project operating system

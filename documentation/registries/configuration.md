@@ -17,5 +17,7 @@
 | Public routes | registry in `routes-and-pages.md` | Confirmed |
 | Recommendation enums | registry in `entities-and-models.md` | Mostly confirmed; wording issue open |
 | Order statuses | `NEW`, `CONFIRMED`, `AWAITING_PAYMENT`, `CANCELLED` | Confirmed from Admin design |
+| Trusted Admin identity | exact JPScents Tally-submitted email plus trusted Supabase `app_metadata.role=admin` | Confirmed from client record |
+| Initial data | empty catalogue and Orders; demo fixtures are explicit local opt-in only | Confirmed |
 
-Secrets and environment-specific credentials never belong in this registry or committed config. Database, authentication, storage, and deployment provider choices remain open until milestone authoring.
+Secrets and environment-specific credentials never belong in this registry or committed config. The trusted Admin email is an identity allowlist value, not a password or credential.

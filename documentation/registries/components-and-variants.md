@@ -3,6 +3,7 @@
 ## Shared application UI
 
 - `ModalShell`: shadcn Dialog composition standardising heading, description, close, body, action footer, focus and responsive sizing.
+- `EmptyState`: shared Paper-derived bordered surface for genuine zero-data and filtered no-result states; feature copy/actions stay local.
 - Public shell: desktop/mobile Header, mobile menu, Cart utility/badge, Footer.
 - Admin shell: desktop sidebar/topbar and mobile header/menu.
 

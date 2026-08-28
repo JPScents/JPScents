@@ -12,7 +12,7 @@
 ## Data and domain
 
 - **Entities:** Order, Perfume, PerfumeVariant, OrderItem-derived counts.
-- **Displayed:** Orders awaiting action, available Perfumes, zero-stock variants, Orders this week, recent Orders, current Bestseller.
+- **Displayed:** total/available catalogue context, Orders awaiting action, zero-stock variants, Orders this week, recent Orders, current Bestseller.
 - **Derived:** all metrics from existing records; no analytics store.
 - **Configuration:** attention statuses, recent-order limit, store URL.
 
@@ -33,7 +33,7 @@
 ## Behaviour and presentation
 
 - Add Perfume navigates `/admin/perfumes/new`; rows open Order Detail; attention links Perfumes; selector composes ModalShell.
-- Empty store replaces counts/lists with actionable zero states.
+- Empty store shows an Add Perfume action, explains that the public site is safely in preparation mode, and avoids claiming that there is no catalogue work to do.
 - Metric reads may load together; selector failures do not break the page.
 
 ## Quality

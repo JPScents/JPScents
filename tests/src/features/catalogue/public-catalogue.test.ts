@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/db/prisma", () => ({ prisma: { perfume: { findMany: vi.fn(), findFirst: vi.fn() } } }));
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: vi.fn() }));
 
-import { getFeaturedPerfumes, getPerfumeBySlug, getRelatedPerfumes, listPerfumes, parsePreferences, parseScent, preferenceSummary, recommendPerfumes } from "@/features/catalogue/public-catalogue";
+import { getFeaturedPerfumes, getPerfumeBySlug, getRelatedPerfumes, hasAvailablePerfumes, hasPublishedPerfumes, listPerfumes, parsePreferences, parseScent, preferenceSummary, recommendPerfumes } from "@/features/catalogue/public-catalogue";
 import { prisma } from "@/db/prisma";
 
 const perfume = (overrides: Record<string, unknown> = {}) => ({ id: "p-1", slug: "quiet-fig", name: "Quiet Fig", scentCue: "Soft fig", scentCharacters: ["FRESH"], occasions: ["EVERYDAY"], timesOfDay: ["DAY"], description: "A quiet perfume.", status: "PUBLISHED", isBestseller: false, isFeatured: false, images: [], variants: [{ id: "v-1", sizeValue: 30, priceMinor: 120000, quantity: 2 }], ...overrides }) as unknown as never;
@@ -24,6 +24,14 @@ describe("public catalogue URL parsing", () => {
     const results = await listPerfumes();
     expect(prisma.perfume.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { status: "PUBLISHED" } }));
     expect(results.map((item) => item.id)).toEqual(["p-1", "unavailable"]);
+  });
+
+  it("checks published and available catalogue presence without loading product projections", async () => {
+    vi.mocked(prisma.perfume.findFirst).mockResolvedValueOnce({ id: "published" } as never).mockResolvedValueOnce(null);
+    await expect(hasPublishedPerfumes()).resolves.toBe(true);
+    await expect(hasAvailablePerfumes()).resolves.toBe(false);
+    expect(prisma.perfume.findFirst).toHaveBeenNthCalledWith(1, { where: { status: "PUBLISHED" }, select: { id: true } });
+    expect(prisma.perfume.findFirst).toHaveBeenNthCalledWith(2, { where: { status: "PUBLISHED", variants: { some: { quantity: { gt: 0 } } } }, select: { id: true } });
   });
 
   it("chooses bestseller before featured for the homepage hero", async () => {

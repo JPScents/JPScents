@@ -86,6 +86,14 @@ export async function listPerfumes(filters: { scentCharacter?: ScentCharacter } 
   return Promise.all(rows.map(projectCard));
 }
 
+export async function hasPublishedPerfumes() {
+  return Boolean(await prisma.perfume.findFirst({ where: { status: "PUBLISHED" }, select: { id: true } }));
+}
+
+export async function hasAvailablePerfumes() {
+  return Boolean(await prisma.perfume.findFirst({ where: { status: "PUBLISHED", variants: { some: { quantity: { gt: 0 } } } }, select: { id: true } }));
+}
+
 export async function getPerfumeBySlug(slug: string): Promise<PublicPerfumeDetail | null> {
   const perfume = await prisma.perfume.findFirst({ where: { slug, status: "PUBLISHED" }, include: detailInclude });
   if (!perfume) return null;

@@ -15,6 +15,8 @@
 - Shared `ModalShell` standardises modal anatomy without becoming a configuration engine.
 - Local Supabase through Docker hosts development data/Auth/Storage; Prisma ORM 7 owns application schema, migrations, generated client, and database connection.
 - Supabase Auth protects Admin and Supabase Storage owns product images.
+- The only accepted Admin identity is the JPScents email preserved in the submitted client record, and it must also carry the trusted Supabase Admin role.
+- No client catalogue was supplied. Empty data is the launch baseline; placeholder products are opt-in local demo fixtures only.
 
 ## Assumptions requiring confirmation
 
@@ -25,9 +27,9 @@
 - Featured may contain multiple Perfumes; Bestseller is at most one.
 - The designed Admin status set is sufficient for launch.
 
-## Open during implementation milestones
+## Open launch handoffs
 
-- Admin login presentation and first-user provisioning;
+- production provisioning/password handoff for the already-confirmed Admin email;
 - image limits, ordering, and deletion/retirement rules;
 - deployment target;
 - exact reference format and collision strategy;

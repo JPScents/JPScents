@@ -34,7 +34,7 @@ vi.mock("next/image", () => ({
   default: () => null,
 }));
 
-import { Checkout, Confirmation } from "@/features/orders/presentations";
+import { AdminOrders, AdminOverview, Checkout, Confirmation } from "@/features/orders/presentations";
 
 const placedOrder = {
   reference: "JP-ABCDEFG",
@@ -81,5 +81,22 @@ describe("order presentations", () => {
     expect(screen.getAllByRole("listitem")).toHaveLength(3);
     expect(screen.getByText("No payment has been taken online.")).toBeInTheDocument();
     expect(screen.getByLabelText("Perfume bottle placeholder")).toBeInTheDocument();
+  });
+
+  it("distinguishes an empty Order store from a filtered no-result", () => {
+    const { rerender } = render(<AdminOrders orders={[]} />);
+    expect(screen.getByRole("heading", { name: "No orders have been placed yet." })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Clear filters" })).not.toBeInTheDocument();
+
+    rerender(<AdminOrders orders={[]} query="missing" />);
+    expect(screen.getByRole("heading", { name: "No orders match these filters." })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Clear filters" })).toHaveAttribute("href", "/admin/orders");
+  });
+
+  it("makes an empty Admin overview actionable without implying the catalogue is healthy", () => {
+    render(<AdminOverview overview={{ awaitingAction: 0, totalPerfumes: 0, availablePerfumes: 0, zeroStockVariants: 0, ordersThisWeek: 0, recentOrders: [], attention: [], bestseller: null }} bestseller={<p>No eligible Bestseller.</p>} />);
+    expect(screen.getByRole("heading", { name: "Start with the first perfume." })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Add perfume" })).toHaveAttribute("href", "/admin/perfumes/new");
+    expect(screen.getByText("Nothing to review until the first perfume is added.")).toBeInTheDocument();
   });
 });

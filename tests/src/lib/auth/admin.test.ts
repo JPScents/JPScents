@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { adminConfig } from "@/config/admin";
+
 const mocks = vi.hoisted(() => ({ createSupabaseServerClient: vi.fn() }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -20,11 +22,11 @@ describe("getCurrentAdmin", () => {
     mocks.createSupabaseServerClient.mockResolvedValue({
       auth: {
         getUser: vi.fn().mockResolvedValue({
-          data: { user: { id: "admin", email: "admin@example.com", app_metadata: { role: "admin" } } },
+          data: { user: { id: "admin", email: adminConfig.trustedEmail, app_metadata: { role: "admin" } } },
           error: null,
         }),
       },
     });
-    await expect(getCurrentAdmin()).resolves.toEqual({ id: "admin", email: "admin@example.com" });
+    await expect(getCurrentAdmin()).resolves.toEqual({ id: "admin", email: adminConfig.trustedEmail });
   });
 });

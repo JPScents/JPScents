@@ -9,6 +9,7 @@ vi.mock("@/features/catalogue/actions/image.admin.action", () => ({ savePrimaryI
 
 import { BestsellerSelector } from "@/features/catalogue/BestsellerSelector";
 import { ProductPreview, StagedVariantManager } from "@/features/catalogue/PerfumeEditor";
+import { PerfumeList } from "@/features/catalogue/PerfumeList";
 
 function StagedFixture() { const [variants, setVariants] = useState<Array<{ sizeValue: string; price: string; quantity: string }>>([]); return <StagedVariantManager variants={variants} onChange={setVariants} />; }
 function PreviewFixture() { const [open, setOpen] = useState(false); const form = useRef<HTMLFormElement>(null); return <><button type="button" onClick={() => setOpen(true)}>Open preview</button><form ref={form}><input name="name" defaultValue="Quiet Fig" /><input name="scentCue" defaultValue="Green fig" /></form><ProductPreview open={open} onOpenChange={setOpen} form={form} variants={[{ priceMinor: 125050, quantity: 2 }]} /></>; }
@@ -32,5 +33,19 @@ describe("BestsellerSelector", () => {
   it("filters candidates and exposes current operational context and no-results feedback", () => {
     render(<BestsellerSelector currentId="fig" candidates={[{ id: "fig", name: "Quiet Fig", scentCharacters: ["FRESH"], variantCount: 2, totalQuantity: 8, orderCount: 0 }]} />); fireEvent.click(screen.getByRole("button", { name: "Choose Bestseller" }));
     expect(screen.getByText("Current")).toBeInTheDocument(); expect(screen.getByText("2 variants · 8 units · 0 orders")).toBeInTheDocument(); fireEvent.change(screen.getByRole("textbox", { name: "Search eligible perfumes" }), { target: { value: "amber" } }); expect(screen.getByText("No eligible perfumes match this search.")).toBeInTheDocument();
+  });
+
+  it("explains the prerequisite when the catalogue has no eligible perfume", () => {
+    render(<BestsellerSelector candidates={[]} />);
+    expect(screen.getByText("Add and publish an in-stock perfume before choosing a Bestseller.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Choose Bestseller" })).not.toBeInTheDocument();
+  });
+});
+
+describe("PerfumeList", () => {
+  it("offers the first catalogue action when there are no perfumes", () => {
+    render(<PerfumeList perfumes={[]} filters={{ availability: "all", placement: "all" }} />);
+    expect(screen.getByRole("heading", { name: "Add the first perfume." })).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: "Add perfume" })[0]).toHaveAttribute("href", "/admin/perfumes/new");
   });
 });

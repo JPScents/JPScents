@@ -13,7 +13,7 @@
 - Supabase CLI + Docker is the development database/Auth/Storage platform; remote hosting is deferred.
 - Prisma ORM 7 is the application schema, migration, generated-client, and database-connection authority.
 - Local runtime and Prisma CLI use the local Postgres connection. A pooled/direct split is introduced only when a serverless deployment target exists.
-- Supabase Auth protects Admin; trusted `app_metadata` supplies authorization context.
+- Supabase Auth protects Admin; access requires both trusted `app_metadata.role=admin` and the exact JPScents email preserved from the client submission.
 - Supabase Storage owns Admin-managed product images.
 - Browser code does not query application tables through the Supabase Data API.
 
@@ -65,10 +65,11 @@ Features do not import another feature's internals. Route composition may combin
 - Feature-specific modals own their fields, validation, and actions; no generic modal configuration engine.
 - Product cards share one data projection but retain explicit Gallery and Catalogue presentations.
 - Page-only sections remain local even when visually substantial.
+- `EmptyState` is the one shared visual shell for genuine zero-data and filtered no-result states; each feature owns its state-specific copy and recovery actions.
 
 ## Infrastructure decisions still required
 
-- final `/admin/login` presentation and the first Admin-user provisioning handoff;
+- production password/provisioning handoff for the confirmed Admin email;
 - product-image limits and deletion/retirement rules;
 - production Supabase/deployment target;
 - exact stock restoration behaviour when an Order is cancelled.

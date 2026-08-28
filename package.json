@@ -13,11 +13,12 @@
     "db:generate": "prisma generate",
     "db:format": "prisma format",
     "db:validate": "prisma validate",
-    "db:seed": "prisma db seed",
+    "db:seed:demo": "prisma db seed",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:status": "supabase status",
-    "supabase:reset": "supabase db reset --local --no-seed && prisma migrate deploy && npm run db:seed"
+    "supabase:reset": "supabase db reset --local --no-seed && prisma migrate deploy",
+    "supabase:reset:demo": "npm run supabase:reset && npm run db:seed:demo"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.9.1",

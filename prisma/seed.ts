@@ -1,8 +1,8 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, PerfumeStatus } from "../src/db/generated/client";
 
-// The documented local Supabase database is safe for deterministic development seeds.
-// Deployed environments must provide DATABASE_URL explicitly.
+// Explicitly opt-in demo data for local development and design review only.
+// Normal resets and deployed environments intentionally start with no catalogue data.
 const databaseUrl = process.env.DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:56322/postgres";
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });

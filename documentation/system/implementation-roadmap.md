@@ -12,7 +12,7 @@ All agents work locally on the shared `main` branch, one at a time. There are no
 
 | Milestone | Outcome | Depends on | Agent thread | Branch |
 | --- | --- | --- | --- | --- |
-| 1. Platform and shared foundation | Local Supabase wiring, Prisma schema/migrations/client, Admin authentication, product-image storage contract, deterministic seed, shared shells, ModalShell, and verification baseline | approved foundation | `milestone_1_platform` | `main` |
+| 1. Platform and shared foundation | Local Supabase wiring, Prisma schema/migrations/client, Admin authentication, product-image storage contract, opt-in demo fixtures, shared shells, ModalShell, and verification baseline | approved foundation | `milestone_1_platform` | `main` |
 | 2. Catalogue management | Catalogue data operations and protected Admin Perfumes/create/edit/variants/images/Featured/Bestseller workflows | Milestone 1 | `milestone_2_catalogue_admin` | `main` |
 | 3. Public discovery | Homepage, Perfumes, Perfume Detail, Help Me Choose, and their public component families/responsive states | Milestone 2 | `milestone_3_public_discovery` | `main` |
 | 4. Cart | Minimal client Cart state/persistence, drawer/bottom sheet, Full Cart, invalid/empty states, and wiring from Perfume Detail | Milestone 3 | `milestone_4_cart` | `main` |
@@ -38,7 +38,7 @@ All agents work locally on the shared `main` branch, one at a time. There are no
 
 - The Supabase CLI and Docker provide the local Postgres, Auth, Storage, and Studio stack during development.
 - Prisma ORM 7 is pinned and owns application schema declarations, generated client, migrations, and database connection. Both runtime and migration tooling use local Postgres until a production deployment exists.
-- Supabase Auth protects Admin. Authorization uses trusted server-side identity and `app_metadata`, never user-editable metadata.
+- Supabase Auth protects Admin. Authorization requires the exact submitted JPScents email and trusted server-side `app_metadata`, never user-editable metadata.
 - Supabase Storage owns product images; upload authorization remains Admin-only.
 - Application data is accessed through the Next.js server and Prisma, not directly from the browser Data API.
 - No payment service, queue, worker, microservice, generic repository framework, or speculative online-payment layer is introduced.
