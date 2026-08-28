@@ -6,12 +6,16 @@ import { getAdminIdentity, type AdminIdentity } from "@/lib/auth/identity";
 export { getAdminIdentity, type AdminIdentity } from "@/lib/auth/identity";
 
 export async function getCurrentAdmin(): Promise<AdminIdentity | null> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.auth.getUser();
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.auth.getUser();
 
-  if (error) {
+    if (error) {
+      return null;
+    }
+
+    return getAdminIdentity(data.user);
+  } catch {
     return null;
   }
-
-  return getAdminIdentity(data.user);
 }

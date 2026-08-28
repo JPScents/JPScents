@@ -36,6 +36,7 @@ describe("orders", () => {
     const result = await createOrder([{ perfumeVariantId: id, quantity: 1 }], checkout, "22222222-2222-4222-8222-222222222222");
     expect(mocks.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ quantity: { gte: 1 }, perfume: { status: "PUBLISHED" } }) }));
     expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ subtotalMinor: 120000, items: { create: [{ perfumeVariantId: id, quantity: 1, unitPriceMinor: 120000 }] } }) }));
+    expect(mocks.create.mock.calls[0][0].data.reference).toMatch(/^JP-[23456789A-HJ-NP-Z]{7}$/);
     expect(result).toMatchObject({ order: { items: [{ sizeLabel: "50 mL", imageUrl: "https://signed.example/bottle" }] } });
     expect(JSON.stringify(result)).not.toContain("private/path.jpg");
   });

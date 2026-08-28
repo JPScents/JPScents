@@ -46,7 +46,13 @@ function parseLines(lines: unknown): OrderCartLine[] | null {
   return [...merged].map(([perfumeVariantId, quantity]) => ({ perfumeVariantId, quantity }));
 }
 
-function reference() { return `${commerceConfig.orderReference.prefix}${randomBytes(5).toString("hex").toUpperCase()}`; }
+const REFERENCE_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+function reference() {
+  const code = [...randomBytes(7)]
+    .map((value) => REFERENCE_ALPHABET[value & 31])
+    .join("");
+  return `${commerceConfig.orderReference.prefix}${code}`;
+}
 function token() { return randomBytes(32).toString("base64url"); }
 const orderInclude = { items: { include: { perfumeVariant: { include: { perfume: { include: { images: { orderBy: { position: "asc" }, take: 1 } } } } } } }, statusEvents: { orderBy: { createdAt: "asc" } } } satisfies Prisma.OrderInclude;
 

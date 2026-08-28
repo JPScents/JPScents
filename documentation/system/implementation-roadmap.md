@@ -4,6 +4,8 @@
 
 Use five sequential milestones. Each milestone gets one focused GPT-5.6 Terra Medium implementation agent in a clearly named agent thread. The Sol orchestrator owns contracts, sequencing, evidence review, conflict resolution, and integration.
 
+All five milestones were implemented and independently reviewed locally on 28 August 2026. The remaining work is client configuration/content confirmation and production deployment, not another application feature milestone.
+
 All agents work locally on the shared `main` branch, one at a time. There are no linked worktrees or milestone branches. The dependencies are linear and the schema, package manifest, route shells, catalogue projections, and cross-feature flows are high-conflict areas, so parallel implementation would add coordination risk without useful speed.
 
 ## Milestones
@@ -14,7 +16,7 @@ All agents work locally on the shared `main` branch, one at a time. There are no
 | 2. Catalogue management | Catalogue data operations and protected Admin Perfumes/create/edit/variants/images/Featured/Bestseller workflows | Milestone 1 | `milestone_2_catalogue_admin` | `main` |
 | 3. Public discovery | Homepage, Perfumes, Perfume Detail, Help Me Choose, and their public component families/responsive states | Milestone 2 | `milestone_3_public_discovery` | `main` |
 | 4. Cart | Minimal client Cart state/persistence, drawer/bottom sheet, Full Cart, invalid/empty states, and wiring from Perfume Detail | Milestone 3 | `milestone_4_cart` | `main` |
-| 5. Orders and integration | Checkout, atomic Order creation/stock decrement, confirmation/WhatsApp, Admin Orders/detail/Overview, end-to-end accessibility and responsive verification | Milestone 4 | `milestone_5_orders_integration` | `main` |
+| 5. Orders and integration | Checkout, atomic Order creation/stock decrement, confirmation/WhatsApp, Admin Orders/detail/Overview, end-to-end accessibility and responsive verification | Milestone 4 | `milestone_5_orders_completion` | `main` |
 
 ## Dependency rationale
 
