@@ -75,7 +75,7 @@ export async function createOrder(linesRaw: unknown, checkoutRaw: unknown, submi
       const complete = await tx.order.findUniqueOrThrow({ where: { id: created.id }, include: orderInclude });
       return { order: complete, duplicate: false };
     });
-    return { order: projectOrder(result.order), confirmationToken: result.duplicate ? undefined : result.order.confirmationToken, duplicate: result.duplicate } as const;
+    return { order: projectOrder(result.order), confirmationToken: result.order.confirmationToken, duplicate: result.duplicate } as const;
   } catch (error) { return { error: error instanceof Error ? error.message : "We could not create your order. Please try again." } as const; }
 }
 
