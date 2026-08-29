@@ -3,12 +3,13 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { ModalShell } from "@/components/shared/ModalShell";
-import { formatNairaFromMinor, occasions, parseNairaToMinor, scentCharacters, timesOfDay } from "./fields";
-import { savePerfume, type PerfumeActionState } from "./actions/save-perfume.admin.action";
+import { formatNairaFromMinor } from "@/shared/utils/format-naira";
+import { occasions, parseNairaToMinor, scentCharacters, timesOfDay } from "../../fields";
+import { savePerfume, type PerfumeActionState } from "../../actions/save-perfume.admin.action";
 import { PrimaryImageManager } from "./PrimaryImageManager";
 import { VariantManager } from "./VariantManager";
 
-type Perfume = NonNullable<Awaited<ReturnType<typeof import("./catalogue").getAdminPerfume>>>;
+type Perfume = NonNullable<Awaited<ReturnType<typeof import("../../catalogue").getAdminPerfume>>>;
 type StagedVariant = { sizeValue: string; price: string; quantity: string };
 const initial: PerfumeActionState = {};
 const labels: Record<string, string> = { FRESH: "Fresh", WARM: "Warm", SWEET: "Sweet", WOODY: "Woody", EVERYDAY: "Everyday", WORK: "Work", DATE_NIGHT: "Date night", SPECIAL_OCCASION: "Special occasion", DAY: "Day", NIGHT: "Night" };

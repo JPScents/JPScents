@@ -1,9 +1,7 @@
 import Link from "next/link";
 
 import { EmptyState } from "@/components/shared/EmptyState";
-import { CatalogueProductCard } from "@/features/catalogue/PublicProductCards";
-import { hasPublishedPerfumes, listPerfumes, parseScent, publicScentCharacters } from "@/features/catalogue/public-catalogue";
-import { scentCharacterContent } from "@/features/catalogue/ScentCharacter";
+import { CatalogueProductCard, hasPublishedPerfumes, listPerfumes, parseScent, publicScentCharacters, scentCharacterContent } from "@/features/catalogue";
 import { siteConfig } from "@/config/site";
 
 export const dynamic = "force-dynamic";

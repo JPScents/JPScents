@@ -7,8 +7,8 @@ import type { Occasion, ScentCharacter, TimeOfDay } from "@/db/generated/client"
 import { siteConfig } from "@/config/site";
 import { RecommendationCard } from "./PublicProductCards";
 import { ScentCharacterSelect } from "./ScentCharacter";
-import type { PublicPerfumeCard } from "./public-catalogue";
-import { preferenceSummary } from "./public-preferences";
+import type { PublicPerfumeCard } from "../../public-catalogue";
+import { preferenceSummary } from "../../public-preferences";
 type Props = { initial: { scentCharacters: ScentCharacter[]; occasions: Occasion[]; timeOfDay?: TimeOfDay }; results?: Array<PublicPerfumeCard & { matchReason: string; score: number }>; submitted: boolean; catalogueAvailable?: boolean };
 const occasions: Array<{ value: Occasion; label: string }> = [{ value: "EVERYDAY", label: "Everyday" }, { value: "WORK", label: "Work" }, { value: "DATE_NIGHT", label: "Evening" }, { value: "SPECIAL_OCCASION", label: "Special occasion" }];
 const scents: ScentCharacter[] = ["FRESH", "WARM", "SWEET", "WOODY"];

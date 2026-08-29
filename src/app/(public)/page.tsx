@@ -4,16 +4,14 @@ import { CircleHelp } from "lucide-react";
 
 import { EmptyState } from "@/components/shared/EmptyState";
 import { siteConfig } from "@/config/site";
+import { ProductBottlePlaceholder } from "@/components/shared/public/ProductBottlePlaceholder";
 import {
   GalleryProductCard,
-  ProductBottlePlaceholder,
-} from "@/features/catalogue/PublicProductCards";
-import { ScentCharacterBrowse } from "@/features/catalogue/ScentCharacter";
-import {
   getFeaturedPerfumes,
   publicScentCharacters,
+  ScentCharacterBrowse,
   type PublicPerfumeCard,
-} from "@/features/catalogue/public-catalogue";
+} from "@/features/catalogue";
 
 export const dynamic = "force-dynamic";
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { formatNairaFromMinor, normalizeSizeValue, parseNairaToMinor, parsePerfumeInput, parseStagedVariants, parseVariantInput, publishingErrors } from "@/features/catalogue/fields";
+import { normalizeSizeValue, parseNairaToMinor, parsePerfumeInput, parseStagedVariants, parseVariantInput, publishingErrors } from "@/features/catalogue/fields";
+import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 
 describe("catalogue validation", () => {
   it("allows an incomplete draft but requires publication details", () => { const draft = new FormData(); draft.set("name", "Quiet Fig"); draft.set("slug", "quiet-fig"); expect(parsePerfumeInput(draft).errors).toEqual({}); draft.set("status", "PUBLISHED"); expect(parsePerfumeInput(draft).errors.scentCue).toBeDefined(); });

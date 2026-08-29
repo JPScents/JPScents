@@ -7,9 +7,9 @@ vi.mock("@/features/catalogue/actions/save-perfume.admin.action", () => ({ saveP
 vi.mock("@/features/catalogue/actions/variants.admin.action", () => ({ saveVariant: vi.fn(), deleteVariant: vi.fn() }));
 vi.mock("@/features/catalogue/actions/image.admin.action", () => ({ savePrimaryImage: vi.fn(), removePrimaryImage: vi.fn() }));
 
-import { BestsellerSelector } from "@/features/catalogue/BestsellerSelector";
-import { ProductPreview, StagedVariantManager } from "@/features/catalogue/PerfumeEditor";
-import { PerfumeList } from "@/features/catalogue/PerfumeList";
+import { BestsellerSelector } from "@/features/catalogue/components/admin/BestsellerSelector";
+import { ProductPreview, StagedVariantManager } from "@/features/catalogue/components/admin/PerfumeEditor";
+import { PerfumeList } from "@/features/catalogue/components/admin/PerfumeList";
 
 function StagedFixture() { const [variants, setVariants] = useState<Array<{ sizeValue: string; price: string; quantity: string }>>([]); return <StagedVariantManager variants={variants} onChange={setVariants} />; }
 function PreviewFixture() { const [open, setOpen] = useState(false); const form = useRef<HTMLFormElement>(null); return <><button type="button" onClick={() => setOpen(true)}>Open preview</button><form ref={form}><input name="name" defaultValue="Quiet Fig" /><input name="scentCue" defaultValue="Green fig" /></form><ProductPreview open={open} onOpenChange={setOpen} form={form} variants={[{ priceMinor: 125050, quantity: 2 }]} /></>; }

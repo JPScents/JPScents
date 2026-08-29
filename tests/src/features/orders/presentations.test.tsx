@@ -20,9 +20,6 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("@/features/cart", () => ({
-  useCart: () => ({ ...mocks.cart, clearCart: mocks.clearCart }),
-}));
 vi.mock("@/features/orders/actions", () => ({
   submitOrder: mocks.submitOrder,
   changeOrderStatus: vi.fn(),
@@ -57,7 +54,7 @@ describe("order presentations", () => {
   it("keeps checkout submission single-flight and exposes server field errors", async () => {
     let finish: (value: { errors: Record<string, string> }) => void = () => undefined;
     mocks.submitOrder.mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
-    render(<Checkout />);
+    render(<Checkout cart={{ ...mocks.cart, clearCart: mocks.clearCart }} />);
 
     const placeOrder = screen.getByRole("button", { name: "Place order" });
     fireEvent.click(placeOrder);

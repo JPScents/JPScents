@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState, useTransition } from "react";
 import { ModalShell } from "@/components/shared/ModalShell";
-import { setBestseller } from "./actions/bestseller.admin.action";
+import { setBestseller } from "../../actions/bestseller.admin.action";
 
 type Candidate = { id: string; name: string; scentCharacters: string[]; primaryImageUrl?: string; variantCount: number; totalQuantity: number; orderCount: number };
 

@@ -1,6 +1,12 @@
-export { PerfumeList } from "./PerfumeList";
-export { PerfumeEditor } from "./PerfumeEditor";
-export { BestsellerSelector } from "./BestsellerSelector";
+export { BestsellerSelector } from "./components/admin/BestsellerSelector";
+export { PerfumeEditor } from "./components/admin/PerfumeEditor";
+export { PerfumeList } from "./components/admin/PerfumeList";
+export { HelpMeChoose } from "./components/public/HelpMeChoose";
+export { VariantPurchaseControls } from "./components/public/PublicControls";
+export { CatalogueProductCard, GalleryProductCard, RecommendationCard } from "./components/public/PublicProductCards";
+export { ScentCharacterBrowse, scentCharacterContent } from "./components/public/ScentCharacter";
 export { listAdminPerfumes, getAdminPerfume, getEligibleBestsellerCandidates } from "./catalogue";
-export { getFeaturedPerfumes, getPerfumeBySlug, getRelatedPerfumes, hasAvailablePerfumes, hasPublishedPerfumes, listPerfumes, parsePreferences, parseScent, recommendPerfumes } from "./public-catalogue";
+export type { CatalogueFilters } from "./catalogue";
+export { getFeaturedPerfumes, getPerfumeBySlug, getRelatedPerfumes, hasAvailablePerfumes, hasPublishedPerfumes, listPerfumes, parsePreferences, parseScent, publicScentCharacters, recommendPerfumes } from "./public-catalogue";
+export { preferenceLabel } from "./public-preferences";
 export type { HelpPreferences, PublicPerfumeCard, PublicPerfumeDetail, Recommendation } from "./public-catalogue";

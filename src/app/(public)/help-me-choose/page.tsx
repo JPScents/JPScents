@@ -1,5 +1,4 @@
-import { HelpMeChoose } from "@/features/catalogue/HelpMeChoose";
-import { hasAvailablePerfumes, parsePreferences, recommendPerfumes } from "@/features/catalogue/public-catalogue";
+import { HelpMeChoose, hasAvailablePerfumes, parsePreferences, recommendPerfumes } from "@/features/catalogue";
 
 export const dynamic = "force-dynamic";
 

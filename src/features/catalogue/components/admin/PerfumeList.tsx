@@ -2,10 +2,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { siteConfig } from "@/config/site";
-import type { CatalogueFilters } from "./catalogue";
+import type { CatalogueFilters } from "../../catalogue";
 
 const control = "h-10 border border-jp-admin-border bg-white px-3 text-sm";
-type Perfumes = Awaited<ReturnType<typeof import("./catalogue").listAdminPerfumes>>;
+type Perfumes = Awaited<ReturnType<typeof import("../../catalogue").listAdminPerfumes>>;
 
 function ImageCell({ url }: { url?: string }) { return <span className="flex h-14 w-12 shrink-0 items-center justify-center bg-jp-stone text-center text-[10px] text-jp-text-secondary">{url ? <Image unoptimized src={url} alt="" width={96} height={112} className="h-full w-full object-contain" /> : "No image"}</span>; }
 

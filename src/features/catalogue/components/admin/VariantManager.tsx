@@ -2,8 +2,8 @@
 
 import { useActionState, useState } from "react";
 import { ModalShell } from "@/components/shared/ModalShell";
-import { formatNairaFromMinor } from "./fields";
-import { deleteVariant, saveVariant, type VariantActionState } from "./actions/variants.admin.action";
+import { formatNairaFromMinor } from "@/shared/utils/format-naira";
+import { deleteVariant, saveVariant, type VariantActionState } from "../../actions/variants.admin.action";
 
 type Variant = { id: string; sizeValue: { toString(): string }; priceMinor: number; quantity: number };
 const initial: VariantActionState = {};

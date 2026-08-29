@@ -3,17 +3,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { siteConfig } from "@/config/site";
-import { VariantPurchaseControls } from "@/features/catalogue/PublicControls";
+import { ProductBottlePlaceholder } from "@/components/shared/public/ProductBottlePlaceholder";
 import {
   GalleryProductCard,
-  ProductBottlePlaceholder,
-} from "@/features/catalogue/PublicProductCards";
-import {
   getPerfumeBySlug,
   getRelatedPerfumes,
+  preferenceLabel,
   type PublicPerfumeDetail,
-} from "@/features/catalogue/public-catalogue";
-import { preferenceLabel } from "@/features/catalogue/public-preferences";
+} from "@/features/catalogue";
+import { VariantPurchaseControls } from "./VariantPurchaseControls";
 
 export const dynamic = "force-dynamic";
 

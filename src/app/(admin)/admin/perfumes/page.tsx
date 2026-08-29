@@ -1,3 +1,2 @@
-import { PerfumeList, listAdminPerfumes } from "@/features/catalogue";
-import type { CatalogueFilters } from "@/features/catalogue/catalogue";
+import { PerfumeList, listAdminPerfumes, type CatalogueFilters } from "@/features/catalogue";
 export default async function AdminPerfumesPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) { const params = await searchParams; const filters: CatalogueFilters = { query: typeof params.query === "string" ? params.query : undefined, availability: params.availability === "available" || params.availability === "unavailable" ? params.availability : "all", placement: params.placement === "featured" || params.placement === "bestseller" ? params.placement : "all" }; return <PerfumeList perfumes={await listAdminPerfumes(filters)} filters={filters}/>; }

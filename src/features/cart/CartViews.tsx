@@ -6,9 +6,9 @@ import { Minus, Plus, ShoppingBag } from "lucide-react";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 
 import { Dialog, DialogClose, DialogCloseButton, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { formatNairaFromMinor } from "@/features/catalogue/fields";
-import { ProductBottlePlaceholder } from "@/features/catalogue/PublicProductCards";
+import { ProductBottlePlaceholder } from "@/components/shared/public/ProductBottlePlaceholder";
 import { siteConfig } from "@/config/site";
+import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 import { useCart } from "./CartProvider";
 
 function issueText(issue?: string, stock?: number) { return issue === "missing" ? "This perfume is no longer available." : issue === "unavailable" ? "This size is currently out of stock." : `Only ${stock ?? 0} available — reduce the quantity.`; }

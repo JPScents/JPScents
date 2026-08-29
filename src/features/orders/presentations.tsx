@@ -5,15 +5,15 @@ import Image from "next/image";
 import { useState, useTransition } from "react";
 
 import { EmptyState } from "@/components/shared/EmptyState";
-import { formatNairaFromMinor } from "@/features/catalogue/fields";
-import { ProductBottlePlaceholder } from "@/features/catalogue/PublicProductCards";
-import { useCart } from "@/features/cart";
+import { ProductBottlePlaceholder } from "@/components/shared/public/ProductBottlePlaceholder";
 import { siteConfig } from "@/config/site";
+import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 import { submitOrder, changeOrderStatus } from "./actions";
 
 type Line = { name: string; sizeLabel: string; quantity: number; unitPriceMinor: number; lineTotalMinor: number; imageUrl?: string };
 type PublicOrder = { reference: string; subtotalMinor: number; status: string; createdAt: Date; items: Line[] };
 type CheckoutForm = { customerName: string; whatsappNumber: string; email: string; deliveryArea: string; deliveryAddress: string; orderNote: string };
+export type CheckoutCart = { items: Array<{ perfumeVariantId: string; quantity: number }>; lines: Array<{ perfumeVariantId: string; requestedQuantity: number; name?: string; sizeLabel?: string; unitPriceMinor?: number; lineAmountMinor: number; imageUrl?: string; isValid: boolean }>; subtotalMinor: number; hasInvalidLines: boolean; clearCart: () => void };
 const statusLabel = (status: string) => status.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
 const orderStatuses = ["NEW", "CONFIRMED", "AWAITING_PAYMENT", "CANCELLED"];
 function whatsappUrl(number: string | undefined, reference: string, items: Array<{ name: string; sizeLabel: string; quantity: number }>) { if (!number || !/^\d{7,15}$/.test(number)) return undefined; const context = items.map((item) => `${item.name} ${item.sizeLabel} ×${item.quantity}`).join(", "); return `https://wa.me/${number}?text=${encodeURIComponent(`Hello JPScents, I’m following up on order ${reference} (${context}).`)}`; }
@@ -29,8 +29,8 @@ function Summary({ order }: { order: { items: Line[]; subtotalMinor: number; ref
   </section>;
 }
 
-export function Checkout() {
-  const cart = useCart(); const [errors, setErrors] = useState<Record<string, string>>({}); const [message, setMessage] = useState(""); const [pending, start] = useTransition(); const [submissionKey] = useState(() => crypto.randomUUID());
+export function Checkout({ cart }: { cart: CheckoutCart }) {
+  const [errors, setErrors] = useState<Record<string, string>>({}); const [message, setMessage] = useState(""); const [pending, start] = useTransition(); const [submissionKey] = useState(() => crypto.randomUUID());
   const [form, setForm] = useState<CheckoutForm>({ customerName: "", whatsappNumber: "", email: "", deliveryArea: "", deliveryAddress: "", orderNote: "" });
   if (!cart.items.length || cart.hasInvalidLines) return <section className="mx-auto max-w-public-container px-public-gutter-mobile py-16 lg:px-public-gutter-desktop"><h1 className="font-display text-5xl">Your cart needs attention.</h1><p className="mt-4 text-jp-text-secondary">Checkout is available once your cart has available perfumes.</p><Link className="mt-6 inline-block border px-5 py-3 text-sm font-semibold" href={siteConfig.routes.cart}>Return to Cart</Link></section>;
   const resolved = { items: cart.lines.filter((line) => line.isValid).map((line) => ({ name: line.name ?? "Perfume", sizeLabel: line.sizeLabel ?? "", quantity: line.requestedQuantity, unitPriceMinor: line.unitPriceMinor ?? 0, lineTotalMinor: line.lineAmountMinor, imageUrl: line.imageUrl })), subtotalMinor: cart.subtotalMinor };

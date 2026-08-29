@@ -3,7 +3,7 @@ import "server-only";
 import { Prisma, type Occasion, type Perfume, type PerfumeImage, type PerfumeVariant, type ScentCharacter, type TimeOfDay } from "@/db/generated/client";
 import { prisma } from "@/db/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { formatNairaFromMinor } from "./fields";
+import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 import { preferenceLabel } from "./public-preferences";
 export { preferenceLabel, preferenceSummary } from "./public-preferences";
 

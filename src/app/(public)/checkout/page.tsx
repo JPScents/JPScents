@@ -1,2 +1,2 @@
-import { Checkout } from "@/features/orders";
+import { Checkout } from "./Checkout";
 export default function CheckoutPage() { return <Checkout />; }

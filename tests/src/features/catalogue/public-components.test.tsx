@@ -6,17 +6,16 @@ const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 vi.mock("next/image", () => ({ default: ({ alt }: { alt?: string }) => <span data-image-alt={alt} /> }));
 
-import { VariantPurchaseControls } from "@/features/catalogue/PublicControls";
-import { ScentCharacterSelect } from "@/features/catalogue/ScentCharacter";
-import { HelpMeChoose } from "@/features/catalogue/HelpMeChoose";
-import { CatalogueProductCard } from "@/features/catalogue/PublicProductCards";
-import { CartProvider } from "@/features/cart";
+import { VariantPurchaseControls } from "@/features/catalogue/components/public/PublicControls";
+import { ScentCharacterSelect } from "@/features/catalogue/components/public/ScentCharacter";
+import { HelpMeChoose } from "@/features/catalogue/components/public/HelpMeChoose";
+import { CatalogueProductCard } from "@/features/catalogue/components/public/PublicProductCards";
 
 afterEach(cleanup);
 
 describe("public catalogue controls", () => {
   it("preselects exactly one available variant and constrains quantity to stock", () => {
-    render(<CartProvider><VariantPurchaseControls variants={[{ id: "one", sizeLabel: "30 mL", price: "₦1,000", quantity: 2, isAvailable: true }, { id: "two", sizeLabel: "50 mL", price: "₦2,000", quantity: 0, isAvailable: false }]} /></CartProvider>);
+    render(<VariantPurchaseControls onAddItem={vi.fn()} variants={[{ id: "one", sizeLabel: "30 mL", price: "₦1,000", quantity: 2, isAvailable: true }, { id: "two", sizeLabel: "50 mL", price: "₦2,000", quantity: 0, isAvailable: false }]} />);
     expect(screen.getByRole("radio", { name: /30 mL/ })).toBeChecked();
     expect(screen.getByRole("button", { name: "Add to Cart" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "Increase quantity" }));
@@ -26,7 +25,7 @@ describe("public catalogue controls", () => {
   });
 
   it("requires a selection when several available sizes exist", () => {
-    render(<CartProvider><VariantPurchaseControls variants={[{ id: "one", sizeLabel: "30 mL", price: "₦1,000", quantity: 2, isAvailable: true }, { id: "two", sizeLabel: "50 mL", price: "₦2,000", quantity: 3, isAvailable: true }]} /></CartProvider>);
+    render(<VariantPurchaseControls onAddItem={vi.fn()} variants={[{ id: "one", sizeLabel: "30 mL", price: "₦1,000", quantity: 2, isAvailable: true }, { id: "two", sizeLabel: "50 mL", price: "₦2,000", quantity: 3, isAvailable: true }]} />);
     expect(screen.getByRole("button", { name: "Add to Cart" })).toBeDisabled();
     fireEvent.click(screen.getByRole("radio", { name: /50 mL/ }));
     expect(screen.getByRole("button", { name: "Add to Cart" })).toBeEnabled();

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useActionState } from "react";
-import { removePrimaryImage, savePrimaryImage, type ImageActionState } from "./actions/image.admin.action";
+import { removePrimaryImage, savePrimaryImage, type ImageActionState } from "../../actions/image.admin.action";
 
 const initial: ImageActionState = {};
 
