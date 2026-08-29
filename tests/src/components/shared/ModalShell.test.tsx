@@ -17,7 +17,7 @@ describe("ModalShell", () => {
     fireEvent.click(trigger);
     expect(screen.getByRole("dialog", { name: "Details" })).toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     await waitFor(() => expect(trigger).toHaveFocus());
   });
 });

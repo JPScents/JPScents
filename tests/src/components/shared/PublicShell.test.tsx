@@ -24,7 +24,7 @@ describe("PublicShell", () => {
     fireEvent.click(trigger);
     expect(screen.getByRole("dialog")).toHaveTextContent("Perfumes");
     fireEvent.keyDown(document, { key: "Escape" });
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     await waitFor(() => expect(trigger).toHaveFocus());
   });
 });

@@ -28,7 +28,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
         <div className="flex items-center gap-[18px]"><DialogTrigger asChild><button className="inline-flex h-11 items-center text-[13px] font-semibold lg:hidden" type="button" aria-label="Open menu">Menu</button></DialogTrigger><CartUtility /></div>
       </div>
     </header>
-    <DialogContent className="inset-x-0 bottom-0 top-auto w-full max-w-none translate-x-0 translate-y-0 rounded-t-sheet border-x-0 border-b-0 lg:hidden">
+    <DialogContent animation="from-bottom" className="inset-x-0 bottom-0 top-auto w-full max-w-none translate-x-0 translate-y-0 rounded-t-sheet border-x-0 border-b-0 lg:hidden">
       <DialogTitle>Navigation</DialogTitle><DialogDescription className="sr-only">Browse JPScents pages.</DialogDescription><DialogCloseButton />
       <nav className="mt-10 grid gap-6 text-2xl" aria-label="Mobile primary navigation">{navigation.map((item) => <DialogClose key={item.href} asChild><Link href={item.href}>{item.label}</Link></DialogClose>)}</nav>
     </DialogContent>

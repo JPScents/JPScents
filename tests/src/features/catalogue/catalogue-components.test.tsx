@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useRef, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -15,17 +15,17 @@ function StagedFixture() { const [variants, setVariants] = useState<Array<{ size
 function PreviewFixture() { const [open, setOpen] = useState(false); const form = useRef<HTMLFormElement>(null); return <><button type="button" onClick={() => setOpen(true)}>Open preview</button><form ref={form}><input name="name" defaultValue="Quiet Fig" /><input name="scentCue" defaultValue="Green fig" /></form><ProductPreview open={open} onOpenChange={setOpen} form={form} variants={[{ priceMinor: 125050, quantity: 2 }]} /></>; }
 
 describe("catalogue editor interactions", () => {
-  it("stages and removes variants through ModalShell, retaining validation feedback", () => {
+  it("stages and removes variants through ModalShell, retaining validation feedback", async () => {
     render(<StagedFixture />); fireEvent.click(screen.getByRole("button", { name: "Add variant" }));
     expect(screen.getByRole("dialog", { name: "Add variant" })).toBeInTheDocument(); fireEvent.click(screen.getByRole("button", { name: "Stage variant" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Enter a positive size");
     const inputs = screen.getAllByRole("textbox"); fireEvent.change(inputs[0], { target: { value: "50" } }); fireEvent.change(inputs[1], { target: { value: "1250.50" } }); fireEvent.change(inputs[2], { target: { value: "2" } }); fireEvent.click(screen.getByRole("button", { name: "Stage variant" }));
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument(); expect(screen.getByText("50 mL")).toBeInTheDocument(); fireEvent.click(screen.getByRole("button", { name: "Remove" })); expect(screen.getByText(/No variants yet/)).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument()); expect(screen.getByText("50 mL")).toBeInTheDocument(); fireEvent.click(screen.getByRole("button", { name: "Remove" })); expect(screen.getByText(/No variants yet/)).toBeInTheDocument();
   });
 
-  it("opens preview, toggles its card treatment, and closes on Escape", () => {
+  it("opens preview, toggles its card treatment, and closes on Escape", async () => {
     render(<PreviewFixture />); const trigger = screen.getByRole("button", { name: "Open preview" }); trigger.focus(); fireEvent.click(trigger);
-    const dialog = screen.getByRole("dialog", { name: "Product preview" }); expect(dialog).toHaveTextContent("Quiet Fig"); fireEvent.click(screen.getByRole("button", { name: "Show compact card" })); expect(screen.getByRole("button", { name: "Show large card" })).toBeInTheDocument(); fireEvent.keyDown(dialog, { key: "Escape" }); expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    const dialog = screen.getByRole("dialog", { name: "Product preview" }); expect(dialog).toHaveTextContent("Quiet Fig"); fireEvent.click(screen.getByRole("button", { name: "Show compact card" })); expect(screen.getByRole("button", { name: "Show large card" })).toBeInTheDocument(); fireEvent.keyDown(dialog, { key: "Escape" }); await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
 });
 
