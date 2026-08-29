@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { siteConfig } from "@/config/site";
 import { ProductBottlePlaceholder } from "@/components/shared/public/ProductBottlePlaceholder";
+import { MotionReveal } from "@/components/shared/MotionReveal";
 import {
   GalleryProductCard,
   getPerfumeBySlug,
@@ -163,12 +164,15 @@ export default async function PerfumeDetailPage({ params }: { params: Promise<{ 
 
   return (
     <>
+      <MotionReveal priority>
       <div className="mx-auto max-w-public-container px-public-gutter-mobile pt-5 text-sm text-jp-text-secondary lg:px-public-gutter-desktop">
         <Link href={siteConfig.routes.perfumes} className="underline">
           Perfumes
         </Link>{" "}
         <span aria-hidden="true">/</span> <span>{perfume.name}</span>
       </div>
+      </MotionReveal>
+      <MotionReveal priority>
       <section className="mx-auto grid max-w-public-container gap-8 px-public-gutter-mobile py-8 lg:grid-cols-2 lg:px-public-gutter-desktop lg:py-14">
         <div className="relative aspect-[4/5] overflow-hidden bg-jp-stone">
           {perfume.primaryImageUrl ? (
@@ -204,8 +208,12 @@ export default async function PerfumeDetailPage({ params }: { params: Promise<{ 
           <MobileDetailAccordions perfume={perfume} />
         </div>
       </section>
+      </MotionReveal>
+      <MotionReveal>
       <DesktopProfile perfume={perfume} />
+      </MotionReveal>
       {related.length > 0 ? (
+        <MotionReveal>
         <section className="bg-jp-surface px-5 py-16 lg:px-[72px] lg:pb-[96px] lg:pt-[92px]">
           <div className="mx-auto max-w-[1296px]">
             <p className="text-[11px] font-semibold uppercase leading-[14px] tracking-[.16em] text-jp-olive">
@@ -215,12 +223,15 @@ export default async function PerfumeDetailPage({ params }: { params: Promise<{ 
               More available perfumes
             </h2>
             <div className="mt-8 grid gap-[68px] lg:grid-cols-3 lg:gap-14">
-              {related.map((item) => (
-                <GalleryProductCard key={item.id} perfume={item} />
+                {related.map((item, index) => (
+                  <MotionReveal key={item.id} delay={Math.min(index, 2) * 0.04}>
+                    <GalleryProductCard perfume={item} />
+                  </MotionReveal>
               ))}
             </div>
           </div>
         </section>
+        </MotionReveal>
       ) : null}
     </>
   );

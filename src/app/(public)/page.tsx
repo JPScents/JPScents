@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CircleHelp } from "lucide-react";
 
 import { EmptyState } from "@/components/shared/EmptyState";
+import { MotionReveal } from "@/components/shared/MotionReveal";
 import { siteConfig } from "@/config/site";
 import { ProductBottlePlaceholder } from "@/components/shared/public/ProductBottlePlaceholder";
 import {
@@ -113,6 +114,7 @@ function ProductImage({
 
 function HomepageHero({ hero }: { hero?: PublicPerfumeCard }) {
   return (
+    <MotionReveal priority>
     <section className="bg-[#f7f3ea] px-5 pb-12 pt-11 lg:min-h-[836px] lg:bg-jp-surface lg:px-[104px] lg:pb-[70px] lg:pt-[50px]">
       <div className="mx-auto flex max-w-[1232px] flex-col gap-7 lg:min-h-[716px] lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-col gap-4 lg:w-[560px] lg:gap-6">
@@ -137,7 +139,9 @@ function HomepageHero({ hero }: { hero?: PublicPerfumeCard }) {
             <>
               <div className="hidden w-[500px] items-end justify-between border-t pt-2 lg:flex">
                 <div>
-                  <h2 className="font-display text-[28px] font-semibold leading-8">{hero.name}</h2>
+                    <h2 className="font-display text-[28px] font-semibold leading-8">
+                      {hero.name}
+                    </h2>
                   <p className="mt-1 text-[13px] leading-5 text-jp-text-secondary">
                     {hero.scentCue}
                   </p>
@@ -173,7 +177,9 @@ function HomepageHero({ hero }: { hero?: PublicPerfumeCard }) {
               />
               <div className="absolute inset-x-4 bottom-4 flex items-center justify-between bg-[#f7f3ea] px-4 py-3.5 lg:hidden">
                 <div>
-                  <h2 className="font-display text-2xl font-medium leading-[26px]">{hero.name}</h2>
+                    <h2 className="font-display text-2xl font-medium leading-[26px]">
+                      {hero.name}
+                    </h2>
                   <p className="mt-1 text-xs leading-[18px] text-jp-text-secondary">
                     {hero.scentCue} · {hero.startingPrice}
                   </p>
@@ -206,6 +212,7 @@ function HomepageHero({ hero }: { hero?: PublicPerfumeCard }) {
         ) : null}
       </div>
     </section>
+    </MotionReveal>
   );
 }
 
@@ -266,6 +273,7 @@ function MobileFeaturedPerfumes({ products }: { products: PublicPerfumeCard[] })
 function FeaturedPerfumes({ products }: { products: PublicPerfumeCard[] }) {
   if (!products.length) return null;
   return (
+    <MotionReveal>
     <section className="border-y bg-[#fbf9f4] px-5 py-[54px] lg:h-[1100px] lg:bg-[#f7f3ea] lg:px-[104px] lg:pb-[84px] lg:pt-[92px]">
       <div className="mx-auto max-w-[1232px]">
         <div className="flex items-end justify-between">
@@ -296,11 +304,13 @@ function FeaturedPerfumes({ products }: { products: PublicPerfumeCard[] }) {
         </div>
       </div>
     </section>
+    </MotionReveal>
   );
 }
 
 function ScentStartingPoints() {
   return (
+    <MotionReveal>
     <section className="border-b bg-[#f7f3ea] px-5 py-[54px] lg:h-[650px] lg:bg-jp-surface lg:px-[104px] lg:py-[88px]">
       <div className="mx-auto max-w-[1232px]">
         <div className="lg:flex lg:items-end lg:justify-between">
@@ -321,11 +331,13 @@ function ScentStartingPoints() {
         </div>
       </div>
     </section>
+    </MotionReveal>
   );
 }
 
 function GuidancePreview() {
   return (
+    <MotionReveal>
     <section className="bg-[#e8ede3] px-5 py-[54px] lg:h-[500px] lg:px-[104px] lg:py-[72px]">
       <div className="mx-auto flex h-full max-w-[1232px] items-center justify-between">
         <div className="flex flex-col gap-[22px] lg:w-[650px] lg:gap-5">
@@ -342,7 +354,8 @@ function GuidancePreview() {
               available perfumes.
             </span>
             <span className="hidden lg:inline">
-              Tell us what you usually enjoy and we’ll narrow down the available perfumes that fit.
+                Tell us what you usually enjoy and we’ll narrow down the available perfumes that
+                fit.
             </span>
           </p>
           <Link
@@ -357,11 +370,13 @@ function GuidancePreview() {
         </div>
       </div>
     </section>
+    </MotionReveal>
   );
 }
 
 function OrderingSteps() {
   return (
+    <MotionReveal>
     <section
       id="how-ordering-works"
       className="border-b bg-[#fbf9f4] px-5 py-[54px] lg:h-[950px] lg:bg-jp-surface lg:px-[104px] lg:pb-[78px] lg:pt-[88px]"
@@ -377,7 +392,8 @@ function OrderingSteps() {
             </h2>
           </div>
           <p className="hidden w-[360px] text-sm leading-[23px] text-jp-text-secondary lg:block">
-            Payment is not taken online. JPScents sends payment details after your order is placed.
+              Payment is not taken online. JPScents sends payment details after your order is
+              placed.
           </p>
         </div>
         <ol className="mt-6 border-t lg:mt-[42px] lg:grid lg:grid-cols-3 lg:border-l">
@@ -403,6 +419,7 @@ function OrderingSteps() {
         </div>
       </div>
     </section>
+    </MotionReveal>
   );
 }
 
@@ -451,6 +468,7 @@ function FaqRows({
 
 function HomepageFaqs() {
   return (
+    <MotionReveal>
     <section className="bg-[#f7f3ea] px-5 py-[54px] lg:h-[820px] lg:bg-jp-surface lg:px-[104px] lg:py-[92px]">
       <div className="mx-auto max-w-[1232px]">
         <div className="lg:flex lg:items-end lg:justify-between">
@@ -475,11 +493,13 @@ function HomepageFaqs() {
         </div>
       </div>
     </section>
+    </MotionReveal>
   );
 }
 
 function ClosingCta() {
   return (
+    <MotionReveal>
     <section className="flex flex-col items-center gap-[22px] bg-[#eae3d7] px-5 py-[60px] text-center lg:min-h-[650px] lg:justify-center lg:gap-6 lg:bg-[#efe7da] lg:px-[104px] lg:py-20">
       <p className="hidden text-[11px] font-semibold uppercase leading-4 tracking-[.18em] text-jp-olive lg:block">
         Your next perfume
@@ -499,6 +519,7 @@ function ClosingCta() {
         </Link>
       </div>
     </section>
+    </MotionReveal>
   );
 }
 

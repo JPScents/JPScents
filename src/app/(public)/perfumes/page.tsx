@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { EmptyState } from "@/components/shared/EmptyState";
+import { MotionReveal } from "@/components/shared/MotionReveal";
 import {
   CatalogueProductCard,
   hasPublishedPerfumes,
@@ -24,6 +25,7 @@ export default async function PerfumesPage({
   const catalogueEmpty = perfumes.length === 0 && (!scent || !(await hasPublishedPerfumes()));
   return (
     <>
+      <MotionReveal priority>
       <section className="mx-auto max-w-public-container px-public-gutter-mobile py-12 lg:px-public-gutter-desktop lg:py-20">
         <div className="lg:flex lg:items-end lg:justify-between lg:gap-16">
           <div>
@@ -34,8 +36,8 @@ export default async function PerfumesPage({
             </h1>
           </div>
           <p className="mt-5 max-w-md text-jp-text-secondary lg:mt-0">
-            Browse what is currently available. Each perfume shows its scent character and starting
-            price.
+              Browse what is currently available. Each perfume shows its scent character and
+              starting price.
           </p>
         </div>
         <div className="mt-10 border-y py-5 lg:flex lg:items-center lg:justify-between">
@@ -68,7 +70,9 @@ export default async function PerfumesPage({
         {perfumes.length ? (
           <div className="mt-6 grid gap-x-5 sm:grid-cols-2 lg:grid-cols-3">
             {perfumes.map((perfume) => (
-              <CatalogueProductCard key={perfume.id} perfume={perfume} />
+                <MotionReveal key={perfume.id} delay={0.04}>
+                  <CatalogueProductCard perfume={perfume} />
+                </MotionReveal>
             ))}
           </div>
         ) : catalogueEmpty ? (
@@ -100,6 +104,8 @@ export default async function PerfumesPage({
           </EmptyState>
         )}
       </section>
+      </MotionReveal>
+      <MotionReveal>
       <section className="border-t bg-jp-stone">
         <div className="mx-auto grid max-w-public-container gap-5 px-public-gutter-mobile py-12 sm:grid-cols-3 lg:px-public-gutter-desktop">
           <div>
@@ -116,6 +122,7 @@ export default async function PerfumesPage({
           </p>
         </div>
       </section>
+      </MotionReveal>
     </>
   );
 }
