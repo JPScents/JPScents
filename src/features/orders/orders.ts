@@ -7,55 +7,15 @@ import { prisma } from "@/db/prisma";
 import { commerceConfig } from "@/config/commerce";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export type OrderCartLine = { perfumeVariantId: string; quantity: number };
-export type CheckoutInput = {
-  customerName: string;
-  whatsappNumber: string;
-  email?: string;
-  deliveryArea: string;
-  deliveryAddress: string;
-  orderNote?: string;
-};
-export type OrderFilters = { query?: string; status?: OrderStatus };
+import { parseCheckoutInput } from "./parsers/checkout.parser";
+import type { OrderCartLine, OrderFilters } from "./types";
+export { parseCheckoutInput } from "./parsers/checkout.parser";
+export { normalizeWhatsappNumber } from "./utils/whatsapp.utils";
 export const orderStatuses = Object.values(OrderStatus);
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const clean = (value: unknown, maximum: number) =>
   typeof value === "string" ? value.trim().slice(0, maximum) : "";
-
-export function parseCheckoutInput(value: unknown): {
-  input?: CheckoutInput;
-  errors: Record<string, string>;
-} {
-  const raw = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
-  const input = {
-    customerName: clean(raw.customerName, 120),
-    whatsappNumber: normalizeWhatsappNumber(clean(raw.whatsappNumber, 32)),
-    email: clean(raw.email, 254),
-    deliveryArea: clean(raw.deliveryArea, 120),
-    deliveryAddress: clean(raw.deliveryAddress, 500),
-    orderNote: clean(raw.orderNote, 500),
-  };
-  const errors: Record<string, string> = {};
-  if (!input.customerName) errors.customerName = "Enter your full name.";
-  if (!input.whatsappNumber) errors.whatsappNumber = "Enter a valid WhatsApp number.";
-  if (input.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email))
-    errors.email = "Enter a valid email address.";
-  if (!input.deliveryArea) errors.deliveryArea = "Enter your delivery area.";
-  if (!input.deliveryAddress) errors.deliveryAddress = "Enter your delivery address.";
-  return {
-    input: Object.keys(errors).length
-      ? undefined
-      : { ...input, email: input.email || undefined, orderNote: input.orderNote || undefined },
-    errors,
-  };
-}
-
-export function normalizeWhatsappNumber(value: string): string {
-  const digits = value.replace(/[^\d+]/g, "").replace(/^\+/, "");
-  const normalized = /^0[7-9]\d{9}$/.test(digits) ? `234${digits.slice(1)}` : digits;
-  return /^\d{7,15}$/.test(normalized) ? normalized : "";
-}
 
 function parseLines(lines: unknown): OrderCartLine[] | null {
   if (!Array.isArray(lines) || !lines.length) return null;
