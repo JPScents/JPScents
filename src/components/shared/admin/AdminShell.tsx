@@ -5,6 +5,7 @@ import { Menu, Store } from "lucide-react";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { MotionPage } from "@/components/shared/MotionPage";
 import {
   Dialog,
   DialogClose,
@@ -85,7 +86,9 @@ export function AdminShell({ children, email }: { children: ReactNode; email: st
             <DialogCloseButton className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" />
             <div className="mt-10">{nav}</div>
           </DialogContent>
-          <main className="p-5 lg:p-admin-content">{children}</main>
+          <MotionPage routeKey={pathname} className="p-5 lg:p-admin-content">
+            {children}
+          </MotionPage>
         </div>
       </div>
     </Dialog>

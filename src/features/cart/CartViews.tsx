@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Minus, Plus, ShoppingBag } from "lucide-react";
 import { useEffect, useRef, useSyncExternalStore } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import {
   Dialog,
@@ -71,9 +72,17 @@ function QuantityStepper({ line }: { line: ReturnType<typeof useCart>["lines"][n
 
 export function CartLine({ line }: { line: ReturnType<typeof useCart>["lines"][number] }) {
   const { removeItem, changeQuantity } = useCart();
+  const reduceMotion = useReducedMotion();
   const name = line.name ?? "Unavailable perfume";
   return (
-    <article className="flex gap-4 border-b py-5">
+    <motion.article
+      layout="position"
+      initial={reduceMotion ? false : { opacity: 0.99, y: 2 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -2 }}
+      transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: "easeOut" }}
+      className="flex gap-4 border-b py-5"
+    >
       <div className="relative h-28 w-22 shrink-0 overflow-hidden bg-jp-stone">
         {line.imageUrl ? (
           <Image
@@ -132,7 +141,7 @@ export function CartLine({ line }: { line: ReturnType<typeof useCart>["lines"][n
           Remove
         </button>
       </div>
-    </article>
+    </motion.article>
   );
 }
 
@@ -239,9 +248,11 @@ export function CartPreview() {
           </p>
         ) : lines.length ? (
           <div className="mt-5">
-            {lines.map((line) => (
-              <CartLine key={line.perfumeVariantId} line={line} />
-            ))}
+            <AnimatePresence initial={false}>
+              {lines.map((line) => (
+                <CartLine key={line.perfumeVariantId} line={line} />
+              ))}
+            </AnimatePresence>
             <Summary preview />
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               <DialogClose asChild>
@@ -373,9 +384,11 @@ export function FullCart() {
       </div>
       <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_22rem]">
         <div>
-          {lines.map((line) => (
-            <CartLine key={line.perfumeVariantId} line={line} />
-          ))}
+          <AnimatePresence initial={false}>
+            {lines.map((line) => (
+              <CartLine key={line.perfumeVariantId} line={line} />
+            ))}
+          </AnimatePresence>
           <Link
             href={siteConfig.routes.perfumes}
             className="mt-6 inline-block text-sm font-semibold uppercase tracking-[.08em]"

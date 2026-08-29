@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion, useReducedMotion } from "motion/react";
 import { EmptyState } from "@/components/shared/EmptyState";
 import type { Occasion, ScentCharacter, TimeOfDay } from "@/db/generated/client";
 import { siteConfig } from "@/config/site";
@@ -36,6 +37,7 @@ export function HelpMeChoose({ initial, results, submitted, catalogueAvailable =
   const [scentCharacters, setScentCharacters] = useState(initial.scentCharacters);
   const [occasionValues, setOccasions] = useState(initial.occasions);
   const [timeOfDay, setTime] = useState<TimeOfDay | undefined>(initial.timeOfDay);
+  const reduceMotion = useReducedMotion();
   const summary = preferenceSummary({ scentCharacters, occasions: occasionValues, timeOfDay });
   useEffect(() => {
     if (submitted) resultsHeading.current?.focus();
@@ -102,12 +104,22 @@ export function HelpMeChoose({ initial, results, submitted, catalogueAvailable =
             </div>
             <div className="grid gap-6 lg:grid-cols-[1.35fr_.85fr_.85fr]">
               {results.map((result, index) => (
-                <RecommendationCard
+                <motion.div
                   key={result.id}
-                  perfume={result}
-                  reason={result.matchReason}
-                  leading={index === 0}
-                />
+                  initial={reduceMotion ? false : { opacity: 0.99, y: 2 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={
+                    reduceMotion
+                      ? { duration: 0 }
+                      : { duration: 0.2, delay: Math.min(index, 2) * 0.04, ease: "easeOut" }
+                  }
+                >
+                  <RecommendationCard
+                    perfume={result}
+                    reason={result.matchReason}
+                    leading={index === 0}
+                  />
+                </motion.div>
               ))}
             </div>
           </div>
@@ -175,15 +187,16 @@ export function HelpMeChoose({ initial, results, submitted, catalogueAvailable =
             </legend>
             <div className="mt-4 flex flex-wrap gap-2">
               {occasions.map((item) => (
-                <button
+                <motion.button
                   key={item.value}
                   type="button"
                   aria-pressed={occasionValues.includes(item.value)}
                   onClick={() => setOccasions(toggle(occasionValues, item.value))}
                   className={`border px-4 py-3 text-sm ${occasionValues.includes(item.value) ? "bg-jp-text-primary text-jp-surface" : "bg-jp-surface"}`}
+                  whileTap={reduceMotion ? undefined : { scale: 0.98 }}
                 >
                   {item.label}
-                </button>
+                </motion.button>
               ))}
             </div>
           </fieldset>
@@ -194,24 +207,26 @@ export function HelpMeChoose({ initial, results, submitted, catalogueAvailable =
             </legend>
             <div className="mt-4 flex flex-wrap gap-2">
               {times.map((item) => (
-                <button
+                <motion.button
                   key={item.label}
                   type="button"
                   aria-pressed={timeOfDay === item.value}
                   onClick={() => setTime(item.value)}
                   className={`border px-4 py-3 text-sm ${timeOfDay === item.value ? "bg-jp-text-primary text-jp-surface" : "bg-jp-surface"}`}
+                  whileTap={reduceMotion ? undefined : { scale: 0.98 }}
                 >
                   {item.label}
-                </button>
+                </motion.button>
               ))}
             </div>
           </fieldset>
-          <button
+          <motion.button
             type="submit"
             className="mt-10 w-full bg-jp-text-primary px-6 py-4 text-sm text-jp-surface sm:w-auto"
+            whileTap={reduceMotion ? undefined : { scale: 0.99 }}
           >
             Recommend perfumes
-          </button>
+          </motion.button>
           <p className="mt-4 text-sm text-jp-text-secondary lg:hidden">
             You can adjust these preferences on the results page.
           </p>

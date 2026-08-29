@@ -1,17 +1,26 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { motion, useReducedMotion } from "motion/react";
 
 import { ProductBottlePlaceholder } from "@/components/shared/public/ProductBottlePlaceholder";
 import { siteConfig } from "@/config/site";
 import type { PublicPerfumeCard } from "../../public-catalogue";
 
 export function CatalogueProductCard({ perfume }: { perfume: PublicPerfumeCard }) {
+  const reduceMotion = useReducedMotion();
   return (
     <Link
       href={siteConfig.routes.perfume(perfume.slug)}
       className="block focus-visible:outline-2 focus-visible:outline-offset-4"
     >
-      <article className="border-b py-5 sm:border sm:bg-jp-surface sm:p-3">
+      <motion.article
+        whileHover={reduceMotion ? undefined : { y: -2 }}
+        whileTap={reduceMotion ? undefined : { scale: 0.99 }}
+        transition={{ duration: 0.16, ease: "easeOut" }}
+        className="border-b py-5 sm:border sm:bg-jp-surface sm:p-3"
+      >
         <div className="relative aspect-[1.1/1] overflow-hidden bg-jp-stone sm:aspect-[4/5]">
           {perfume.primaryImageUrl ? (
             <Image
@@ -43,7 +52,7 @@ export function CatalogueProductCard({ perfume }: { perfume: PublicPerfumeCard }
             <p className="mt-3 text-xs font-medium text-jp-text-secondary">Currently unavailable</p>
           )}
         </div>
-      </article>
+      </motion.article>
     </Link>
   );
 }

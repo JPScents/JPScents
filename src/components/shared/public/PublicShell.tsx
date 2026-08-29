@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { MotionPage } from "@/components/shared/MotionPage";
 import {
   Dialog,
   DialogClose,
@@ -95,7 +96,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
               ))}
             </nav>
           </DialogContent>
-          <main>{children}</main>
+          <MotionPage routeKey={pathname}>{children}</MotionPage>
           <footer className="bg-[#1f211d] text-white">
             <div className="mx-auto flex h-44 max-w-[1440px] flex-col justify-between px-5 py-7 lg:hidden">
               <Link

@@ -1,4 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { motion, useReducedMotion } from "motion/react";
 
 import { cn } from "@/lib/utils";
 
@@ -15,8 +18,12 @@ export function EmptyState({
   children?: ReactNode;
   className?: string;
 }) {
+  const reduceMotion = useReducedMotion();
   return (
-    <div
+    <motion.div
+      initial={reduceMotion ? false : { opacity: 0.99, y: 2 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={reduceMotion ? { duration: 0 } : { duration: 0.2, ease: "easeOut" }}
       className={cn(
         "flex flex-col items-center justify-center border bg-jp-stone px-6 py-12 text-center sm:px-10 sm:py-16",
         className,
@@ -32,6 +39,6 @@ export function EmptyState({
         {description}
       </p>
       {children ? <div className="mt-7 flex flex-wrap justify-center gap-3">{children}</div> : null}
-    </div>
+    </motion.div>
   );
 }

@@ -1,17 +1,26 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { motion, useReducedMotion } from "motion/react";
 
 import { ProductBottlePlaceholder } from "@/components/shared/public/ProductBottlePlaceholder";
 import { siteConfig } from "@/config/site";
 import type { PublicPerfumeCard } from "../../public-catalogue";
 
 export function GalleryProductCard({ perfume }: { perfume: PublicPerfumeCard }) {
+  const reduceMotion = useReducedMotion();
   return (
     <Link
       href={siteConfig.routes.perfume(perfume.slug)}
       className="group block focus-visible:outline-2 focus-visible:outline-offset-4"
     >
-      <article className="flex flex-col gap-3.5">
+      <motion.article
+        whileHover={reduceMotion ? undefined : { y: -2 }}
+        whileTap={reduceMotion ? undefined : { scale: 0.99 }}
+        transition={{ duration: 0.16, ease: "easeOut" }}
+        className="flex flex-col gap-3.5"
+      >
         <div className="relative aspect-[35/43] overflow-hidden bg-jp-stone lg:aspect-[392/570]">
           {perfume.primaryImageUrl ? (
             <Image
@@ -44,7 +53,7 @@ export function GalleryProductCard({ perfume }: { perfume: PublicPerfumeCard }) 
           <span>View Perfume</span>
           <span aria-hidden="true">→</span>
         </div>
-      </article>
+      </motion.article>
     </Link>
   );
 }

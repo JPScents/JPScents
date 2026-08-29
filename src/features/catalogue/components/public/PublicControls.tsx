@@ -2,6 +2,7 @@
 
 import { Minus, Plus } from "lucide-react";
 import { useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
 
 export function VariantPurchaseControls({
   variants,
@@ -22,6 +23,7 @@ export function VariantPurchaseControls({
   );
   const selected = variants.find((variant) => variant.id === selectedId);
   const [quantity, setQuantity] = useState(1);
+  const reduceMotion = useReducedMotion();
   const choose = (id: string) => {
     setSelectedId(id);
     setQuantity(1);
@@ -37,8 +39,9 @@ export function VariantPurchaseControls({
       <fieldset className="mt-4 flex flex-wrap gap-2" aria-label="Available sizes">
         <legend className="sr-only">Size</legend>
         {variants.map((variant) => (
-          <label
+          <motion.label
             key={variant.id}
+            whileTap={reduceMotion ? undefined : { scale: 0.98 }}
             className={`flex min-w-32 cursor-pointer items-center justify-between gap-4 border px-4 py-3 ${selectedId === variant.id ? "border-jp-text-primary bg-jp-stone" : ""} ${!variant.isAvailable ? "cursor-not-allowed opacity-55" : ""}`}
           >
             <span>{variant.sizeLabel}</span>
@@ -51,7 +54,7 @@ export function VariantPurchaseControls({
               disabled={!variant.isAvailable}
               onChange={() => choose(variant.id)}
             />
-          </label>
+          </motion.label>
         ))}
       </fieldset>
       {selected ? (
@@ -63,40 +66,43 @@ export function VariantPurchaseControls({
             </p>
           </div>
           <div className="flex items-center border">
-            <button
+            <motion.button
               type="button"
               className="grid size-11 place-items-center disabled:opacity-40"
               disabled={quantity <= 1}
               onClick={() => setQuantity((value) => Math.max(1, value - 1))}
               aria-label="Decrease quantity"
+              whileTap={reduceMotion ? undefined : { scale: 0.94 }}
             >
               <Minus className="size-4" />
-            </button>
+            </motion.button>
             <output className="grid size-10 place-items-center" aria-live="polite">
               {quantity}
             </output>
-            <button
+            <motion.button
               type="button"
               className="grid size-11 place-items-center disabled:opacity-40"
               disabled={quantity >= selected.quantity}
               onClick={() => setQuantity((value) => Math.min(selected.quantity, value + 1))}
               aria-label="Increase quantity"
+              whileTap={reduceMotion ? undefined : { scale: 0.94 }}
             >
               <Plus className="size-4" />
-            </button>
+            </motion.button>
           </div>
         </div>
       ) : (
         <p className="mt-5 text-sm text-jp-text-secondary">Select an available size to continue.</p>
       )}
-      <button
+      <motion.button
         type="button"
         disabled={!selected}
         onClick={() => selected && onAddItem(selected.id, quantity, selected.quantity)}
         className="mt-6 w-full bg-jp-text-primary px-5 py-4 text-sm font-medium text-jp-surface disabled:cursor-not-allowed disabled:opacity-40"
+        whileTap={reduceMotion ? undefined : { scale: 0.99 }}
       >
         Add to Cart
-      </button>
+      </motion.button>
     </section>
   );
 }
