@@ -2,12 +2,12 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Protected Admin composition page |
-| Sources | Final Admin Overview and Bestseller Selector desktop frames |
-| Route/access | `/admin` · authenticated Admin only |
-| Purpose | Surface current operational attention, recent Orders, catalogue stock issues, and Bestseller control. |
+| Field        | Value                                                                                                 |
+| ------------ | ----------------------------------------------------------------------------------------------------- |
+| Type         | Protected Admin composition page                                                                      |
+| Sources      | Final Admin Overview and Bestseller Selector desktop frames                                           |
+| Route/access | `/admin` · authenticated Admin only                                                                   |
+| Purpose      | Surface current operational attention, recent Orders, catalogue stock issues, and Bestseller control. |
 
 ## Data and domain
 
@@ -18,11 +18,11 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Read | `getAdminOverview` | Return four counts, recent Orders, catalogue attention, Bestseller summary |
-| Read | Search Bestseller candidates | Open/search selector |
-| Write | `setBestseller` | Atomically replace current selection |
+| Kind  | Requirement                  | Trigger/result                                                             |
+| ----- | ---------------------------- | -------------------------------------------------------------------------- |
+| Read  | `getAdminOverview`           | Return four counts, recent Orders, catalogue attention, Bestseller summary |
+| Read  | Search Bestseller candidates | Open/search selector                                                       |
+| Write | `setBestseller`              | Atomically replace current selection                                       |
 
 ## Components
 

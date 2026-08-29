@@ -2,12 +2,12 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Public Catalogue flow |
-| Sources | Final Site Preferences/Results desktop/mobile; Notion Help Me Choose behaviour |
-| Route/access | `/help-me-choose` · public; results are route state, not a second route |
-| Purpose | Return a deterministic shortlist of available Perfumes from maintained enum selections. |
+| Field        | Value                                                                                   |
+| ------------ | --------------------------------------------------------------------------------------- |
+| Type         | Public Catalogue flow                                                                   |
+| Sources      | Final Site Preferences/Results desktop/mobile; Notion Help Me Choose behaviour          |
+| Route/access | `/help-me-choose` · public; results are route state, not a second route                 |
+| Purpose      | Return a deterministic shortlist of available Perfumes from maintained enum selections. |
 
 ## Data and domain
 
@@ -18,10 +18,10 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Read | `recommendPerfumes(preferences)` | Return ranked available Perfume projections and match reasons |
-| Write | Update local/search state | Submit preferences, show results, adjust choices |
+| Kind  | Requirement                      | Trigger/result                                                |
+| ----- | -------------------------------- | ------------------------------------------------------------- |
+| Read  | `recommendPerfumes(preferences)` | Return ranked available Perfume projections and match reasons |
+| Write | Update local/search state        | Submit preferences, show results, adjust choices              |
 
 ## Components
 

@@ -12,13 +12,52 @@ describe("resolveCartItems", () => {
     const empty = "33333333-3333-4333-8333-333333333333";
     const missing = "44444444-4444-4444-8444-444444444444";
     findMany.mockResolvedValueOnce([
-      { id: available, sizeValue: 50, priceMinor: 120000, quantity: 2, perfume: { name: "Santal Veil", slug: "santal-veil", images: [] } },
-      { id: empty, sizeValue: 30, priceMinor: 90000, quantity: 0, perfume: { name: "Citrus Linen", slug: "citrus-linen", images: [] } },
+      {
+        id: available,
+        sizeValue: 50,
+        priceMinor: 120000,
+        quantity: 2,
+        perfume: { name: "Santal Veil", slug: "santal-veil", images: [] },
+      },
+      {
+        id: empty,
+        sizeValue: 30,
+        priceMinor: 90000,
+        quantity: 0,
+        perfume: { name: "Citrus Linen", slug: "citrus-linen", images: [] },
+      },
     ]);
-    const lines = await resolveCartItems([{ perfumeVariantId: "not-a-uuid", quantity: 2 }, { perfumeVariantId: missing, quantity: 1 }, { perfumeVariantId: empty, quantity: 1 }, { perfumeVariantId: available, quantity: 3 }, { perfumeVariantId: available, quantity: 1 }]);
-    expect(lines.map((line) => line.perfumeVariantId)).toEqual(["not-a-uuid", missing, empty, available, available]);
-    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ id: { in: [missing, empty, available, available] } }) }));
-    expect(lines.map((line) => line.issue)).toEqual(["missing", "missing", "unavailable", "over-quantity", undefined]);
-    expect(lines[4]).toMatchObject({ unitPriceMinor: 120000, stock: 2, lineAmountMinor: 120000, isValid: true });
+    const lines = await resolveCartItems([
+      { perfumeVariantId: "not-a-uuid", quantity: 2 },
+      { perfumeVariantId: missing, quantity: 1 },
+      { perfumeVariantId: empty, quantity: 1 },
+      { perfumeVariantId: available, quantity: 3 },
+      { perfumeVariantId: available, quantity: 1 },
+    ]);
+    expect(lines.map((line) => line.perfumeVariantId)).toEqual([
+      "not-a-uuid",
+      missing,
+      empty,
+      available,
+      available,
+    ]);
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: { in: [missing, empty, available, available] } }),
+      }),
+    );
+    expect(lines.map((line) => line.issue)).toEqual([
+      "missing",
+      "missing",
+      "unavailable",
+      "over-quantity",
+      undefined,
+    ]);
+    expect(lines[4]).toMatchObject({
+      unitPriceMinor: 120000,
+      stock: 2,
+      lineAmountMinor: 120000,
+      isValid: true,
+    });
   });
 });

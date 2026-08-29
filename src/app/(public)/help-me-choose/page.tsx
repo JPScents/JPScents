@@ -1,8 +1,17 @@
-import { HelpMeChoose, hasAvailablePerfumes, parsePreferences, recommendPerfumes } from "@/features/catalogue";
+import {
+  HelpMeChoose,
+  hasAvailablePerfumes,
+  parsePreferences,
+  recommendPerfumes,
+} from "@/features/catalogue";
 
 export const dynamic = "force-dynamic";
 
-export default async function HelpMeChoosePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+export default async function HelpMeChoosePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const params = await searchParams;
   const preferences = parsePreferences(params);
   const submitted = params.results === "1";
@@ -10,5 +19,12 @@ export default async function HelpMeChoosePage({ searchParams }: { searchParams:
     submitted ? recommendPerfumes(preferences) : Promise.resolve(undefined),
     hasAvailablePerfumes(),
   ]);
-  return <HelpMeChoose initial={preferences} submitted={submitted} results={results} catalogueAvailable={catalogueAvailable} />;
+  return (
+    <HelpMeChoose
+      initial={preferences}
+      submitted={submitted}
+      results={results}
+      catalogueAvailable={catalogueAvailable}
+    />
+  );
 }

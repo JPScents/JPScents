@@ -23,10 +23,7 @@ import {
   savePrimaryImage,
 } from "@/features/catalogue/actions/image.admin.action";
 import { savePerfume } from "@/features/catalogue/actions/save-perfume.admin.action";
-import {
-  deleteVariant,
-  saveVariant,
-} from "@/features/catalogue/actions/variants.admin.action";
+import { deleteVariant, saveVariant } from "@/features/catalogue/actions/variants.admin.action";
 import { imageInputError } from "@/features/catalogue/fields";
 
 describe("catalogue mutation boundaries", () => {

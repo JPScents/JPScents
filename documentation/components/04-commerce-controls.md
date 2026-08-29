@@ -2,11 +2,11 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Catalogue/Cart component family |
-| Sources | Workspace `Commerce Controls`; Perfumes; Product Detail; Cart frames |
-| Access | Public interactive controls |
+| Field   | Value                                                                                     |
+| ------- | ----------------------------------------------------------------------------------------- |
+| Type    | Catalogue/Cart component family                                                           |
+| Sources | Workspace `Commerce Controls`; Perfumes; Product Detail; Cart frames                      |
+| Access  | Public interactive controls                                                               |
 | Purpose | Standardize filtering, variant selection, quantities, availability, and commerce actions. |
 
 ## Data and domain
@@ -18,11 +18,11 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Read | Read variants and filter configuration | Render valid choices |
-| Write | Update URL search parameters | Catalogue filter selection |
-| Write | Update local selection/Cart | Size, quantity, Add to Cart |
+| Kind  | Requirement                            | Trigger/result              |
+| ----- | -------------------------------------- | --------------------------- |
+| Read  | Read variants and filter configuration | Render valid choices        |
+| Write | Update URL search parameters           | Catalogue filter selection  |
+| Write | Update local selection/Cart            | Size, quantity, Add to Cart |
 
 ## Components
 

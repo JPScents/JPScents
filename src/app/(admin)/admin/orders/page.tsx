@@ -1,3 +1,16 @@
 import { AdminOrders, listOrders } from "@/features/orders";
 import { OrderStatus } from "@/db/generated/client";
-export default async function AdminOrdersPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) { const params = await searchParams; const status = typeof params.status === "string" && Object.values(OrderStatus).includes(params.status as OrderStatus) ? params.status as OrderStatus : undefined; const query = typeof params.query === "string" ? params.query : undefined; return <AdminOrders orders={await listOrders({ query, status })} query={query} status={status} />; }
+export default async function AdminOrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const status =
+    typeof params.status === "string" &&
+    Object.values(OrderStatus).includes(params.status as OrderStatus)
+      ? (params.status as OrderStatus)
+      : undefined;
+  const query = typeof params.query === "string" ? params.query : undefined;
+  return <AdminOrders orders={await listOrders({ query, status })} query={query} status={status} />;
+}

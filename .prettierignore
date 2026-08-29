@@ -1,0 +1,9 @@
+node_modules
+.next
+out
+build
+coverage
+output
+.playwright-cli
+src/db/generated
+supabase/.temp

@@ -2,13 +2,13 @@
 
 ## Authority
 
-| Concern | Source |
-| --- | --- |
-| Behaviour | Notion `06 — Website Structure — Internal` |
-| Public UI | [Paper — Final Site](https://app.paper.design/file/01M1176ZB9DXCTZEH57YQGHY2Q/3-0) |
-| Admin UI | [Paper — Final Admin](https://app.paper.design/file/01M1176ZB9DXCTZEH57YQGHY2Q/2-0) |
+| Concern            | Source                                                                                          |
+| ------------------ | ----------------------------------------------------------------------------------------------- |
+| Behaviour          | Notion `06 — Website Structure — Internal`                                                      |
+| Public UI          | [Paper — Final Site](https://app.paper.design/file/01M1176ZB9DXCTZEH57YQGHY2Q/3-0)              |
+| Admin UI           | [Paper — Final Admin](https://app.paper.design/file/01M1176ZB9DXCTZEH57YQGHY2Q/2-0)             |
 | Component variants | [Paper — Workspace / Exploration](https://app.paper.design/file/01M1176ZB9DXCTZEH57YQGHY2Q/1-0) |
-| Implemented tokens | `foundations/01-theme-and-configuration.md` and source configuration |
+| Implemented tokens | `foundations/01-theme-and-configuration.md` and source configuration                            |
 
 ## Reusable rules
 

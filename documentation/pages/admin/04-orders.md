@@ -2,12 +2,12 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Protected Orders list page |
-| Sources | Final Admin Orders desktop/mobile; Workspace Admin Operations |
-| Route/access | `/admin/orders` · authenticated Admin only |
-| Purpose | Find placed Orders quickly by reference/customer and status. |
+| Field        | Value                                                         |
+| ------------ | ------------------------------------------------------------- |
+| Type         | Protected Orders list page                                    |
+| Sources      | Final Admin Orders desktop/mobile; Workspace Admin Operations |
+| Route/access | `/admin/orders` · authenticated Admin only                    |
+| Purpose      | Find placed Orders quickly by reference/customer and status.  |
 
 ## Data and domain
 
@@ -18,11 +18,11 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Read | `listOrders(filters)` | Search reference/name/phone and filter status |
-| Read | `exportOrders(filters)` | Download the current operational result when retained |
-| Write | None | Rows/cards navigate to detail |
+| Kind  | Requirement             | Trigger/result                                        |
+| ----- | ----------------------- | ----------------------------------------------------- |
+| Read  | `listOrders(filters)`   | Search reference/name/phone and filter status         |
+| Read  | `exportOrders(filters)` | Download the current operational result when retained |
+| Write | None                    | Rows/cards navigate to detail                         |
 
 ## Components
 

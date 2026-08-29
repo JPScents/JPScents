@@ -1,3 +1,5 @@
 import { FullCart } from "@/features/cart";
 
-export default function CartPage() { return <FullCart />; }
+export default function CartPage() {
+  return <FullCart />;
+}

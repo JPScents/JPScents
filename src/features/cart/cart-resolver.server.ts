@@ -33,32 +33,51 @@ async function signedImageUrl(path?: string) {
 }
 
 export async function resolveCartItems(lines: CartRequestLine[]): Promise<ResolvedCartLine[]> {
-  const validLines = lines.filter((line) => typeof line.perfumeVariantId === "string" && Number.isSafeInteger(line.quantity) && line.quantity > 0);
-  const ids = validLines.filter((line) => UUID_PATTERN.test(line.perfumeVariantId)).map((line) => line.perfumeVariantId);
-  const variants = ids.length ? await prisma.perfumeVariant.findMany({
-    where: { id: { in: ids }, perfume: { status: "PUBLISHED" } },
-    include: { perfume: { include: { images: { orderBy: { position: "asc" }, take: 1 } } } },
-  }) : [];
+  const validLines = lines.filter(
+    (line) =>
+      typeof line.perfumeVariantId === "string" &&
+      Number.isSafeInteger(line.quantity) &&
+      line.quantity > 0,
+  );
+  const ids = validLines
+    .filter((line) => UUID_PATTERN.test(line.perfumeVariantId))
+    .map((line) => line.perfumeVariantId);
+  const variants = ids.length
+    ? await prisma.perfumeVariant.findMany({
+        where: { id: { in: ids }, perfume: { status: "PUBLISHED" } },
+        include: { perfume: { include: { images: { orderBy: { position: "asc" }, take: 1 } } } },
+      })
+    : [];
   const byId = new Map(variants.map((variant) => [variant.id, variant]));
-  return Promise.all(validLines.map(async (line) => {
-    const variant = byId.get(line.perfumeVariantId);
-    if (!variant) return { perfumeVariantId: line.perfumeVariantId, requestedQuantity: line.quantity, lineAmountMinor: 0, isValid: false, issue: "missing" };
-    const stock = variant.quantity;
-    const issue = stock === 0 ? "unavailable" : line.quantity > stock ? "over-quantity" : undefined;
-    const image = variant.perfume.images[0];
-    return {
-      perfumeVariantId: variant.id,
-      requestedQuantity: line.quantity,
-      name: variant.perfume.name,
-      slug: variant.perfume.slug,
-      sizeLabel: `${variant.sizeValue.toString()} mL`,
-      imageUrl: await signedImageUrl(image?.path),
-      imageAlt: image?.altText || `${variant.perfume.name} bottle`,
-      unitPriceMinor: variant.priceMinor,
-      stock,
-      lineAmountMinor: issue ? 0 : variant.priceMinor * line.quantity,
-      isValid: !issue,
-      issue,
-    };
-  }));
+  return Promise.all(
+    validLines.map(async (line) => {
+      const variant = byId.get(line.perfumeVariantId);
+      if (!variant)
+        return {
+          perfumeVariantId: line.perfumeVariantId,
+          requestedQuantity: line.quantity,
+          lineAmountMinor: 0,
+          isValid: false,
+          issue: "missing",
+        };
+      const stock = variant.quantity;
+      const issue =
+        stock === 0 ? "unavailable" : line.quantity > stock ? "over-quantity" : undefined;
+      const image = variant.perfume.images[0];
+      return {
+        perfumeVariantId: variant.id,
+        requestedQuantity: line.quantity,
+        name: variant.perfume.name,
+        slug: variant.perfume.slug,
+        sizeLabel: `${variant.sizeValue.toString()} mL`,
+        imageUrl: await signedImageUrl(image?.path),
+        imageAlt: image?.altText || `${variant.perfume.name} bottle`,
+        unitPriceMinor: variant.priceMinor,
+        stock,
+        lineAmountMinor: issue ? 0 : variant.priceMinor * line.quantity,
+        isValid: !issue,
+        issue,
+      };
+    }),
+  );
 }

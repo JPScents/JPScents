@@ -1,2 +1,4 @@
 import { PerfumeEditor } from "@/features/catalogue";
-export default function NewPerfumePage() { return <PerfumeEditor />; }
+export default function NewPerfumePage() {
+  return <PerfumeEditor />;
+}

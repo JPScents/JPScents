@@ -8,7 +8,11 @@ const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 function getPrisma() {
   if (globalForPrisma.prisma) return globalForPrisma.prisma;
 
-  const databaseUrl = process.env.DATABASE_URL ?? (process.env.NODE_ENV === "production" ? undefined : "postgresql://postgres:postgres@127.0.0.1:56322/postgres");
+  const databaseUrl =
+    process.env.DATABASE_URL ??
+    (process.env.NODE_ENV === "production"
+      ? undefined
+      : "postgresql://postgres:postgres@127.0.0.1:56322/postgres");
   if (!databaseUrl) {
     throw new Error("DATABASE_URL is required for the server database client.");
   }

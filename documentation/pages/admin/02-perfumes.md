@@ -2,12 +2,12 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Protected Catalogue Admin page |
-| Sources | Final Admin `Perfumes · Desktop`; Workspace Admin Operations |
-| Route/access | `/admin/perfumes` · authenticated Admin only |
-| Purpose | Search and review catalogue readiness, stock, and homepage merchandising before editing. |
+| Field        | Value                                                                                    |
+| ------------ | ---------------------------------------------------------------------------------------- |
+| Type         | Protected Catalogue Admin page                                                           |
+| Sources      | Final Admin `Perfumes · Desktop`; Workspace Admin Operations                             |
+| Route/access | `/admin/perfumes` · authenticated Admin only                                             |
+| Purpose      | Search and review catalogue readiness, stock, and homepage merchandising before editing. |
 
 ## Data and domain
 
@@ -18,10 +18,10 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Read | `listAdminPerfumes(filters)` | Operational catalogue projection |
-| Write | None | Create/edit navigation only |
+| Kind  | Requirement                  | Trigger/result                   |
+| ----- | ---------------------------- | -------------------------------- |
+| Read  | `listAdminPerfumes(filters)` | Operational catalogue projection |
+| Write | None                         | Create/edit navigation only      |
 
 ## Components
 

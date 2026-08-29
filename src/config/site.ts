@@ -17,8 +17,7 @@ export const siteConfig = {
     adminNewPerfume: "/admin/perfumes/new",
     adminPerfume: (id: string) => `/admin/perfumes/${id}` as const,
     adminOrders: "/admin/orders",
-    adminOrder: (reference: string) =>
-      `/admin/orders/${reference}` as const,
+    adminOrder: (reference: string) => `/admin/orders/${reference}` as const,
   },
 } as const;
 

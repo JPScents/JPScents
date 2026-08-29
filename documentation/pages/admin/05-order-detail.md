@@ -2,12 +2,12 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Protected Orders detail page |
-| Sources | Final Admin Order Detail desktop/mobile |
-| Route/access | `/admin/orders/{reference}` · authenticated Admin only |
-| Purpose | Review one saved Order, update its operational status, view activity, and continue the WhatsApp conversation. |
+| Field        | Value                                                                                                         |
+| ------------ | ------------------------------------------------------------------------------------------------------------- |
+| Type         | Protected Orders detail page                                                                                  |
+| Sources      | Final Admin Order Detail desktop/mobile                                                                       |
+| Route/access | `/admin/orders/{reference}` · authenticated Admin only                                                        |
+| Purpose      | Review one saved Order, update its operational status, view activity, and continue the WhatsApp conversation. |
 
 ## Data and domain
 
@@ -18,10 +18,10 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Read | `getOrderByReference` | Authorized detail projection with items/events |
-| Write | `updateOrderStatus` | Validate transition and create status event atomically |
+| Kind  | Requirement           | Trigger/result                                         |
+| ----- | --------------------- | ------------------------------------------------------ |
+| Read  | `getOrderByReference` | Authorized detail projection with items/events         |
+| Write | `updateOrderStatus`   | Validate transition and create status event atomically |
 
 ## Components
 

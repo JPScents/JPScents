@@ -2,12 +2,12 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Protected Catalogue Admin pages with modal states |
-| Sources | Final Admin Create/Edit Perfume, Add Variant modal, Product Preview modal; Workspace editor/variant families |
-| Route/access | `/admin/perfumes/new`; `/admin/perfumes/{id}` · authenticated Admin only |
-| Purpose | Create/update a complete Perfume and its variants using one shared editor. |
+| Field        | Value                                                                                                        |
+| ------------ | ------------------------------------------------------------------------------------------------------------ |
+| Type         | Protected Catalogue Admin pages with modal states                                                            |
+| Sources      | Final Admin Create/Edit Perfume, Add Variant modal, Product Preview modal; Workspace editor/variant families |
+| Route/access | `/admin/perfumes/new`; `/admin/perfumes/{id}` · authenticated Admin only                                     |
+| Purpose      | Create/update a complete Perfume and its variants using one shared editor.                                   |
 
 ## Data and domain
 
@@ -18,12 +18,12 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Read | `getAdminPerfume(id)` | Populate edit route and variant list |
-| Write | `createPerfume` / `updatePerfume` | Persist validated Perfume fields |
-| Write | upload/replace image | Update ordered Perfume image references |
-| Write | add/update/delete variant | Manage stable child records |
+| Kind  | Requirement                       | Trigger/result                          |
+| ----- | --------------------------------- | --------------------------------------- |
+| Read  | `getAdminPerfume(id)`             | Populate edit route and variant list    |
+| Write | `createPerfume` / `updatePerfume` | Persist validated Perfume fields        |
+| Write | upload/replace image              | Update ordered Perfume image references |
+| Write | add/update/delete variant         | Manage stable child records             |
 
 ## Components
 

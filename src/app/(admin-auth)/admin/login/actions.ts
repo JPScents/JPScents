@@ -11,14 +11,12 @@ export type LoginState = {
   message?: string;
 };
 
-const sentMessage =
-  "If this address has Admin access, a secure sign-in link is on its way.";
+const sentMessage = "If this address has Admin access, a secure sign-in link is on its way.";
 
-export async function requestMagicLink(
-  _: LoginState,
-  formData: FormData,
-): Promise<LoginState> {
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+export async function requestMagicLink(_: LoginState, formData: FormData): Promise<LoginState> {
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
 
   if (!email || !email.includes("@")) {
     return { status: "error", message: "Enter a valid email address." };

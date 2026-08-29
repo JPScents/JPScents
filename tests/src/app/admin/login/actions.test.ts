@@ -18,9 +18,7 @@ describe("Admin magic-link request", () => {
   beforeEach(() => {
     getHeaders.mockReset();
     signInWithOtp.mockReset();
-    getHeaders.mockResolvedValue(
-      new Headers({ origin: "http://127.0.0.1:3000" }),
-    );
+    getHeaders.mockResolvedValue(new Headers({ origin: "http://127.0.0.1:3000" }));
     signInWithOtp.mockResolvedValue({ error: null });
   });
 
@@ -42,8 +40,7 @@ describe("Admin magic-link request", () => {
 
     expect(result).toEqual({
       status: "sent",
-      message:
-        "If this address has Admin access, a secure sign-in link is on its way.",
+      message: "If this address has Admin access, a secure sign-in link is on its way.",
     });
     expect(signInWithOtp).not.toHaveBeenCalled();
   });

@@ -2,12 +2,12 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Cart/Orders component family |
+| Field   | Value                                                                                         |
+| ------- | --------------------------------------------------------------------------------------------- |
+| Type    | Cart/Orders component family                                                                  |
 | Sources | Workspace `Cart & Order`; cart preview, Full Cart, Checkout, Confirmation, Admin Order Detail |
-| Access | Public and protected contexts |
-| Purpose | Reuse resolved line-item and summary presentation without duplicating catalogue state. |
+| Access  | Public and protected contexts                                                                 |
+| Purpose | Reuse resolved line-item and summary presentation without duplicating catalogue state.        |
 
 ## Data and domain
 
@@ -17,11 +17,11 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Read | Resolve cart variants by identifier | Render preview, cart, and checkout |
-| Read | Read Order with items and catalogue relations | Confirmation/Admin detail |
-| Write | Local cart quantity/remove/clear | Immediate Cart update |
+| Kind  | Requirement                                   | Trigger/result                     |
+| ----- | --------------------------------------------- | ---------------------------------- |
+| Read  | Resolve cart variants by identifier           | Render preview, cart, and checkout |
+| Read  | Read Order with items and catalogue relations | Confirmation/Admin detail          |
+| Write | Local cart quantity/remove/clear              | Immediate Cart update              |
 
 ## Components
 

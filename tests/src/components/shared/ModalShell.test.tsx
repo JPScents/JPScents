@@ -6,7 +6,17 @@ import { ModalShell } from "@/components/shared/ModalShell";
 
 function Fixture() {
   const [open, setOpen] = useState(false);
-  return <ModalShell open={open} onOpenChange={setOpen} trigger={<button type="button">Open details</button>} title="Details" description="Accessible details"><p>Modal content</p></ModalShell>;
+  return (
+    <ModalShell
+      open={open}
+      onOpenChange={setOpen}
+      trigger={<button type="button">Open details</button>}
+      title="Details"
+      description="Accessible details"
+    >
+      <p>Modal content</p>
+    </ModalShell>
+  );
 }
 
 describe("ModalShell", () => {

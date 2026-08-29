@@ -2,11 +2,11 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Admin component family |
-| Sources | Workspace `Admin Operations`; Admin Overview, Perfumes, Orders |
-| Access | Protected Admin |
+| Field   | Value                                                                                                |
+| ------- | ---------------------------------------------------------------------------------------------------- |
+| Type    | Admin component family                                                                               |
+| Sources | Workspace `Admin Operations`; Admin Overview, Perfumes, Orders                                       |
+| Access  | Protected Admin                                                                                      |
 | Purpose | Provide dense, calm operational lists, filters, status indicators, and responsive row/card patterns. |
 
 ## Data and domain
@@ -17,10 +17,10 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Read | Search/filter Admin projections | URL or local filter state updates list |
-| Write | None at row level | Rows navigate to detail/editor |
+| Kind  | Requirement                     | Trigger/result                         |
+| ----- | ------------------------------- | -------------------------------------- |
+| Read  | Search/filter Admin projections | URL or local filter state updates list |
+| Write | None at row level               | Rows navigate to detail/editor         |
 
 ## Components
 

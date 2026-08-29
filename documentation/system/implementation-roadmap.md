@@ -10,13 +10,13 @@ All agents work locally on the shared `main` branch, one at a time. There are no
 
 ## Milestones
 
-| Milestone | Outcome | Depends on | Agent thread | Branch |
-| --- | --- | --- | --- | --- |
-| 1. Platform and shared foundation | Local Supabase wiring, Prisma schema/migrations/client, Admin authentication, product-image storage contract, opt-in demo fixtures, shared shells, ModalShell, and verification baseline | approved foundation | `milestone_1_platform` | `main` |
-| 2. Catalogue management | Catalogue data operations and protected Admin Perfumes/create/edit/variants/images/Featured/Bestseller workflows | Milestone 1 | `milestone_2_catalogue_admin` | `main` |
-| 3. Public discovery | Homepage, Perfumes, Perfume Detail, Help Me Choose, and their public component families/responsive states | Milestone 2 | `milestone_3_public_discovery` | `main` |
-| 4. Cart | Minimal client Cart state/persistence, drawer/bottom sheet, Full Cart, invalid/empty states, and wiring from Perfume Detail | Milestone 3 | `milestone_4_cart` | `main` |
-| 5. Orders and integration | Checkout, atomic Order creation/stock decrement, confirmation/WhatsApp, Admin Orders/detail/Overview, end-to-end accessibility and responsive verification | Milestone 4 | `milestone_5_orders_completion` | `main` |
+| Milestone                         | Outcome                                                                                                                                                                                  | Depends on          | Agent thread                    | Branch |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | ------------------------------- | ------ |
+| 1. Platform and shared foundation | Local Supabase wiring, Prisma schema/migrations/client, Admin authentication, product-image storage contract, opt-in demo fixtures, shared shells, ModalShell, and verification baseline | approved foundation | `milestone_1_platform`          | `main` |
+| 2. Catalogue management           | Catalogue data operations and protected Admin Perfumes/create/edit/variants/images/Featured/Bestseller workflows                                                                         | Milestone 1         | `milestone_2_catalogue_admin`   | `main` |
+| 3. Public discovery               | Homepage, Perfumes, Perfume Detail, Help Me Choose, and their public component families/responsive states                                                                                | Milestone 2         | `milestone_3_public_discovery`  | `main` |
+| 4. Cart                           | Minimal client Cart state/persistence, drawer/bottom sheet, Full Cart, invalid/empty states, and wiring from Perfume Detail                                                              | Milestone 3         | `milestone_4_cart`              | `main` |
+| 5. Orders and integration         | Checkout, atomic Order creation/stock decrement, confirmation/WhatsApp, Admin Orders/detail/Overview, end-to-end accessibility and responsive verification                               | Milestone 4         | `milestone_5_orders_completion` | `main` |
 
 ## Dependency rationale
 

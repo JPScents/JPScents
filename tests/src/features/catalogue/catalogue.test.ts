@@ -1,12 +1,80 @@
 import { describe, expect, it } from "vitest";
-import { normalizeSizeValue, parseNairaToMinor, parsePerfumeInput, parseStagedVariants, parseVariantInput, publishingErrors } from "@/features/catalogue/fields";
+import {
+  normalizeSizeValue,
+  parseNairaToMinor,
+  parsePerfumeInput,
+  parseStagedVariants,
+  parseVariantInput,
+  publishingErrors,
+} from "@/features/catalogue/fields";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 
 describe("catalogue validation", () => {
-  it("allows an incomplete draft but requires publication details", () => { const draft = new FormData(); draft.set("name", "Quiet Fig"); draft.set("slug", "quiet-fig"); expect(parsePerfumeInput(draft).errors).toEqual({}); draft.set("status", "PUBLISHED"); expect(parsePerfumeInput(draft).errors.scentCue).toBeDefined(); });
-  it("parses Naira strings without floating point arithmetic", () => { expect(parseNairaToMinor("1250.50")).toBe(125050); const form = new FormData(); form.set("sizeValue", "50"); form.set("price", "100.00"); form.set("quantity", "0"); expect(parseVariantInput(form).input).toEqual({ sizeValue: "50", priceMinor: 10000, quantity: 0 }); });
-  it("preserves meaningful Naira decimals and rejects fractional stock", () => { expect(formatNairaFromMinor(125050)).toBe("₦1,250.50"); const form = new FormData(); form.set("sizeValue", "50"); form.set("price", "100"); form.set("quantity", "1.5"); expect(parseVariantInput(form).errors.quantity).toBeDefined(); });
-  it("validates staged variants before the first create", () => { expect(parseStagedVariants(JSON.stringify([{ sizeValue: "30", price: "1000", quantity: "1" }])).variants).toHaveLength(1); expect(parseStagedVariants(JSON.stringify([{ sizeValue: "30", price: "1000", quantity: "1" }, { sizeValue: "30", price: "1200", quantity: "2" }])).error).toContain("unique"); });
-  it("normalizes decimal sizes so equivalent staged values cannot duplicate", () => { expect(normalizeSizeValue("50.0")).toBe("50.00"); expect(parseStagedVariants(JSON.stringify([{ sizeValue: "50", price: "1000", quantity: "1" }, { sizeValue: "50.0", price: "1200", quantity: "2" }])).error).toContain("unique"); });
-  it("blocks publishing without image and positive stock", () => { const form = new FormData(); form.set("name", "Quiet Fig"); form.set("slug", "quiet-fig"); form.set("scentCue", "Fig"); form.set("description", "Description"); form.set("status", "PUBLISHED"); form.append("scentCharacters", "FRESH"); form.append("occasions", "EVERYDAY"); form.append("timesOfDay", "DAY"); const parsed = parsePerfumeInput(form); expect(publishingErrors(parsed.input!, 0, 1).form).toContain("primary image"); expect(publishingErrors(parsed.input!, 1, 0).form).toContain("in-stock"); });
+  it("allows an incomplete draft but requires publication details", () => {
+    const draft = new FormData();
+    draft.set("name", "Quiet Fig");
+    draft.set("slug", "quiet-fig");
+    expect(parsePerfumeInput(draft).errors).toEqual({});
+    draft.set("status", "PUBLISHED");
+    expect(parsePerfumeInput(draft).errors.scentCue).toBeDefined();
+  });
+  it("parses Naira strings without floating point arithmetic", () => {
+    expect(parseNairaToMinor("1250.50")).toBe(125050);
+    const form = new FormData();
+    form.set("sizeValue", "50");
+    form.set("price", "100.00");
+    form.set("quantity", "0");
+    expect(parseVariantInput(form).input).toEqual({
+      sizeValue: "50",
+      priceMinor: 10000,
+      quantity: 0,
+    });
+  });
+  it("preserves meaningful Naira decimals and rejects fractional stock", () => {
+    expect(formatNairaFromMinor(125050)).toBe("₦1,250.50");
+    const form = new FormData();
+    form.set("sizeValue", "50");
+    form.set("price", "100");
+    form.set("quantity", "1.5");
+    expect(parseVariantInput(form).errors.quantity).toBeDefined();
+  });
+  it("validates staged variants before the first create", () => {
+    expect(
+      parseStagedVariants(JSON.stringify([{ sizeValue: "30", price: "1000", quantity: "1" }]))
+        .variants,
+    ).toHaveLength(1);
+    expect(
+      parseStagedVariants(
+        JSON.stringify([
+          { sizeValue: "30", price: "1000", quantity: "1" },
+          { sizeValue: "30", price: "1200", quantity: "2" },
+        ]),
+      ).error,
+    ).toContain("unique");
+  });
+  it("normalizes decimal sizes so equivalent staged values cannot duplicate", () => {
+    expect(normalizeSizeValue("50.0")).toBe("50.00");
+    expect(
+      parseStagedVariants(
+        JSON.stringify([
+          { sizeValue: "50", price: "1000", quantity: "1" },
+          { sizeValue: "50.0", price: "1200", quantity: "2" },
+        ]),
+      ).error,
+    ).toContain("unique");
+  });
+  it("blocks publishing without image and positive stock", () => {
+    const form = new FormData();
+    form.set("name", "Quiet Fig");
+    form.set("slug", "quiet-fig");
+    form.set("scentCue", "Fig");
+    form.set("description", "Description");
+    form.set("status", "PUBLISHED");
+    form.append("scentCharacters", "FRESH");
+    form.append("occasions", "EVERYDAY");
+    form.append("timesOfDay", "DAY");
+    const parsed = parsePerfumeInput(form);
+    expect(publishingErrors(parsed.input!, 0, 1).form).toContain("primary image");
+    expect(publishingErrors(parsed.input!, 1, 0).form).toContain("in-stock");
+  });
 });

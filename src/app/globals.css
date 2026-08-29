@@ -6,8 +6,7 @@
 
 @theme inline {
   --font-sans: "Inter", "Inter Fallback", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Cormorant Garamond", "Cormorant Garamond Fallback", ui-serif,
-    Georgia, serif;
+  --font-display: "Cormorant Garamond", "Cormorant Garamond Fallback", ui-serif, Georgia, serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -54,13 +53,9 @@
   --color-jp-overlay-modal: var(--jp-overlay-modal);
   --color-jp-modal-border: var(--jp-modal-border);
   --color-jp-status-confirmed: var(--jp-status-confirmed);
-  --color-jp-status-confirmed-foreground: var(
-    --jp-status-confirmed-foreground
-  );
+  --color-jp-status-confirmed-foreground: var(--jp-status-confirmed-foreground);
   --color-jp-status-attention: var(--jp-status-attention);
-  --color-jp-status-attention-foreground: var(
-    --jp-status-attention-foreground
-  );
+  --color-jp-status-attention-foreground: var(--jp-status-attention-foreground);
 
   --radius-sm: 0;
   --radius-md: 0;

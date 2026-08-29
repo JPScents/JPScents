@@ -2,11 +2,11 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Catalogue Admin component family |
-| Sources | Workspace `Perfume Editor`; Create/Edit Perfume frames |
-| Access | Protected Admin route composition |
+| Field   | Value                                                             |
+| ------- | ----------------------------------------------------------------- |
+| Type    | Catalogue Admin component family                                  |
+| Sources | Workspace `Perfume Editor`; Create/Edit Perfume frames            |
+| Access  | Protected Admin route composition                                 |
 | Purpose | Reuse the same Perfume editing surface for create and edit flows. |
 
 ## Data and domain
@@ -17,10 +17,10 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Read | Load Perfume for edit | Populate controlled form |
-| Write | Create or update Perfume | Persist validated owning fields |
+| Kind  | Requirement                  | Trigger/result                            |
+| ----- | ---------------------------- | ----------------------------------------- |
+| Read  | Load Perfume for edit        | Populate controlled form                  |
+| Write | Create or update Perfume     | Persist validated owning fields           |
 | Write | Upload/replace primary image | Store asset then update Perfume reference |
 
 ## Components

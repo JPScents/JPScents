@@ -6,15 +6,15 @@ Implemented as the shared project foundation. No product routes, page sections, 
 
 ## Code ownership
 
-| Concern | Location | Decision |
-| --- | --- | --- |
-| Global semantic tokens | `src/app/globals.css` | Paper values mapped to Tailwind and shadcn variables |
-| Fonts | `src/lib/fonts.ts` | Cormorant Garamond display; Inter UI/body |
-| Application shell | `src/app/layout.tsx` | Font variables, language, base metadata, global CSS |
-| Site identity and route names | `src/config/site.ts` | Typed non-secret configuration only |
-| Commerce constants | `src/config/commerce.ts` | Typed current-phase defaults only |
-| shadcn integration | `components.json` | Radix-based, RSC-compatible, CSS variables enabled |
-| Shared class composition | `src/lib/utils.ts` | shadcn-compatible `cn` utility |
+| Concern                       | Location                 | Decision                                             |
+| ----------------------------- | ------------------------ | ---------------------------------------------------- |
+| Global semantic tokens        | `src/app/globals.css`    | Paper values mapped to Tailwind and shadcn variables |
+| Fonts                         | `src/lib/fonts.ts`       | Cormorant Garamond display; Inter UI/body            |
+| Application shell             | `src/app/layout.tsx`     | Font variables, language, base metadata, global CSS  |
+| Site identity and route names | `src/config/site.ts`     | Typed non-secret configuration only                  |
+| Commerce constants            | `src/config/commerce.ts` | Typed current-phase defaults only                    |
+| shadcn integration            | `components.json`        | Radix-based, RSC-compatible, CSS variables enabled   |
+| Shared class composition      | `src/lib/utils.ts`       | shadcn-compatible `cn` utility                       |
 
 No global React provider exists yet. A provider will be introduced only when a real shared runtime concern—such as cart state—requires it.
 
@@ -44,26 +44,26 @@ Amber is decorative/accent use only at its current value; it does not have suffi
 
 ## Configuration
 
-| Value | Current setting | Status |
-| --- | --- | --- |
-| Brand name | JPScents | Confirmed |
-| Public locale | `en-NG` | Assumed |
-| Currency | `NGN` | Assumed |
-| Size unit | `mL` | Assumed |
-| Payment mode | Manual | Confirmed |
-| WhatsApp handoff | After saved order | Confirmed |
-| Order reference | `JP-` plus at least four digits | Assumed |
-| Home path | `/` | Confirmed |
-| Catalogue path | `/perfumes` | Confirmed |
-| Product path | `/perfume/{slug}` | Confirmed |
-| Cart path | `/cart` | Confirmed |
-| Checkout path | `/checkout` | Confirmed |
-| Confirmation path | `/checkout/confirm` | Confirmed |
-| Help Me Choose path | `/help-me-choose` | Confirmed |
-| Help Me Choose results | State/search parameters on `/help-me-choose` | Confirmed; not a separate route |
-| Admin overview | `/admin` | Confirmed |
-| Admin perfumes | `/admin/perfumes`, `/admin/perfumes/new`, `/admin/perfumes/{id}` | Confirmed |
-| Admin orders | `/admin/orders`, `/admin/orders/{reference}` | Confirmed |
+| Value                  | Current setting                                                  | Status                          |
+| ---------------------- | ---------------------------------------------------------------- | ------------------------------- |
+| Brand name             | JPScents                                                         | Confirmed                       |
+| Public locale          | `en-NG`                                                          | Assumed                         |
+| Currency               | `NGN`                                                            | Assumed                         |
+| Size unit              | `mL`                                                             | Assumed                         |
+| Payment mode           | Manual                                                           | Confirmed                       |
+| WhatsApp handoff       | After saved order                                                | Confirmed                       |
+| Order reference        | `JP-` plus at least four digits                                  | Assumed                         |
+| Home path              | `/`                                                              | Confirmed                       |
+| Catalogue path         | `/perfumes`                                                      | Confirmed                       |
+| Product path           | `/perfume/{slug}`                                                | Confirmed                       |
+| Cart path              | `/cart`                                                          | Confirmed                       |
+| Checkout path          | `/checkout`                                                      | Confirmed                       |
+| Confirmation path      | `/checkout/confirm`                                              | Confirmed                       |
+| Help Me Choose path    | `/help-me-choose`                                                | Confirmed                       |
+| Help Me Choose results | State/search parameters on `/help-me-choose`                     | Confirmed; not a separate route |
+| Admin overview         | `/admin`                                                         | Confirmed                       |
+| Admin perfumes         | `/admin/perfumes`, `/admin/perfumes/new`, `/admin/perfumes/{id}` | Confirmed                       |
+| Admin orders           | `/admin/orders`, `/admin/orders/{reference}`                     | Confirmed                       |
 
 Route values are configuration references only; the routes do not exist yet.
 

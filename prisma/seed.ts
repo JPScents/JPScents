@@ -3,7 +3,8 @@ import { PrismaClient, PerfumeStatus } from "../src/db/generated/client";
 
 // Explicitly opt-in demo data for local development and design review only.
 // Normal resets and deployed environments intentionally start with no catalogue data.
-const databaseUrl = process.env.DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:56322/postgres";
+const databaseUrl =
+  process.env.DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:56322/postgres";
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
 
@@ -17,10 +18,24 @@ const perfumes = [
     scentCharacters: ["WOODY", "WARM"] as const,
     occasions: ["DATE_NIGHT", "SPECIAL_OCCASION"] as const,
     timesOfDay: ["NIGHT"] as const,
-    image: { id: "31000000-0000-4000-8000-000000000001", path: "/perfume-placeholders/santal-veil.svg", altText: "Controlled placeholder artwork for Santal Veil perfume." },
+    image: {
+      id: "31000000-0000-4000-8000-000000000001",
+      path: "/perfume-placeholders/santal-veil.svg",
+      altText: "Controlled placeholder artwork for Santal Veil perfume.",
+    },
     variants: [
-      { id: "32000000-0000-4000-8000-000000000001", sizeValue: "30", priceMinor: 125000, quantity: 12 },
-      { id: "32000000-0000-4000-8000-000000000002", sizeValue: "50", priceMinor: 185000, quantity: 8 },
+      {
+        id: "32000000-0000-4000-8000-000000000001",
+        sizeValue: "30",
+        priceMinor: 125000,
+        quantity: 12,
+      },
+      {
+        id: "32000000-0000-4000-8000-000000000002",
+        sizeValue: "50",
+        priceMinor: 185000,
+        quantity: 8,
+      },
     ],
   },
   {
@@ -32,8 +47,19 @@ const perfumes = [
     scentCharacters: ["WARM", "SWEET"] as const,
     occasions: ["DATE_NIGHT", "SPECIAL_OCCASION"] as const,
     timesOfDay: ["NIGHT"] as const,
-    image: { id: "31000000-0000-4000-8000-000000000002", path: "/perfume-placeholders/amber-no-7.svg", altText: "Controlled placeholder artwork for Amber No. 7 perfume." },
-    variants: [{ id: "32000000-0000-4000-8000-000000000003", sizeValue: "50", priceMinor: 210000, quantity: 6 }],
+    image: {
+      id: "31000000-0000-4000-8000-000000000002",
+      path: "/perfume-placeholders/amber-no-7.svg",
+      altText: "Controlled placeholder artwork for Amber No. 7 perfume.",
+    },
+    variants: [
+      {
+        id: "32000000-0000-4000-8000-000000000003",
+        sizeValue: "50",
+        priceMinor: 210000,
+        quantity: 6,
+      },
+    ],
   },
   {
     id: "30000000-0000-4000-8000-000000000003",
@@ -44,8 +70,19 @@ const perfumes = [
     scentCharacters: ["FRESH", "WOODY"] as const,
     occasions: ["EVERYDAY", "WORK"] as const,
     timesOfDay: ["DAY"] as const,
-    image: { id: "31000000-0000-4000-8000-000000000003", path: "/perfume-placeholders/citrus-linen.svg", altText: "Controlled placeholder artwork for Citrus Linen perfume." },
-    variants: [{ id: "32000000-0000-4000-8000-000000000004", sizeValue: "50", priceMinor: 165000, quantity: 10 }],
+    image: {
+      id: "31000000-0000-4000-8000-000000000003",
+      path: "/perfume-placeholders/citrus-linen.svg",
+      altText: "Controlled placeholder artwork for Citrus Linen perfume.",
+    },
+    variants: [
+      {
+        id: "32000000-0000-4000-8000-000000000004",
+        sizeValue: "50",
+        priceMinor: 165000,
+        quantity: 10,
+      },
+    ],
   },
 ] as const;
 

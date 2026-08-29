@@ -2,12 +2,12 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Page / Component family / Foundation |
-| Sources | Paper frame names and product authority |
+| Field        | Value                                      |
+| ------------ | ------------------------------------------ |
+| Type         | Page / Component family / Foundation       |
+| Sources      | Paper frame names and product authority    |
 | Route/access | Route, protected route, or UI-only trigger |
-| Purpose | One sentence |
+| Purpose      | One sentence                               |
 
 ## Data and domain
 
@@ -20,10 +20,10 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Read |  |  |
-| Write |  |  |
+| Kind  | Requirement | Trigger/result |
+| ----- | ----------- | -------------- |
+| Read  |             |                |
+| Write |             |                |
 
 Record requirements, not endpoint contracts.
 

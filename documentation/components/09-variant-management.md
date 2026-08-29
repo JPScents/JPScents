@@ -2,12 +2,12 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Catalogue Admin component family |
+| Field   | Value                                                                     |
+| ------- | ------------------------------------------------------------------------- |
+| Type    | Catalogue Admin component family                                          |
 | Sources | Workspace `Variant Management`; Create/Edit Perfume and Add Variant modal |
-| Access | Protected Admin editor state/modal |
-| Purpose | Manage sellable size, price, and current quantity per PerfumeVariant. |
+| Access  | Protected Admin editor state/modal                                        |
+| Purpose | Manage sellable size, price, and current quantity per PerfumeVariant.     |
 
 ## Data and domain
 
@@ -18,12 +18,12 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Read | Read variants with owning Perfume | Render list and edit defaults |
-| Write | Add variant | Create child with stable identifier |
-| Write | Update variant | Persist size, price, quantity |
-| Write | Delete variant | Allowed only when no integrity/Order reference conflict |
+| Kind  | Requirement                       | Trigger/result                                          |
+| ----- | --------------------------------- | ------------------------------------------------------- |
+| Read  | Read variants with owning Perfume | Render list and edit defaults                           |
+| Write | Add variant                       | Create child with stable identifier                     |
+| Write | Update variant                    | Persist size, price, quantity                           |
+| Write | Delete variant                    | Allowed only when no integrity/Order reference conflict |
 
 ## Components
 

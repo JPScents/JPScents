@@ -2,12 +2,12 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Public Catalogue page |
-| Sources | Final Site `Perfumes` desktop/mobile and `Perfumes No Results` |
-| Route/access | `/perfumes` · public |
-| Purpose | Show published Perfumes and let customers narrow available options simply. |
+| Field        | Value                                                                      |
+| ------------ | -------------------------------------------------------------------------- |
+| Type         | Public Catalogue page                                                      |
+| Sources      | Final Site `Perfumes` desktop/mobile and `Perfumes No Results`             |
+| Route/access | `/perfumes` · public                                                       |
+| Purpose      | Show published Perfumes and let customers narrow available options simply. |
 
 ## Data and domain
 
@@ -19,10 +19,10 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Read | `listPerfumes({ scentCharacter })` | Published catalogue projection filtered by optional enum |
-| Write | Update search parameters | `/perfumes?scent=<enum>`; clear removes parameter |
+| Kind  | Requirement                        | Trigger/result                                           |
+| ----- | ---------------------------------- | -------------------------------------------------------- |
+| Read  | `listPerfumes({ scentCharacter })` | Published catalogue projection filtered by optional enum |
+| Write | Update search parameters           | `/perfumes?scent=<enum>`; clear removes parameter        |
 
 ## Components
 

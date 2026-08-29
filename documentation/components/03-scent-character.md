@@ -2,11 +2,11 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Catalogue component family |
-| Sources | Workspace `Scent Character`; Home; Help Me Choose desktop/mobile |
-| Access | Browse link or selectable preference control |
+| Field   | Value                                                                            |
+| ------- | -------------------------------------------------------------------------------- |
+| Type    | Catalogue component family                                                       |
+| Sources | Workspace `Scent Character`; Home; Help Me Choose desktop/mobile                 |
+| Access  | Browse link or selectable preference control                                     |
 | Purpose | Provide one visual language for the four maintained scent-character enum values. |
 
 ## Data and domain
@@ -18,9 +18,9 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Read | Read enum configuration | Render all supported choices |
+| Kind  | Requirement                       | Trigger/result                          |
+| ----- | --------------------------------- | --------------------------------------- |
+| Read  | Read enum configuration           | Render all supported choices            |
 | Write | Update local preference selection | Toggle choice without a server mutation |
 
 ## Components

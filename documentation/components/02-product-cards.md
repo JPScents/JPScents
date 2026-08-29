@@ -2,12 +2,12 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Catalogue component family |
+| Field   | Value                                                                                      |
+| ------- | ------------------------------------------------------------------------------------------ |
+| Type    | Catalogue component family                                                                 |
 | Sources | Workspace `Product Cards`; Home, Perfumes, Product Detail, Help Me Choose, Product Preview |
-| Access | Reused public/Admin preview presentation |
-| Purpose | Present a consistent shoppable Perfume projection in gallery and catalogue contexts. |
+| Access  | Reused public/Admin preview presentation                                                   |
+| Purpose | Present a consistent shoppable Perfume projection in gallery and catalogue contexts.       |
 
 ## Data and domain
 
@@ -18,10 +18,10 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Read | Receive a reusable Perfume card projection | Parent query supplies card data |
-| Write | None | Card navigates to Product Detail |
+| Kind  | Requirement                                | Trigger/result                   |
+| ----- | ------------------------------------------ | -------------------------------- |
+| Read  | Receive a reusable Perfume card projection | Parent query supplies card data  |
+| Write | None                                       | Card navigates to Product Detail |
 
 ## Components
 

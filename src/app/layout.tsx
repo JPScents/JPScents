@@ -13,9 +13,7 @@ export const metadata: Metadata = {
   description: "Perfume, chosen with care.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: ReactNode }>) {
+export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html
       lang="en"

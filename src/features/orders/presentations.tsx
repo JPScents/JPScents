@@ -10,45 +10,860 @@ import { siteConfig } from "@/config/site";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 import { submitOrder, changeOrderStatus } from "./actions";
 
-type Line = { name: string; sizeLabel: string; quantity: number; unitPriceMinor: number; lineTotalMinor: number; imageUrl?: string };
-type PublicOrder = { reference: string; subtotalMinor: number; status: string; createdAt: Date; items: Line[] };
-type CheckoutForm = { customerName: string; whatsappNumber: string; email: string; deliveryArea: string; deliveryAddress: string; orderNote: string };
-export type CheckoutCart = { items: Array<{ perfumeVariantId: string; quantity: number }>; lines: Array<{ perfumeVariantId: string; requestedQuantity: number; name?: string; sizeLabel?: string; unitPriceMinor?: number; lineAmountMinor: number; imageUrl?: string; isValid: boolean }>; subtotalMinor: number; hasInvalidLines: boolean; clearCart: () => void };
-const statusLabel = (status: string) => status.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
+type Line = {
+  name: string;
+  sizeLabel: string;
+  quantity: number;
+  unitPriceMinor: number;
+  lineTotalMinor: number;
+  imageUrl?: string;
+};
+type PublicOrder = {
+  reference: string;
+  subtotalMinor: number;
+  status: string;
+  createdAt: Date;
+  items: Line[];
+};
+type CheckoutForm = {
+  customerName: string;
+  whatsappNumber: string;
+  email: string;
+  deliveryArea: string;
+  deliveryAddress: string;
+  orderNote: string;
+};
+export type CheckoutCart = {
+  items: Array<{ perfumeVariantId: string; quantity: number }>;
+  lines: Array<{
+    perfumeVariantId: string;
+    requestedQuantity: number;
+    name?: string;
+    sizeLabel?: string;
+    unitPriceMinor?: number;
+    lineAmountMinor: number;
+    imageUrl?: string;
+    isValid: boolean;
+  }>;
+  subtotalMinor: number;
+  hasInvalidLines: boolean;
+  clearCart: () => void;
+};
+const statusLabel = (status: string) =>
+  status
+    .replaceAll("_", " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 const orderStatuses = ["NEW", "CONFIRMED", "AWAITING_PAYMENT", "CANCELLED"];
-function whatsappUrl(number: string | undefined, reference: string, items: Array<{ name: string; sizeLabel: string; quantity: number }>) { if (!number || !/^\d{7,15}$/.test(number)) return undefined; const context = items.map((item) => `${item.name} ${item.sizeLabel} ×${item.quantity}`).join(", "); return `https://wa.me/${number}?text=${encodeURIComponent(`Hello JPScents, I’m following up on order ${reference} (${context}).`)}`; }
+function whatsappUrl(
+  number: string | undefined,
+  reference: string,
+  items: Array<{ name: string; sizeLabel: string; quantity: number }>,
+) {
+  if (!number || !/^\d{7,15}$/.test(number)) return undefined;
+  const context = items
+    .map((item) => `${item.name} ${item.sizeLabel} ×${item.quantity}`)
+    .join(", ");
+  return `https://wa.me/${number}?text=${encodeURIComponent(`Hello JPScents, I’m following up on order ${reference} (${context}).`)}`;
+}
 
-function Summary({ order }: { order: { items: Line[]; subtotalMinor: number; reference?: string } }) {
+function Summary({
+  order,
+}: {
+  order: { items: Line[]; subtotalMinor: number; reference?: string };
+}) {
   const itemCount = order.items.reduce((total, item) => total + item.quantity, 0);
   const isPlacedOrder = Boolean(order.reference);
-  return <section className="border bg-jp-surface p-5 lg:p-7" aria-label="Order summary">
-    <div className="flex justify-between border-b pb-4"><p className="text-xs font-semibold uppercase tracking-[.14em] text-jp-olive">Order summary</p><span className="text-xs text-jp-text-secondary">{itemCount} {itemCount === 1 ? "item" : "items"}</span></div>
-    <div className="divide-y">{order.items.map((item, index) => <div key={`${item.name}-${index}`} className="flex gap-3 py-4 text-sm"><div className="relative h-16 w-12 shrink-0 bg-jp-stone">{item.imageUrl ? <Image src={item.imageUrl} alt="" fill unoptimized sizes="48px" className="object-contain" /> : <ProductBottlePlaceholder />}</div><p className="min-w-0 flex-1">{item.name}<br/><span className="text-jp-text-secondary">{item.sizeLabel} · Qty {item.quantity}</span></p><strong>{formatNairaFromMinor(item.lineTotalMinor)}</strong></div>)}</div>
-    <div className="mt-4 space-y-3 border-t pt-4 text-sm"><div className="flex justify-between"><span>Merchandise subtotal</span><strong className="font-display text-3xl">{formatNairaFromMinor(order.subtotalMinor)}</strong></div><div className="flex justify-between"><span>Delivery</span><span className="text-jp-text-secondary">Confirmed after ordering</span></div></div>
-    {!isPlacedOrder ? <div className="mt-5 bg-jp-green-surface p-4 text-xs leading-5 text-jp-text-secondary"><strong className="block uppercase tracking-[.12em] text-jp-olive">What happens next</strong>Your order is saved and a reference is created before WhatsApp opens.</div> : null}
-  </section>;
+  return (
+    <section className="border bg-jp-surface p-5 lg:p-7" aria-label="Order summary">
+      <div className="flex justify-between border-b pb-4">
+        <p className="text-xs font-semibold uppercase tracking-[.14em] text-jp-olive">
+          Order summary
+        </p>
+        <span className="text-xs text-jp-text-secondary">
+          {itemCount} {itemCount === 1 ? "item" : "items"}
+        </span>
+      </div>
+      <div className="divide-y">
+        {order.items.map((item, index) => (
+          <div key={`${item.name}-${index}`} className="flex gap-3 py-4 text-sm">
+            <div className="relative h-16 w-12 shrink-0 bg-jp-stone">
+              {item.imageUrl ? (
+                <Image
+                  src={item.imageUrl}
+                  alt=""
+                  fill
+                  unoptimized
+                  sizes="48px"
+                  className="object-contain"
+                />
+              ) : (
+                <ProductBottlePlaceholder />
+              )}
+            </div>
+            <p className="min-w-0 flex-1">
+              {item.name}
+              <br />
+              <span className="text-jp-text-secondary">
+                {item.sizeLabel} · Qty {item.quantity}
+              </span>
+            </p>
+            <strong>{formatNairaFromMinor(item.lineTotalMinor)}</strong>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 space-y-3 border-t pt-4 text-sm">
+        <div className="flex justify-between">
+          <span>Merchandise subtotal</span>
+          <strong className="font-display text-3xl">
+            {formatNairaFromMinor(order.subtotalMinor)}
+          </strong>
+        </div>
+        <div className="flex justify-between">
+          <span>Delivery</span>
+          <span className="text-jp-text-secondary">Confirmed after ordering</span>
+        </div>
+      </div>
+      {!isPlacedOrder ? (
+        <div className="mt-5 bg-jp-green-surface p-4 text-xs leading-5 text-jp-text-secondary">
+          <strong className="block uppercase tracking-[.12em] text-jp-olive">
+            What happens next
+          </strong>
+          Your order is saved and a reference is created before WhatsApp opens.
+        </div>
+      ) : null}
+    </section>
+  );
 }
 
 export function Checkout({ cart }: { cart: CheckoutCart }) {
-  const [errors, setErrors] = useState<Record<string, string>>({}); const [message, setMessage] = useState(""); const [pending, start] = useTransition(); const [submissionKey] = useState(() => crypto.randomUUID());
-  const [form, setForm] = useState<CheckoutForm>({ customerName: "", whatsappNumber: "", email: "", deliveryArea: "", deliveryAddress: "", orderNote: "" });
-  if (!cart.items.length || cart.hasInvalidLines) return <section className="mx-auto max-w-public-container px-public-gutter-mobile py-16 lg:px-public-gutter-desktop"><h1 className="font-display text-5xl">Your cart needs attention.</h1><p className="mt-4 text-jp-text-secondary">Checkout is available once your cart has available perfumes.</p><Link className="mt-6 inline-block border px-5 py-3 text-sm font-semibold" href={siteConfig.routes.cart}>Return to Cart</Link></section>;
-  const resolved = { items: cart.lines.filter((line) => line.isValid).map((line) => ({ name: line.name ?? "Perfume", sizeLabel: line.sizeLabel ?? "", quantity: line.requestedQuantity, unitPriceMinor: line.unitPriceMinor ?? 0, lineTotalMinor: line.lineAmountMinor, imageUrl: line.imageUrl })), subtotalMinor: cart.subtotalMinor };
-  const update = (field: keyof typeof form, value: string) => setForm((previous) => ({ ...previous, [field]: value }));
-  const submit = (event: React.FormEvent) => { event.preventDefault(); setMessage(""); start(async () => { const result = await submitOrder(cart.items, form, submissionKey); if ("errors" in result) { setErrors(result.errors ?? {}); return; } if ("error" in result) { setErrors({}); setMessage(result.error ?? "Unable to place this order."); return; } cart.clearCart(); window.location.assign(siteConfig.routes.checkoutConfirmation); }); };
-  return <section className="mx-auto max-w-public-container px-public-gutter-mobile py-12 lg:px-public-gutter-desktop lg:py-16"><div className="border-b pb-8 lg:flex lg:items-end lg:justify-between"><div><p className="text-xs font-semibold uppercase tracking-[.16em] text-jp-olive">Checkout</p><h1 className="mt-3 font-display text-6xl lg:text-7xl">Place your order</h1></div><p className="mt-4 max-w-md text-sm leading-6 text-jp-text-secondary">Payment isn’t taken online. Place your order to receive a reference, then continue on WhatsApp for payment and delivery.</p></div><form onSubmit={submit} className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_25rem]"><div className="space-y-10"><fieldset className="grid gap-5 border-t pt-6"><legend className="flex w-full items-center justify-between border-b pb-4 font-display text-3xl">Contact details <span className="font-sans text-xs tracking-[.14em] text-jp-olive">01</span></legend><div className="grid gap-5 lg:grid-cols-2"><Fields form={form} update={update} errors={errors} fields={[['customerName','Full name','Your name','name'],['whatsappNumber','WhatsApp number','e.g. 0800 000 0000','tel']]} /><div className="lg:col-span-2"><Fields form={form} update={update} errors={errors} fields={[['email','Email (optional)','you@example.com','email']]} /></div></div></fieldset><fieldset className="grid gap-5 border-t pt-6"><legend className="flex w-full items-center justify-between border-b pb-4 font-display text-3xl">Delivery details <span className="font-sans text-xs tracking-[.14em] text-jp-olive">02</span></legend><Fields form={form} update={update} errors={errors} fields={[['deliveryArea','Delivery area','Enter your delivery area','text'],['deliveryAddress','Delivery address','Where should your order be delivered?','textarea'],['orderNote','Order note (optional)','Anything we should know?','textarea']]} /></fieldset>{message ? <p role="alert" className="text-sm text-destructive">{message}</p> : null}<button disabled={pending} className="h-14 w-full bg-jp-text-primary text-sm font-bold uppercase tracking-[.08em] text-jp-surface disabled:opacity-50">{pending ? "Saving order…" : "Place order"}</button><div className="flex justify-between gap-4 text-xs text-jp-text-secondary"><Link href={siteConfig.routes.cart}>← Return to Cart</Link><span>No payment is taken online.</span></div></div><Summary order={resolved} /></form></section>;
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [message, setMessage] = useState("");
+  const [pending, start] = useTransition();
+  const [submissionKey] = useState(() => crypto.randomUUID());
+  const [form, setForm] = useState<CheckoutForm>({
+    customerName: "",
+    whatsappNumber: "",
+    email: "",
+    deliveryArea: "",
+    deliveryAddress: "",
+    orderNote: "",
+  });
+  if (!cart.items.length || cart.hasInvalidLines)
+    return (
+      <section className="mx-auto max-w-public-container px-public-gutter-mobile py-16 lg:px-public-gutter-desktop">
+        <h1 className="font-display text-5xl">Your cart needs attention.</h1>
+        <p className="mt-4 text-jp-text-secondary">
+          Checkout is available once your cart has available perfumes.
+        </p>
+        <Link
+          className="mt-6 inline-block border px-5 py-3 text-sm font-semibold"
+          href={siteConfig.routes.cart}
+        >
+          Return to Cart
+        </Link>
+      </section>
+    );
+  const resolved = {
+    items: cart.lines
+      .filter((line) => line.isValid)
+      .map((line) => ({
+        name: line.name ?? "Perfume",
+        sizeLabel: line.sizeLabel ?? "",
+        quantity: line.requestedQuantity,
+        unitPriceMinor: line.unitPriceMinor ?? 0,
+        lineTotalMinor: line.lineAmountMinor,
+        imageUrl: line.imageUrl,
+      })),
+    subtotalMinor: cart.subtotalMinor,
+  };
+  const update = (field: keyof typeof form, value: string) =>
+    setForm((previous) => ({ ...previous, [field]: value }));
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault();
+    setMessage("");
+    start(async () => {
+      const result = await submitOrder(cart.items, form, submissionKey);
+      if ("errors" in result) {
+        setErrors(result.errors ?? {});
+        return;
+      }
+      if ("error" in result) {
+        setErrors({});
+        setMessage(result.error ?? "Unable to place this order.");
+        return;
+      }
+      cart.clearCart();
+      window.location.assign(siteConfig.routes.checkoutConfirmation);
+    });
+  };
+  return (
+    <section className="mx-auto max-w-public-container px-public-gutter-mobile py-12 lg:px-public-gutter-desktop lg:py-16">
+      <div className="border-b pb-8 lg:flex lg:items-end lg:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[.16em] text-jp-olive">Checkout</p>
+          <h1 className="mt-3 font-display text-6xl lg:text-7xl">Place your order</h1>
+        </div>
+        <p className="mt-4 max-w-md text-sm leading-6 text-jp-text-secondary">
+          Payment isn’t taken online. Place your order to receive a reference, then continue on
+          WhatsApp for payment and delivery.
+        </p>
+      </div>
+      <form onSubmit={submit} className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_25rem]">
+        <div className="space-y-10">
+          <fieldset className="grid gap-5 border-t pt-6">
+            <legend className="flex w-full items-center justify-between border-b pb-4 font-display text-3xl">
+              Contact details{" "}
+              <span className="font-sans text-xs tracking-[.14em] text-jp-olive">01</span>
+            </legend>
+            <div className="grid gap-5 lg:grid-cols-2">
+              <Fields
+                form={form}
+                update={update}
+                errors={errors}
+                fields={[
+                  ["customerName", "Full name", "Your name", "name"],
+                  ["whatsappNumber", "WhatsApp number", "e.g. 0800 000 0000", "tel"],
+                ]}
+              />
+              <div className="lg:col-span-2">
+                <Fields
+                  form={form}
+                  update={update}
+                  errors={errors}
+                  fields={[["email", "Email (optional)", "you@example.com", "email"]]}
+                />
+              </div>
+            </div>
+          </fieldset>
+          <fieldset className="grid gap-5 border-t pt-6">
+            <legend className="flex w-full items-center justify-between border-b pb-4 font-display text-3xl">
+              Delivery details{" "}
+              <span className="font-sans text-xs tracking-[.14em] text-jp-olive">02</span>
+            </legend>
+            <Fields
+              form={form}
+              update={update}
+              errors={errors}
+              fields={[
+                ["deliveryArea", "Delivery area", "Enter your delivery area", "text"],
+                [
+                  "deliveryAddress",
+                  "Delivery address",
+                  "Where should your order be delivered?",
+                  "textarea",
+                ],
+                ["orderNote", "Order note (optional)", "Anything we should know?", "textarea"],
+              ]}
+            />
+          </fieldset>
+          {message ? (
+            <p role="alert" className="text-sm text-destructive">
+              {message}
+            </p>
+          ) : null}
+          <button
+            disabled={pending}
+            className="h-14 w-full bg-jp-text-primary text-sm font-bold uppercase tracking-[.08em] text-jp-surface disabled:opacity-50"
+          >
+            {pending ? "Saving order…" : "Place order"}
+          </button>
+          <div className="flex justify-between gap-4 text-xs text-jp-text-secondary">
+            <Link href={siteConfig.routes.cart}>← Return to Cart</Link>
+            <span>No payment is taken online.</span>
+          </div>
+        </div>
+        <Summary order={resolved} />
+      </form>
+    </section>
+  );
 }
 
-function Fields({ form, update, errors, fields }: { form: CheckoutForm; update: (field: keyof CheckoutForm, value: string) => void; errors: Record<string, string>; fields: [keyof CheckoutForm, string, string, string][] }) { return <>{fields.map(([key, label, placeholder, type]) => <label key={key} className="grid gap-2 text-sm font-semibold">{label}{type === "textarea" ? <textarea value={form[key]} onChange={(event) => update(key, event.target.value)} placeholder={placeholder} rows={key === "deliveryAddress" ? 3 : 2} className="border bg-jp-surface p-3 font-normal" aria-invalid={Boolean(errors[key])} aria-describedby={errors[key] ? `${key}-error` : undefined} /> : <input value={form[key]} onChange={(event) => update(key, event.target.value)} placeholder={placeholder} type={type} inputMode={key === "whatsappNumber" ? "tel" : undefined} autoComplete={key === "customerName" ? "name" : key === "email" ? "email" : key === "whatsappNumber" ? "tel" : undefined} className="h-12 border bg-jp-surface px-3 font-normal" aria-invalid={Boolean(errors[key])} aria-describedby={errors[key] ? `${key}-error` : undefined} />}{errors[key] ? <span id={`${key}-error`} role="alert" className="font-normal text-destructive">{errors[key]}</span> : null}</label>)}</> }
+function Fields({
+  form,
+  update,
+  errors,
+  fields,
+}: {
+  form: CheckoutForm;
+  update: (field: keyof CheckoutForm, value: string) => void;
+  errors: Record<string, string>;
+  fields: [keyof CheckoutForm, string, string, string][];
+}) {
+  return (
+    <>
+      {fields.map(([key, label, placeholder, type]) => (
+        <label key={key} className="grid gap-2 text-sm font-semibold">
+          {label}
+          {type === "textarea" ? (
+            <textarea
+              value={form[key]}
+              onChange={(event) => update(key, event.target.value)}
+              placeholder={placeholder}
+              rows={key === "deliveryAddress" ? 3 : 2}
+              className="border bg-jp-surface p-3 font-normal"
+              aria-invalid={Boolean(errors[key])}
+              aria-describedby={errors[key] ? `${key}-error` : undefined}
+            />
+          ) : (
+            <input
+              value={form[key]}
+              onChange={(event) => update(key, event.target.value)}
+              placeholder={placeholder}
+              type={type}
+              inputMode={key === "whatsappNumber" ? "tel" : undefined}
+              autoComplete={
+                key === "customerName"
+                  ? "name"
+                  : key === "email"
+                    ? "email"
+                    : key === "whatsappNumber"
+                      ? "tel"
+                      : undefined
+              }
+              className="h-12 border bg-jp-surface px-3 font-normal"
+              aria-invalid={Boolean(errors[key])}
+              aria-describedby={errors[key] ? `${key}-error` : undefined}
+            />
+          )}
+          {errors[key] ? (
+            <span id={`${key}-error`} role="alert" className="font-normal text-destructive">
+              {errors[key]}
+            </span>
+          ) : null}
+        </label>
+      ))}
+    </>
+  );
+}
 
-export function Confirmation({ order, businessNumber }: { order: PublicOrder | null; businessNumber?: string }) { const [copied, setCopied] = useState(false); if (!order) return <section className="mx-auto max-w-public-container px-public-gutter-mobile py-20 text-center lg:px-public-gutter-desktop"><h1 className="font-display text-5xl">We can’t find that order confirmation.</h1><p className="mt-4 text-jp-text-secondary">For privacy, order details are available only from the secure confirmation link after checkout.</p><div className="mt-7 flex justify-center gap-3"><Link href={siteConfig.routes.perfumes} className="bg-jp-text-primary px-5 py-3 text-sm font-semibold text-jp-surface">Browse Perfumes</Link><Link href={siteConfig.routes.cart} className="border px-5 py-3 text-sm font-semibold">View Cart</Link></div></section>; const url = whatsappUrl(businessNumber, order.reference, order.items); return <section className="mx-auto max-w-public-container px-public-gutter-mobile py-12 lg:px-public-gutter-desktop lg:py-16"><div className="grid gap-12 lg:grid-cols-[1fr_29rem]"><div><p className="text-xs font-semibold uppercase tracking-[.16em] text-jp-olive">Order received</p><h1 className="mt-4 max-w-2xl font-display text-6xl lg:text-7xl">Your order is confirmed.</h1><p className="mt-5 max-w-xl leading-7 text-jp-text-secondary">Your order has been saved. Continue on WhatsApp with your reference to receive payment details and confirm delivery.</p><div className="mt-8 flex flex-wrap gap-3">{url ? <a href={url} target="_blank" rel="noreferrer" className="bg-jp-text-primary px-6 py-4 text-sm font-bold uppercase tracking-[.08em] text-jp-surface">Continue on WhatsApp</a> : <button disabled className="bg-jp-text-primary px-6 py-4 text-sm font-bold uppercase tracking-[.08em] text-jp-surface opacity-45">WhatsApp unavailable</button>}<Link href={siteConfig.routes.perfumes} className="border border-jp-text-primary px-6 py-4 text-sm font-bold uppercase tracking-[.08em]">Browse Perfumes</Link></div></div><aside className="flex flex-col justify-between border bg-jp-green-surface p-8"><p className="text-xs font-semibold uppercase tracking-[.16em] text-jp-olive">Your order reference</p><strong className="my-8 whitespace-nowrap font-display text-4xl lg:text-5xl">{order.reference}</strong><button type="button" onClick={async () => { try { await navigator.clipboard.writeText(order.reference); setCopied(true); } catch { setCopied(false); } }} className="border-t pt-4 text-left text-sm font-semibold">{copied ? "Copied" : "Copy Reference"}</button></aside></div><div className="mt-12 grid gap-8 lg:grid-cols-2"><Summary order={order} /><section className="border bg-jp-surface p-6"><h2 className="font-display text-4xl">What happens next</h2><ol className="mt-6 space-y-5 text-sm leading-6 text-jp-text-secondary"><li><strong className="mr-3 text-jp-text-primary">01</strong>Continue on WhatsApp with your order reference.</li><li><strong className="mr-3 text-jp-text-primary">02</strong>Confirm availability, payment, and delivery details.</li><li><strong className="mr-3 text-jp-text-primary">03</strong>We’ll confirm your fulfilment details before dispatch.</li></ol><p className="mt-6 border-t pt-4 text-sm text-jp-text-secondary">No payment has been taken online.</p></section></div></section>; }
+export function Confirmation({
+  order,
+  businessNumber,
+}: {
+  order: PublicOrder | null;
+  businessNumber?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  if (!order)
+    return (
+      <section className="mx-auto max-w-public-container px-public-gutter-mobile py-20 text-center lg:px-public-gutter-desktop">
+        <h1 className="font-display text-5xl">We can’t find that order confirmation.</h1>
+        <p className="mt-4 text-jp-text-secondary">
+          For privacy, order details are available only from the secure confirmation link after
+          checkout.
+        </p>
+        <div className="mt-7 flex justify-center gap-3">
+          <Link
+            href={siteConfig.routes.perfumes}
+            className="bg-jp-text-primary px-5 py-3 text-sm font-semibold text-jp-surface"
+          >
+            Browse Perfumes
+          </Link>
+          <Link href={siteConfig.routes.cart} className="border px-5 py-3 text-sm font-semibold">
+            View Cart
+          </Link>
+        </div>
+      </section>
+    );
+  const url = whatsappUrl(businessNumber, order.reference, order.items);
+  return (
+    <section className="mx-auto max-w-public-container px-public-gutter-mobile py-12 lg:px-public-gutter-desktop lg:py-16">
+      <div className="grid gap-12 lg:grid-cols-[1fr_29rem]">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[.16em] text-jp-olive">
+            Order received
+          </p>
+          <h1 className="mt-4 max-w-2xl font-display text-6xl lg:text-7xl">
+            Your order is confirmed.
+          </h1>
+          <p className="mt-5 max-w-xl leading-7 text-jp-text-secondary">
+            Your order has been saved. Continue on WhatsApp with your reference to receive payment
+            details and confirm delivery.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            {url ? (
+              <a
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="bg-jp-text-primary px-6 py-4 text-sm font-bold uppercase tracking-[.08em] text-jp-surface"
+              >
+                Continue on WhatsApp
+              </a>
+            ) : (
+              <button
+                disabled
+                className="bg-jp-text-primary px-6 py-4 text-sm font-bold uppercase tracking-[.08em] text-jp-surface opacity-45"
+              >
+                WhatsApp unavailable
+              </button>
+            )}
+            <Link
+              href={siteConfig.routes.perfumes}
+              className="border border-jp-text-primary px-6 py-4 text-sm font-bold uppercase tracking-[.08em]"
+            >
+              Browse Perfumes
+            </Link>
+          </div>
+        </div>
+        <aside className="flex flex-col justify-between border bg-jp-green-surface p-8">
+          <p className="text-xs font-semibold uppercase tracking-[.16em] text-jp-olive">
+            Your order reference
+          </p>
+          <strong className="my-8 whitespace-nowrap font-display text-4xl lg:text-5xl">
+            {order.reference}
+          </strong>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(order.reference);
+                setCopied(true);
+              } catch {
+                setCopied(false);
+              }
+            }}
+            className="border-t pt-4 text-left text-sm font-semibold"
+          >
+            {copied ? "Copied" : "Copy Reference"}
+          </button>
+        </aside>
+      </div>
+      <div className="mt-12 grid gap-8 lg:grid-cols-2">
+        <Summary order={order} />
+        <section className="border bg-jp-surface p-6">
+          <h2 className="font-display text-4xl">What happens next</h2>
+          <ol className="mt-6 space-y-5 text-sm leading-6 text-jp-text-secondary">
+            <li>
+              <strong className="mr-3 text-jp-text-primary">01</strong>Continue on WhatsApp with
+              your order reference.
+            </li>
+            <li>
+              <strong className="mr-3 text-jp-text-primary">02</strong>Confirm availability,
+              payment, and delivery details.
+            </li>
+            <li>
+              <strong className="mr-3 text-jp-text-primary">03</strong>We’ll confirm your fulfilment
+              details before dispatch.
+            </li>
+          </ol>
+          <p className="mt-6 border-t pt-4 text-sm text-jp-text-secondary">
+            No payment has been taken online.
+          </p>
+        </section>
+      </div>
+    </section>
+  );
+}
 
-type OrderRow = { reference: string; customerName: string; whatsappNumber: string; subtotalMinor: number; status: string; createdAt: Date; itemCount: number };
-export function AdminOrders({ orders, query, status }: { orders: OrderRow[]; query?: string; status?: string }) { const filtered = Boolean(query || status); return <section><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[.14em] text-jp-olive">Orders</p><h1 className="mt-2 font-display text-5xl">Orders</h1></div></div><form className="mt-7 flex flex-wrap gap-3" action="/admin/orders"><input defaultValue={query} name="query" placeholder="Search reference, customer or phone" className="h-11 min-w-64 border bg-jp-admin-surface px-3 text-sm" /><select name="status" defaultValue={status ?? ""} className="h-11 border bg-jp-admin-surface px-3 text-sm"><option value="">All statuses</option>{orderStatuses.map((value) => <option key={value} value={value}>{statusLabel(value)}</option>)}</select><button className="border px-4 text-sm font-semibold">Filter</button></form>{orders.length ? <><div className="mt-7 hidden overflow-x-auto border lg:block"><table className="w-full text-left text-sm"><thead className="border-b text-xs uppercase tracking-[.1em] text-jp-text-secondary"><tr><th className="p-4">Reference</th><th>Customer</th><th>Placed</th><th>Items</th><th>Total</th><th>Status</th></tr></thead><tbody>{orders.map((order) => <tr key={order.reference} className="border-b last:border-0"><td className="p-4 font-semibold"><Link href={siteConfig.routes.adminOrder(order.reference)}>{order.reference}</Link></td><td>{order.customerName}<br/><span className="text-xs text-jp-text-secondary">{order.whatsappNumber}</span></td><td>{new Intl.DateTimeFormat("en-NG", { dateStyle: "medium" }).format(order.createdAt)}</td><td>{order.itemCount}</td><td>{formatNairaFromMinor(order.subtotalMinor)}</td><td><span className="border px-2 py-1 text-xs">{statusLabel(order.status)}</span></td></tr>)}</tbody></table></div><div className="mt-7 grid gap-3 lg:hidden">{orders.map((order) => <Link key={order.reference} href={siteConfig.routes.adminOrder(order.reference)} className="border bg-jp-admin-surface p-4"><div className="flex justify-between"><strong>{order.reference}</strong><span className="text-xs">{statusLabel(order.status)}</span></div><p className="mt-3">{order.customerName}</p><p className="text-sm text-jp-text-secondary">{order.whatsappNumber}</p><div className="mt-4 flex justify-between text-sm"><span>{order.itemCount} items</span><strong>{formatNairaFromMinor(order.subtotalMinor)}</strong></div></Link>)}</div></> : <EmptyState className="mt-8" eyebrow={filtered ? "No matching orders" : "Orders empty"} title={filtered ? "No orders match these filters." : "No orders have been placed yet."} description={filtered ? "Clear the search or choose another status to see the order list." : "New customer orders will appear here after checkout creates a saved order."}>{filtered ? <Link href={siteConfig.routes.adminOrders} className="border border-jp-admin-action px-4 py-3 text-sm font-semibold">Clear filters</Link> : null}</EmptyState>}</section>; }
+type OrderRow = {
+  reference: string;
+  customerName: string;
+  whatsappNumber: string;
+  subtotalMinor: number;
+  status: string;
+  createdAt: Date;
+  itemCount: number;
+};
+export function AdminOrders({
+  orders,
+  query,
+  status,
+}: {
+  orders: OrderRow[];
+  query?: string;
+  status?: string;
+}) {
+  const filtered = Boolean(query || status);
+  return (
+    <section>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[.14em] text-jp-olive">Orders</p>
+          <h1 className="mt-2 font-display text-5xl">Orders</h1>
+        </div>
+      </div>
+      <form className="mt-7 flex flex-wrap gap-3" action="/admin/orders">
+        <input
+          defaultValue={query}
+          name="query"
+          placeholder="Search reference, customer or phone"
+          className="h-11 min-w-64 border bg-jp-admin-surface px-3 text-sm"
+        />
+        <select
+          name="status"
+          defaultValue={status ?? ""}
+          className="h-11 border bg-jp-admin-surface px-3 text-sm"
+        >
+          <option value="">All statuses</option>
+          {orderStatuses.map((value) => (
+            <option key={value} value={value}>
+              {statusLabel(value)}
+            </option>
+          ))}
+        </select>
+        <button className="border px-4 text-sm font-semibold">Filter</button>
+      </form>
+      {orders.length ? (
+        <>
+          <div className="mt-7 hidden overflow-x-auto border lg:block">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b text-xs uppercase tracking-[.1em] text-jp-text-secondary">
+                <tr>
+                  <th className="p-4">Reference</th>
+                  <th>Customer</th>
+                  <th>Placed</th>
+                  <th>Items</th>
+                  <th>Total</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((order) => (
+                  <tr key={order.reference} className="border-b last:border-0">
+                    <td className="p-4 font-semibold">
+                      <Link href={siteConfig.routes.adminOrder(order.reference)}>
+                        {order.reference}
+                      </Link>
+                    </td>
+                    <td>
+                      {order.customerName}
+                      <br />
+                      <span className="text-xs text-jp-text-secondary">{order.whatsappNumber}</span>
+                    </td>
+                    <td>
+                      {new Intl.DateTimeFormat("en-NG", { dateStyle: "medium" }).format(
+                        order.createdAt,
+                      )}
+                    </td>
+                    <td>{order.itemCount}</td>
+                    <td>{formatNairaFromMinor(order.subtotalMinor)}</td>
+                    <td>
+                      <span className="border px-2 py-1 text-xs">{statusLabel(order.status)}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-7 grid gap-3 lg:hidden">
+            {orders.map((order) => (
+              <Link
+                key={order.reference}
+                href={siteConfig.routes.adminOrder(order.reference)}
+                className="border bg-jp-admin-surface p-4"
+              >
+                <div className="flex justify-between">
+                  <strong>{order.reference}</strong>
+                  <span className="text-xs">{statusLabel(order.status)}</span>
+                </div>
+                <p className="mt-3">{order.customerName}</p>
+                <p className="text-sm text-jp-text-secondary">{order.whatsappNumber}</p>
+                <div className="mt-4 flex justify-between text-sm">
+                  <span>{order.itemCount} items</span>
+                  <strong>{formatNairaFromMinor(order.subtotalMinor)}</strong>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </>
+      ) : (
+        <EmptyState
+          className="mt-8"
+          eyebrow={filtered ? "No matching orders" : "Orders empty"}
+          title={filtered ? "No orders match these filters." : "No orders have been placed yet."}
+          description={
+            filtered
+              ? "Clear the search or choose another status to see the order list."
+              : "New customer orders will appear here after checkout creates a saved order."
+          }
+        >
+          {filtered ? (
+            <Link
+              href={siteConfig.routes.adminOrders}
+              className="border border-jp-admin-action px-4 py-3 text-sm font-semibold"
+            >
+              Clear filters
+            </Link>
+          ) : null}
+        </EmptyState>
+      )}
+    </section>
+  );
+}
 
-export function AdminOrderDetail({ order }: { order: (PublicOrder & { customerName?: string; whatsappNumber?: string; email?: string | null; deliveryArea?: string; deliveryAddress?: string; orderNote?: string | null; events?: { id: string; fromStatus: string | null; toStatus: string; createdAt: Date }[] }) | null }) { const [message, setMessage] = useState(""); const [pending, start] = useTransition(); const [status, setStatus] = useState(order?.status ?? "NEW"); if (!order) return <section><h1 className="font-display text-5xl">Order not found</h1><p className="mt-4 text-jp-text-secondary">This order does not exist or is no longer available.</p><Link href={siteConfig.routes.adminOrders} className="mt-6 inline-block border px-4 py-3 text-sm">Back to Orders</Link></section>; const url = whatsappUrl(order.whatsappNumber, order.reference, order.items); return <section><Link href={siteConfig.routes.adminOrders} className="text-sm">← Orders</Link><div className="mt-5 flex flex-wrap items-center justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[.14em] text-jp-olive">Order</p><h1 className="mt-2 font-display text-5xl">{order.reference}</h1></div><span className="border px-3 py-2 text-sm">{statusLabel(order.status)}</span></div><div className="mt-8 grid gap-7 lg:grid-cols-[1fr_22rem]"><div className="space-y-7"><Summary order={order} /><section className="border bg-jp-admin-surface p-6"><h2 className="font-display text-3xl">Activity</h2><ol className="mt-5 space-y-4">{(order.events ?? []).map((event) => <li key={event.id} className="border-l pl-4 text-sm"><strong>{statusLabel(event.toStatus)}</strong><p className="mt-1 text-jp-text-secondary">{new Intl.DateTimeFormat("en-NG", { dateStyle: "medium", timeStyle: "short" }).format(event.createdAt)}{event.fromStatus ? ` · changed from ${statusLabel(event.fromStatus)}` : " · order placed"}</p></li>)}</ol></section></div><aside className="space-y-6"><section className="border bg-jp-admin-surface p-5"><h2 className="font-display text-3xl">Customer</h2><dl className="mt-4 space-y-3 text-sm"><div><dt className="text-jp-text-secondary">Name</dt><dd>{order.customerName}</dd></div><div><dt className="text-jp-text-secondary">WhatsApp</dt><dd>{order.whatsappNumber}</dd></div>{order.email ? <div><dt className="text-jp-text-secondary">Email</dt><dd>{order.email}</dd></div> : null}</dl>{url ? <a href={url} target="_blank" rel="noreferrer" className="mt-5 inline-block border px-4 py-3 text-sm font-semibold">Continue on WhatsApp</a> : null}</section><section className="border bg-jp-admin-surface p-5"><h2 className="font-display text-3xl">Delivery</h2><p className="mt-4 text-sm"><strong>{order.deliveryArea}</strong><br/>{order.deliveryAddress}</p>{order.orderNote ? <p className="mt-4 text-sm text-jp-text-secondary">{order.orderNote}</p> : null}</section><section className="border bg-jp-admin-surface p-5"><h2 className="font-display text-3xl">Update status</h2><select value={status} onChange={(event) => setStatus(event.target.value)} className="mt-4 h-11 w-full border bg-white px-3 text-sm">{orderStatuses.map((value) => <option key={value} value={value}>{statusLabel(value)}</option>)}</select><button disabled={pending || status === order.status} onClick={() => start(async () => { const result = await changeOrderStatus(order.reference, status); setMessage("error" in result ? (result.error ?? "Unable to update this order.") : "unchanged" in result ? "Status is already current." : "Status updated."); })} className="mt-3 w-full bg-jp-admin-action py-3 text-sm font-semibold text-white disabled:opacity-45">Save status</button>{message ? <p className="mt-3 text-sm" role="status">{message}</p> : null}</section></aside></div></section>; }
+export function AdminOrderDetail({
+  order,
+}: {
+  order:
+    | (PublicOrder & {
+        customerName?: string;
+        whatsappNumber?: string;
+        email?: string | null;
+        deliveryArea?: string;
+        deliveryAddress?: string;
+        orderNote?: string | null;
+        events?: { id: string; fromStatus: string | null; toStatus: string; createdAt: Date }[];
+      })
+    | null;
+}) {
+  const [message, setMessage] = useState("");
+  const [pending, start] = useTransition();
+  const [status, setStatus] = useState(order?.status ?? "NEW");
+  if (!order)
+    return (
+      <section>
+        <h1 className="font-display text-5xl">Order not found</h1>
+        <p className="mt-4 text-jp-text-secondary">
+          This order does not exist or is no longer available.
+        </p>
+        <Link
+          href={siteConfig.routes.adminOrders}
+          className="mt-6 inline-block border px-4 py-3 text-sm"
+        >
+          Back to Orders
+        </Link>
+      </section>
+    );
+  const url = whatsappUrl(order.whatsappNumber, order.reference, order.items);
+  return (
+    <section>
+      <Link href={siteConfig.routes.adminOrders} className="text-sm">
+        ← Orders
+      </Link>
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[.14em] text-jp-olive">Order</p>
+          <h1 className="mt-2 font-display text-5xl">{order.reference}</h1>
+        </div>
+        <span className="border px-3 py-2 text-sm">{statusLabel(order.status)}</span>
+      </div>
+      <div className="mt-8 grid gap-7 lg:grid-cols-[1fr_22rem]">
+        <div className="space-y-7">
+          <Summary order={order} />
+          <section className="border bg-jp-admin-surface p-6">
+            <h2 className="font-display text-3xl">Activity</h2>
+            <ol className="mt-5 space-y-4">
+              {(order.events ?? []).map((event) => (
+                <li key={event.id} className="border-l pl-4 text-sm">
+                  <strong>{statusLabel(event.toStatus)}</strong>
+                  <p className="mt-1 text-jp-text-secondary">
+                    {new Intl.DateTimeFormat("en-NG", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    }).format(event.createdAt)}
+                    {event.fromStatus
+                      ? ` · changed from ${statusLabel(event.fromStatus)}`
+                      : " · order placed"}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </section>
+        </div>
+        <aside className="space-y-6">
+          <section className="border bg-jp-admin-surface p-5">
+            <h2 className="font-display text-3xl">Customer</h2>
+            <dl className="mt-4 space-y-3 text-sm">
+              <div>
+                <dt className="text-jp-text-secondary">Name</dt>
+                <dd>{order.customerName}</dd>
+              </div>
+              <div>
+                <dt className="text-jp-text-secondary">WhatsApp</dt>
+                <dd>{order.whatsappNumber}</dd>
+              </div>
+              {order.email ? (
+                <div>
+                  <dt className="text-jp-text-secondary">Email</dt>
+                  <dd>{order.email}</dd>
+                </div>
+              ) : null}
+            </dl>
+            {url ? (
+              <a
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-5 inline-block border px-4 py-3 text-sm font-semibold"
+              >
+                Continue on WhatsApp
+              </a>
+            ) : null}
+          </section>
+          <section className="border bg-jp-admin-surface p-5">
+            <h2 className="font-display text-3xl">Delivery</h2>
+            <p className="mt-4 text-sm">
+              <strong>{order.deliveryArea}</strong>
+              <br />
+              {order.deliveryAddress}
+            </p>
+            {order.orderNote ? (
+              <p className="mt-4 text-sm text-jp-text-secondary">{order.orderNote}</p>
+            ) : null}
+          </section>
+          <section className="border bg-jp-admin-surface p-5">
+            <h2 className="font-display text-3xl">Update status</h2>
+            <select
+              value={status}
+              onChange={(event) => setStatus(event.target.value)}
+              className="mt-4 h-11 w-full border bg-white px-3 text-sm"
+            >
+              {orderStatuses.map((value) => (
+                <option key={value} value={value}>
+                  {statusLabel(value)}
+                </option>
+              ))}
+            </select>
+            <button
+              disabled={pending || status === order.status}
+              onClick={() =>
+                start(async () => {
+                  const result = await changeOrderStatus(order.reference, status);
+                  setMessage(
+                    "error" in result
+                      ? (result.error ?? "Unable to update this order.")
+                      : "unchanged" in result
+                        ? "Status is already current."
+                        : "Status updated.",
+                  );
+                })
+              }
+              className="mt-3 w-full bg-jp-admin-action py-3 text-sm font-semibold text-white disabled:opacity-45"
+            >
+              Save status
+            </button>
+            {message ? (
+              <p className="mt-3 text-sm" role="status">
+                {message}
+              </p>
+            ) : null}
+          </section>
+        </aside>
+      </div>
+    </section>
+  );
+}
 
-export function AdminOverview({ overview, bestseller }: { overview: { awaitingAction: number; totalPerfumes: number; availablePerfumes: number; zeroStockVariants: number; ordersThisWeek: number; recentOrders: OrderRow[]; attention: { id: string; name: string; status: string }[]; bestseller: { id: string; name: string } | null }; bestseller: React.ReactNode }) {
-  const metrics = [["Orders awaiting action", overview.awaitingAction], ["Available perfumes", overview.availablePerfumes], ["Zero-stock variants", overview.zeroStockVariants], ["Orders this week", overview.ordersThisWeek]];
-  return <section><p className="text-xs font-semibold uppercase tracking-[.14em] text-jp-olive">Overview</p><h1 className="mt-2 font-display text-5xl">Good morning.</h1>{overview.totalPerfumes === 0 ? <EmptyState className="mt-8" eyebrow="Catalogue empty" title="Start with the first perfume." description="The public site is safely showing its catalogue-in-preparation state. Add a perfume here when confirmed product details are ready."><Link href={siteConfig.routes.adminNewPerfume} className="bg-jp-admin-action px-4 py-3 text-sm font-semibold text-white">Add perfume</Link></EmptyState> : null}<div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{metrics.map(([label, value]) => <div key={String(label)} className="border bg-jp-admin-surface p-5"><p className="text-sm text-jp-text-secondary">{label}</p><strong className="mt-4 block font-display text-5xl">{value}</strong></div>)}</div><div className="mt-7 grid gap-7 xl:grid-cols-[1fr_22rem]"><section className="border bg-jp-admin-surface p-6"><div className="flex justify-between"><h2 className="font-display text-3xl">Recent orders</h2><Link href={siteConfig.routes.adminOrders} className="text-sm">View all</Link></div>{overview.recentOrders.length ? <div className="mt-4 divide-y">{overview.recentOrders.map((order) => <Link href={siteConfig.routes.adminOrder(order.reference)} key={order.reference} className="flex justify-between gap-4 py-4 text-sm"><span><strong>{order.reference}</strong><br/><span className="text-jp-text-secondary">{order.customerName}</span></span><span className="text-right">{formatNairaFromMinor(order.subtotalMinor)}<br/><span className="text-xs text-jp-text-secondary">{statusLabel(order.status)}</span></span></Link>)}</div> : <p className="mt-5 text-sm text-jp-text-secondary">No orders yet. New orders will appear here after checkout.</p>}</section><section className="border bg-jp-admin-surface p-6"><h2 className="font-display text-3xl">Current Bestseller</h2><p className="mt-4 text-sm">{overview.bestseller?.name ?? "No Bestseller selected."}</p><div className="mt-5">{bestseller}</div></section><section className="border bg-jp-admin-surface p-6 xl:col-span-2"><div className="flex justify-between"><h2 className="font-display text-3xl">Catalogue attention</h2><Link href={siteConfig.routes.adminPerfumes} className="text-sm">Manage perfumes</Link></div>{overview.attention.length ? <ul className="mt-4 divide-y">{overview.attention.map((perfume) => <li key={perfume.id} className="flex justify-between py-3 text-sm"><span>{perfume.name}</span><span className="text-jp-text-secondary">{perfume.status === "DRAFT" ? "Draft" : "Out of stock"}</span></li>)}</ul> : <p className="mt-4 text-sm text-jp-text-secondary">{overview.totalPerfumes === 0 ? "Nothing to review until the first perfume is added." : "No catalogue attention needed."}</p>}</section></div></section>;
+export function AdminOverview({
+  overview,
+  bestseller,
+}: {
+  overview: {
+    awaitingAction: number;
+    totalPerfumes: number;
+    availablePerfumes: number;
+    zeroStockVariants: number;
+    ordersThisWeek: number;
+    recentOrders: OrderRow[];
+    attention: { id: string; name: string; status: string }[];
+    bestseller: { id: string; name: string } | null;
+  };
+  bestseller: React.ReactNode;
+}) {
+  const metrics = [
+    ["Orders awaiting action", overview.awaitingAction],
+    ["Available perfumes", overview.availablePerfumes],
+    ["Zero-stock variants", overview.zeroStockVariants],
+    ["Orders this week", overview.ordersThisWeek],
+  ];
+  return (
+    <section>
+      <p className="text-xs font-semibold uppercase tracking-[.14em] text-jp-olive">Overview</p>
+      <h1 className="mt-2 font-display text-5xl">Good morning.</h1>
+      {overview.totalPerfumes === 0 ? (
+        <EmptyState
+          className="mt-8"
+          eyebrow="Catalogue empty"
+          title="Start with the first perfume."
+          description="The public site is safely showing its catalogue-in-preparation state. Add a perfume here when confirmed product details are ready."
+        >
+          <Link
+            href={siteConfig.routes.adminNewPerfume}
+            className="bg-jp-admin-action px-4 py-3 text-sm font-semibold text-white"
+          >
+            Add perfume
+          </Link>
+        </EmptyState>
+      ) : null}
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {metrics.map(([label, value]) => (
+          <div key={String(label)} className="border bg-jp-admin-surface p-5">
+            <p className="text-sm text-jp-text-secondary">{label}</p>
+            <strong className="mt-4 block font-display text-5xl">{value}</strong>
+          </div>
+        ))}
+      </div>
+      <div className="mt-7 grid gap-7 xl:grid-cols-[1fr_22rem]">
+        <section className="border bg-jp-admin-surface p-6">
+          <div className="flex justify-between">
+            <h2 className="font-display text-3xl">Recent orders</h2>
+            <Link href={siteConfig.routes.adminOrders} className="text-sm">
+              View all
+            </Link>
+          </div>
+          {overview.recentOrders.length ? (
+            <div className="mt-4 divide-y">
+              {overview.recentOrders.map((order) => (
+                <Link
+                  href={siteConfig.routes.adminOrder(order.reference)}
+                  key={order.reference}
+                  className="flex justify-between gap-4 py-4 text-sm"
+                >
+                  <span>
+                    <strong>{order.reference}</strong>
+                    <br />
+                    <span className="text-jp-text-secondary">{order.customerName}</span>
+                  </span>
+                  <span className="text-right">
+                    {formatNairaFromMinor(order.subtotalMinor)}
+                    <br />
+                    <span className="text-xs text-jp-text-secondary">
+                      {statusLabel(order.status)}
+                    </span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-5 text-sm text-jp-text-secondary">
+              No orders yet. New orders will appear here after checkout.
+            </p>
+          )}
+        </section>
+        <section className="border bg-jp-admin-surface p-6">
+          <h2 className="font-display text-3xl">Current Bestseller</h2>
+          <p className="mt-4 text-sm">{overview.bestseller?.name ?? "No Bestseller selected."}</p>
+          <div className="mt-5">{bestseller}</div>
+        </section>
+        <section className="border bg-jp-admin-surface p-6 xl:col-span-2">
+          <div className="flex justify-between">
+            <h2 className="font-display text-3xl">Catalogue attention</h2>
+            <Link href={siteConfig.routes.adminPerfumes} className="text-sm">
+              Manage perfumes
+            </Link>
+          </div>
+          {overview.attention.length ? (
+            <ul className="mt-4 divide-y">
+              {overview.attention.map((perfume) => (
+                <li key={perfume.id} className="flex justify-between py-3 text-sm">
+                  <span>{perfume.name}</span>
+                  <span className="text-jp-text-secondary">
+                    {perfume.status === "DRAFT" ? "Draft" : "Out of stock"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-4 text-sm text-jp-text-secondary">
+              {overview.totalPerfumes === 0
+                ? "Nothing to review until the first perfume is added."
+                : "No catalogue attention needed."}
+            </p>
+          )}
+        </section>
+      </div>
+    </section>
+  );
 }

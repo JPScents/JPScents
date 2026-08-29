@@ -2,11 +2,11 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Shared UI component family |
-| Sources | Workspace `Form Controls`; Checkout; Admin Editor; Admin Order Detail |
-| Access | Public and protected forms |
+| Field   | Value                                                                                      |
+| ------- | ------------------------------------------------------------------------------------------ |
+| Type    | Shared UI component family                                                                 |
+| Sources | Workspace `Form Controls`; Checkout; Admin Editor; Admin Order Detail                      |
+| Access  | Public and protected forms                                                                 |
 | Purpose | Standardize labels, inputs, selections, validation, maintained tags, toggles, and actions. |
 
 ## Data and domain
@@ -16,10 +16,10 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Write | Submit owning feature form | Parent mutation validates authoritatively |
-| Read | Read configured select/tag options | Render controlled choices |
+| Kind  | Requirement                        | Trigger/result                            |
+| ----- | ---------------------------------- | ----------------------------------------- |
+| Write | Submit owning feature form         | Parent mutation validates authoritatively |
+| Read  | Read configured select/tag options | Render controlled choices                 |
 
 ## Components
 

@@ -2,7 +2,14 @@
 
 import type { ReactNode } from "react";
 
-import { Dialog, DialogCloseButton, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogCloseButton,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 type ModalShellProps = {
   open: boolean;
@@ -14,7 +21,15 @@ type ModalShellProps = {
   footer?: ReactNode;
 };
 
-export function ModalShell({ open, onOpenChange, title, description, trigger, children, footer }: ModalShellProps) {
+export function ModalShell({
+  open,
+  onOpenChange,
+  title,
+  description,
+  trigger,
+  children,
+  footer,
+}: ModalShellProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}

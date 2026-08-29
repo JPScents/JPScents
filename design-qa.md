@@ -15,14 +15,14 @@
 
 ## Viewports and normalization
 
-| Target | Source pixels | Implementation pixels | CSS viewport / density | Combined evidence |
-| --- | ---: | ---: | --- | --- |
-| Homepage desktop | 720 × 3055 at 0.5× (1440 × 6110 CSS) | 1440 × 6111 | 1440 × 900, DPR 1; implementation downsampled to 720 px wide | `output/playwright/compare-homepage-desktop.png` |
-| Homepage mobile | 390 × 4243 | 390 × 4228 | 390 × 844, DPR 1 | `output/playwright/compare-homepage-mobile.png` |
-| Homepage FAQ desktop | 720 × 410 at 0.5× | 1440 × 820 | 1440 px CSS width; implementation downsampled to 720 px wide | `output/playwright/compare-focus-homepage-desktop-faq.png` |
-| Homepage FAQ mobile | 390 × 423 | 390 × 427 | 390 px CSS width, DPR 1 | `output/playwright/compare-focus-homepage-mobile-faq.png` |
-| Product profile desktop | 648 × 114 at 0.5× | 1296 × 227 | 1296 px content width; implementation downsampled to 648 px wide | `output/playwright/compare-focus-product-detail-desktop-profile.png` |
-| Product disclosures mobile | 350 × 223 | 350 × 227 | 390 px viewport with 20 px gutters, DPR 1 | `output/playwright/compare-focus-product-detail-mobile-accordions.png` |
+| Target                     |                        Source pixels | Implementation pixels | CSS viewport / density                                           | Combined evidence                                                      |
+| -------------------------- | -----------------------------------: | --------------------: | ---------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Homepage desktop           | 720 × 3055 at 0.5× (1440 × 6110 CSS) |           1440 × 6111 | 1440 × 900, DPR 1; implementation downsampled to 720 px wide     | `output/playwright/compare-homepage-desktop.png`                       |
+| Homepage mobile            |                           390 × 4243 |            390 × 4228 | 390 × 844, DPR 1                                                 | `output/playwright/compare-homepage-mobile.png`                        |
+| Homepage FAQ desktop       |                    720 × 410 at 0.5× |            1440 × 820 | 1440 px CSS width; implementation downsampled to 720 px wide     | `output/playwright/compare-focus-homepage-desktop-faq.png`             |
+| Homepage FAQ mobile        |                            390 × 423 |             390 × 427 | 390 px CSS width, DPR 1                                          | `output/playwright/compare-focus-homepage-mobile-faq.png`              |
+| Product profile desktop    |                    648 × 114 at 0.5× |            1296 × 227 | 1296 px content width; implementation downsampled to 648 px wide | `output/playwright/compare-focus-product-detail-desktop-profile.png`   |
+| Product disclosures mobile |                            350 × 223 |             350 × 227 | 390 px viewport with 20 px gutters, DPR 1                        | `output/playwright/compare-focus-product-detail-mobile-accordions.png` |
 
 The focused comparisons use matching collapsed disclosure states. The broader Product Detail captures intentionally contain only two related items because the opt-in local catalogue has three total items and the current product is correctly excluded; this content-state difference is outside the disclosure/profile comparison.
 

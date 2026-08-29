@@ -22,11 +22,16 @@ describe("getCurrentAdmin", () => {
     mocks.createSupabaseServerClient.mockResolvedValue({
       auth: {
         getUser: vi.fn().mockResolvedValue({
-          data: { user: { id: "admin", email: adminConfig.trustedEmail, app_metadata: { role: "admin" } } },
+          data: {
+            user: { id: "admin", email: adminConfig.trustedEmail, app_metadata: { role: "admin" } },
+          },
           error: null,
         }),
       },
     });
-    await expect(getCurrentAdmin()).resolves.toEqual({ id: "admin", email: adminConfig.trustedEmail });
+    await expect(getCurrentAdmin()).resolves.toEqual({
+      id: "admin",
+      email: adminConfig.trustedEmail,
+    });
   });
 });

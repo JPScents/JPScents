@@ -7,10 +7,7 @@ import { requestMagicLink, type LoginState } from "./actions";
 const initialState: LoginState = {};
 
 export function LoginForm() {
-  const [state, action, pending] = useActionState(
-    requestMagicLink,
-    initialState,
-  );
+  const [state, action, pending] = useActionState(requestMagicLink, initialState);
 
   return (
     <form action={action} className="grid gap-5">

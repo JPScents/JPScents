@@ -2,12 +2,12 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Public Cart page |
-| Sources | Final Site Full Cart desktop/mobile and Empty Cart desktop |
-| Route/access | `/cart` · public |
-| Purpose | Let customers review and correct a multi-variant Cart before Checkout. |
+| Field        | Value                                                                  |
+| ------------ | ---------------------------------------------------------------------- |
+| Type         | Public Cart page                                                       |
+| Sources      | Final Site Full Cart desktop/mobile and Empty Cart desktop             |
+| Route/access | `/cart` · public                                                       |
+| Purpose      | Let customers review and correct a multi-variant Cart before Checkout. |
 
 ## Data and domain
 
@@ -18,10 +18,10 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Read | `resolveCartItems(variantIds)` | Hydrate catalogue truth for client identifiers |
-| Write | Local update/remove | Persist Cart and recompute totals |
+| Kind  | Requirement                    | Trigger/result                                 |
+| ----- | ------------------------------ | ---------------------------------------------- |
+| Read  | `resolveCartItems(variantIds)` | Hydrate catalogue truth for client identifiers |
+| Write | Local update/remove            | Persist Cart and recompute totals              |
 
 ## Components
 

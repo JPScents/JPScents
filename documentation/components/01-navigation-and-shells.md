@@ -2,11 +2,11 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Shared component family |
-| Sources | Workspace `Navigation & Shells`; all Final Site and Final Admin frames |
-| Access | Public shell and protected Admin shell |
+| Field   | Value                                                                                   |
+| ------- | --------------------------------------------------------------------------------------- |
+| Type    | Shared component family                                                                 |
+| Sources | Workspace `Navigation & Shells`; all Final Site and Final Admin frames                  |
+| Access  | Public shell and protected Admin shell                                                  |
 | Purpose | Provide consistent navigation, cart visibility, responsive menus, and layout ownership. |
 
 ## Data and domain
@@ -18,11 +18,11 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Read | Resolve local cart count | Header render and cart changes |
-| Read | Resolve Admin session | Protect Admin shell and display signed-in state |
-| Write | None | Menus and cart preview are local UI state |
+| Kind  | Requirement              | Trigger/result                                  |
+| ----- | ------------------------ | ----------------------------------------------- |
+| Read  | Resolve local cart count | Header render and cart changes                  |
+| Read  | Resolve Admin session    | Protect Admin shell and display signed-in state |
+| Write | None                     | Menus and cart preview are local UI state       |
 
 ## Components
 

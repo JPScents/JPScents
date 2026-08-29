@@ -2,12 +2,12 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Public Orders page |
-| Sources | Final Site Order Confirm desktop/mobile; Notion confirmation behaviour |
-| Route/access | `/checkout/confirm` · public only with secure confirmation access |
-| Purpose | Confirm the saved Order/reference and continue payment/fulfilment on WhatsApp. |
+| Field        | Value                                                                          |
+| ------------ | ------------------------------------------------------------------------------ |
+| Type         | Public Orders page                                                             |
+| Sources      | Final Site Order Confirm desktop/mobile; Notion confirmation behaviour         |
+| Route/access | `/checkout/confirm` · public only with secure confirmation access              |
+| Purpose      | Confirm the saved Order/reference and continue payment/fulfilment on WhatsApp. |
 
 ## Data and domain
 
@@ -18,10 +18,10 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Read | `getOrderConfirmation(confirmationToken)` | Return only the newly created Order projection |
-| Write | None | Copy reference and WhatsApp launch are client actions |
+| Kind  | Requirement                               | Trigger/result                                        |
+| ----- | ----------------------------------------- | ----------------------------------------------------- |
+| Read  | `getOrderConfirmation(confirmationToken)` | Return only the newly created Order projection        |
+| Write | None                                      | Copy reference and WhatsApp launch are client actions |
 
 ## Components
 

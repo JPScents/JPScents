@@ -2,11 +2,11 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Catalogue Admin component family |
-| Sources | Workspace `Bestseller Selection`; Admin Overview and selector overlay |
-| Access | Protected Admin Overview modal |
+| Field   | Value                                                                                 |
+| ------- | ------------------------------------------------------------------------------------- |
+| Type    | Catalogue Admin component family                                                      |
+| Sources | Workspace `Bestseller Selection`; Admin Overview and selector overlay                 |
+| Access  | Protected Admin Overview modal                                                        |
 | Purpose | Maintain exactly one eligible storefront Bestseller with minimal operational context. |
 
 ## Data and domain
@@ -17,10 +17,10 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Read | Search eligible Perfumes by name/character | Populate selector results |
-| Write | Replace Bestseller | Atomically clear previous and set selected Perfume |
+| Kind  | Requirement                                | Trigger/result                                     |
+| ----- | ------------------------------------------ | -------------------------------------------------- |
+| Read  | Search eligible Perfumes by name/character | Populate selector results                          |
+| Write | Replace Bestseller                         | Atomically clear previous and set selected Perfume |
 
 ## Components
 

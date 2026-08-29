@@ -19,11 +19,11 @@
 
 ## Feature boundaries
 
-| Feature | Owns | Does not own |
-| --- | --- | --- |
-| `catalogue` | Perfumes, variants, product discovery, related/featured/bestseller selection, Help Me Choose, Admin perfume management | Cart persistence, checkout, Orders |
-| `cart` | Client cart state, persistence, quantities, removal, preview/full-cart presentation | Product truth, stock mutation, Order creation |
-| `orders` | Checkout, cart revalidation, Order creation, confirmation, WhatsApp handoff, Admin order operations | Catalogue editing, client cart storage |
+| Feature     | Owns                                                                                                                   | Does not own                                  |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `catalogue` | Perfumes, variants, product discovery, related/featured/bestseller selection, Help Me Choose, Admin perfume management | Cart persistence, checkout, Orders            |
+| `cart`      | Client cart state, persistence, quantities, removal, preview/full-cart presentation                                    | Product truth, stock mutation, Order creation |
+| `orders`    | Checkout, cart revalidation, Order creation, confirmation, WhatsApp handoff, Admin order operations                    | Catalogue editing, client cart storage        |
 
 Checkout belongs to Orders because its successful result is a persisted Order. Homepage and Admin Overview are route compositions, not additional features.
 

@@ -2,12 +2,12 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Public Catalogue page with Cart UI state |
-| Sources | Final Site Product Detail desktop/mobile and Cart drawer/bottom-sheet variants |
-| Route/access | `/perfume/{slug}` · public; cart preview is UI-only |
-| Purpose | Explain one Perfume, select an exact variant/quantity, and add it without leaving the page. |
+| Field        | Value                                                                                       |
+| ------------ | ------------------------------------------------------------------------------------------- |
+| Type         | Public Catalogue page with Cart UI state                                                    |
+| Sources      | Final Site Product Detail desktop/mobile and Cart drawer/bottom-sheet variants              |
+| Route/access | `/perfume/{slug}` · public; cart preview is UI-only                                         |
+| Purpose      | Explain one Perfume, select an exact variant/quantity, and add it without leaving the page. |
 
 ## Data and domain
 
@@ -18,12 +18,12 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Read | `getPerfumeBySlug` | Public Perfume with variants |
-| Read | `getRelatedPerfumes` | Small available set sharing attributes, excluding current Perfume |
-| Read | Resolve current cart variants | Populate preview |
-| Write | Local `addCartItem` / update / remove | Merge same variant and open preview |
+| Kind  | Requirement                           | Trigger/result                                                    |
+| ----- | ------------------------------------- | ----------------------------------------------------------------- |
+| Read  | `getPerfumeBySlug`                    | Public Perfume with variants                                      |
+| Read  | `getRelatedPerfumes`                  | Small available set sharing attributes, excluding current Perfume |
+| Read  | Resolve current cart variants         | Populate preview                                                  |
+| Write | Local `addCartItem` / update / remove | Merge same variant and open preview                               |
 
 ## Components
 

@@ -2,12 +2,12 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Public Orders page |
-| Sources | Final Site Checkout desktop/mobile; Notion Checkout behaviour |
-| Route/access | `/checkout` · public, requires non-empty Cart |
-| Purpose | Collect minimum fulfilment details and atomically create a saved Order before WhatsApp. |
+| Field        | Value                                                                                   |
+| ------------ | --------------------------------------------------------------------------------------- |
+| Type         | Public Orders page                                                                      |
+| Sources      | Final Site Checkout desktop/mobile; Notion Checkout behaviour                           |
+| Route/access | `/checkout` · public, requires non-empty Cart                                           |
+| Purpose      | Collect minimum fulfilment details and atomically create a saved Order before WhatsApp. |
 
 ## Data and domain
 
@@ -19,10 +19,10 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Read | Resolve and revalidate Cart | Render review and validate eligibility |
-| Write | `createOrder` | Idempotently create Order/items/event and decrement quantities atomically |
+| Kind  | Requirement                 | Trigger/result                                                            |
+| ----- | --------------------------- | ------------------------------------------------------------------------- |
+| Read  | Resolve and revalidate Cart | Render review and validate eligibility                                    |
+| Write | `createOrder`               | Idempotently create Order/items/event and decrement quantities atomically |
 
 ## Components
 

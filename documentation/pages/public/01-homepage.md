@@ -2,12 +2,12 @@
 
 ## Identity
 
-| Field | Value |
-| --- | --- |
-| Type | Public page |
-| Sources | Final Site `Homepage · Desktop` and `Homepage · Mobile`; Notion Home structure |
-| Route/access | `/` · public |
-| Purpose | Lead with a real shoppable Perfume, offer curated browsing/guidance, and explain the Order-first flow. |
+| Field        | Value                                                                                                  |
+| ------------ | ------------------------------------------------------------------------------------------------------ |
+| Type         | Public page                                                                                            |
+| Sources      | Final Site `Homepage · Desktop` and `Homepage · Mobile`; Notion Home structure                         |
+| Route/access | `/` · public                                                                                           |
+| Purpose      | Lead with a real shoppable Perfume, offer curated browsing/guidance, and explain the Order-first flow. |
 
 ## Data and domain
 
@@ -18,10 +18,10 @@
 
 ## Operations
 
-| Kind | Requirement | Trigger/result |
-| --- | --- | --- |
-| Read | `getFeaturedPerfumes` | Return hero selection plus small featured available list |
-| Write | None | All actions navigate to Catalogue/Product/Help routes |
+| Kind  | Requirement           | Trigger/result                                           |
+| ----- | --------------------- | -------------------------------------------------------- |
+| Read  | `getFeaturedPerfumes` | Return hero selection plus small featured available list |
+| Write | None                  | All actions navigate to Catalogue/Product/Help routes    |
 
 ## Components
 
