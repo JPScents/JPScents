@@ -8,7 +8,8 @@ export {
   GalleryProductCard,
   RecommendationCard,
 } from "./components/public/PublicProductCards";
-export { ScentCharacterBrowse, scentCharacterContent } from "./components/public/ScentCharacter";
+export { ScentCharacterBrowse } from "./components/public/ScentCharacterBrowse";
+export { scentCharacterContent } from "./constants";
 export { listAdminPerfumes, getAdminPerfume, getEligibleBestsellerCandidates } from "./catalogue";
 export type { CatalogueFilters } from "./catalogue";
 export {

@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import type { Occasion, ScentCharacter, TimeOfDay } from "@/db/generated/client";
 import { siteConfig } from "@/config/site";
 import { RecommendationCard } from "./PublicProductCards";
-import { ScentCharacterSelect } from "./ScentCharacter";
+import { ScentCharacterSelect } from "./ScentCharacterSelect";
 import type { PublicPerfumeCard } from "../../public-catalogue";
 import { preferenceSummary } from "../../public-preferences";
 type Props = {

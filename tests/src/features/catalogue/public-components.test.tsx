@@ -15,7 +15,7 @@ vi.mock("next/image", () => ({
 }));
 
 import { VariantPurchaseControls } from "@/features/catalogue/components/public/PublicControls";
-import { ScentCharacterSelect } from "@/features/catalogue/components/public/ScentCharacter";
+import { ScentCharacterSelect } from "@/features/catalogue/components/public/ScentCharacterSelect";
 import { HelpMeChoose } from "@/features/catalogue/components/public/HelpMeChoose";
 import { CatalogueProductCard } from "@/features/catalogue/components/public/PublicProductCards";
 
