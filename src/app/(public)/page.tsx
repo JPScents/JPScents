@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CircleHelp } from "lucide-react";
 
 import { EmptyState } from "@/components/shared/EmptyState";
+import { HomepageFaqRows } from "@/components/home/HomepageFaqRows";
 import { MotionReveal } from "@/components/shared/MotionReveal";
 import { siteConfig } from "@/config/site";
 import { ProductBottlePlaceholder } from "@/components/shared/public/ProductBottlePlaceholder";
@@ -423,49 +424,6 @@ function OrderingSteps() {
   );
 }
 
-function FaqRows({
-  items,
-  desktop = false,
-}: {
-  items: readonly { question: string; answer: string }[];
-  desktop?: boolean;
-}) {
-  return (
-    <div className="border-t">
-      {items.map((item) => (
-        <details key={item.question} className="group border-b">
-          <summary
-            className={`flex cursor-pointer list-none items-center justify-between gap-6 [&::-webkit-details-marker]:hidden ${desktop ? "min-h-[94px]" : "min-h-[62px]"}`}
-          >
-            <span
-              className={desktop ? "font-display text-2xl leading-[30px]" : "text-sm leading-5"}
-            >
-              {item.question}
-            </span>
-            <span
-              className={`${desktop ? "text-lg leading-[30px]" : "text-xl font-light leading-5"} group-open:hidden`}
-              aria-hidden="true"
-            >
-              +
-            </span>
-            <span
-              className={`${desktop ? "text-lg leading-[30px]" : "text-xl font-light leading-5"} hidden group-open:inline`}
-              aria-hidden="true"
-            >
-              −
-            </span>
-          </summary>
-          <p
-            className={`${desktop ? "max-w-3xl pb-7 text-sm leading-6" : "pb-5 pr-8 text-[13px] leading-5"} text-jp-text-secondary`}
-          >
-            {item.answer}
-          </p>
-        </details>
-      ))}
-    </div>
-  );
-}
-
 function HomepageFaqs() {
   return (
     <MotionReveal>
@@ -486,10 +444,10 @@ function HomepageFaqs() {
           </p>
         </div>
         <div className="mt-6 lg:hidden">
-          <FaqRows items={mobileFaqs} />
+            <HomepageFaqRows items={mobileFaqs} />
         </div>
         <div className="mt-11 hidden lg:block">
-          <FaqRows items={desktopFaqs} desktop />
+            <HomepageFaqRows items={desktopFaqs} desktop />
         </div>
       </div>
     </section>
