@@ -22,7 +22,10 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("@/features/orders/actions", () => ({
+vi.mock("@/features/orders/actions/change-order-status.admin.action", () => ({
+  changeOrderStatus: vi.fn(),
+}));
+vi.mock("@/features/orders/actions/submit-order.action", () => ({
   submitOrder: mocks.submitOrder,
   changeOrderStatus: vi.fn(),
 }));

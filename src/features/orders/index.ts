@@ -13,4 +13,4 @@ export {
   getAdminOverview,
   orderStatuses,
 } from "./orders";
-export { readConfirmationCookie } from "./actions";
+export { readConfirmationCookie } from "./actions/read-confirmation-cookie.action";

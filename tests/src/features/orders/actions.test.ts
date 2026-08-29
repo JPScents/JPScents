@@ -14,7 +14,8 @@ vi.mock("@/features/orders/orders", () => ({
   createOrder: mocks.createOrder,
   updateOrderStatus: mocks.updateOrderStatus,
 }));
-import { changeOrderStatus, submitOrder } from "@/features/orders/actions";
+import { changeOrderStatus } from "@/features/orders/actions/change-order-status.admin.action";
+import { submitOrder } from "@/features/orders/actions/submit-order.action";
 
 describe("order server actions", () => {
   beforeEach(() => vi.clearAllMocks());

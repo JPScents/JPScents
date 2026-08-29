@@ -8,7 +8,8 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { ProductBottlePlaceholder } from "@/components/shared/public/ProductBottlePlaceholder";
 import { siteConfig } from "@/config/site";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
-import { submitOrder, changeOrderStatus } from "./actions";
+import { changeOrderStatus } from "./actions/change-order-status.admin.action";
+import { submitOrder } from "./actions/submit-order.action";
 
 type Line = {
   name: string;

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { EmptyState } from "@/components/shared/EmptyState";
 import type { Occasion, ScentCharacter, TimeOfDay } from "@/db/generated/client";
 import { siteConfig } from "@/config/site";
-import { RecommendationCard } from "./PublicProductCards";
+import { RecommendationCard } from "./RecommendationCard";
 import { ScentCharacterSelect } from "./ScentCharacterSelect";
 import type { PublicPerfumeCard } from "../../public-catalogue";
 import { preferenceSummary } from "../../public-preferences";

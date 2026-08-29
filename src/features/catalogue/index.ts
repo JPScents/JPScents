@@ -3,11 +3,9 @@ export { PerfumeEditor } from "./components/admin/PerfumeEditor";
 export { PerfumeList } from "./components/admin/PerfumeList";
 export { HelpMeChoose } from "./components/public/HelpMeChoose";
 export { VariantPurchaseControls } from "./components/public/PublicControls";
-export {
-  CatalogueProductCard,
-  GalleryProductCard,
-  RecommendationCard,
-} from "./components/public/PublicProductCards";
+export { CatalogueProductCard } from "./components/public/CatalogueProductCard";
+export { GalleryProductCard } from "./components/public/GalleryProductCard";
+export { RecommendationCard } from "./components/public/RecommendationCard";
 export { ScentCharacterBrowse } from "./components/public/ScentCharacterBrowse";
 export { scentCharacterContent } from "./constants";
 export { listAdminPerfumes, getAdminPerfume, getEligibleBestsellerCandidates } from "./catalogue";
