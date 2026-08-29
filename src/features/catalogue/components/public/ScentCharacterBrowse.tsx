@@ -4,6 +4,7 @@ import type { ScentCharacter } from "@/db/generated/client";
 import { siteConfig } from "@/config/site";
 import { scentCharacterContent } from "../../constants";
 
+/* eslint-disable @next/next/no-img-element -- local controlled scent assets are decorative. */
 export function ScentCharacterBrowse({ values }: { values: readonly ScentCharacter[] }) {
   return (
     <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4 lg:gap-6">

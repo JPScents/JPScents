@@ -3,6 +3,7 @@ import { Check } from "lucide-react";
 import type { ScentCharacter } from "@/db/generated/client";
 import { scentCharacterContent } from "../../constants";
 
+/* eslint-disable @next/next/no-img-element -- local controlled scent assets are decorative. */
 export function ScentCharacterSelect({
   value,
   selected,
