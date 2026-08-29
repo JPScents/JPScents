@@ -1,5 +1,9 @@
 import type { ScentCharacter } from "@/db/generated/client";
 
+export const scentCharacters = ["FRESH", "WARM", "SWEET", "WOODY"] as const;
+export const occasions = ["EVERYDAY", "WORK", "DATE_NIGHT", "SPECIAL_OCCASION"] as const;
+export const timesOfDay = ["DAY", "NIGHT"] as const;
+
 export const scentCharacterContent: Record<
   ScentCharacter,
   { label: string; cue: string; image: string }

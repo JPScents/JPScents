@@ -2,24 +2,26 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
+
 import { prisma } from "@/db/prisma";
 import { getCurrentAdmin } from "@/lib/auth/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { imageInputError } from "../fields";
 
-export type ImageActionState = { error?: string; ok?: boolean };
+import { validateImageInput } from "../schemas/image.schema";
+
+export type SavePrimaryImageState = { error?: string; ok?: boolean };
 
 export async function savePrimaryImage(
-  _: ImageActionState,
+  _: SavePrimaryImageState,
   formData: FormData,
-): Promise<ImageActionState> {
+): Promise<SavePrimaryImageState> {
   if (!(await getCurrentAdmin())) return { error: "You are not authorized to manage images." };
   const perfumeId = formData.get("perfumeId");
   const file = formData.get("image");
   const altText =
     typeof formData.get("altText") === "string" ? String(formData.get("altText")).trim() : "";
   if (typeof perfumeId !== "string") return { error: "Missing perfume." };
-  const error = imageInputError(file, altText);
+  const error = validateImageInput(file, altText);
   if (error) return { error };
   const perfume = await prisma.perfume.findUnique({
     where: { id: perfumeId },
@@ -49,28 +51,6 @@ export async function savePrimaryImage(
   }
   const previousPaths = perfume.images.map((existing) => existing.path);
   if (previousPaths.length) await supabase.storage.from("perfume-images").remove(previousPaths);
-  revalidatePath(`/admin/perfumes/${perfumeId}`);
-  return { ok: true };
-}
-
-export async function removePrimaryImage(
-  _: ImageActionState,
-  formData: FormData,
-): Promise<ImageActionState> {
-  if (!(await getCurrentAdmin())) return { error: "You are not authorized to manage images." };
-  const perfumeId = formData.get("perfumeId");
-  if (typeof perfumeId !== "string") return { error: "Missing perfume." };
-  const image = await prisma.perfumeImage.findFirst({
-    where: { perfumeId },
-    orderBy: { position: "asc" },
-  });
-  if (!image) return { ok: true };
-  const perfume = await prisma.perfume.findUnique({ where: { id: perfumeId } });
-  if (perfume?.status === "PUBLISHED")
-    return { error: "Unpublish this perfume before removing its required primary image." };
-  await prisma.perfumeImage.delete({ where: { id: image.id } });
-  const supabase = await createSupabaseServerClient();
-  await supabase.storage.from("perfume-images").remove([image.path]);
   revalidatePath(`/admin/perfumes/${perfumeId}`);
   return { ok: true };
 }

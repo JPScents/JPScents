@@ -3,11 +3,8 @@
 import { useActionState, useState } from "react";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
-import {
-  deleteVariant,
-  saveVariant,
-  type VariantActionState,
-} from "../../actions/variants.admin.action";
+import { deleteVariant, type DeleteVariantState } from "../../actions/delete-variant.admin.action";
+import { saveVariant, type SaveVariantState } from "../../actions/save-variant.admin.action";
 
 type Variant = {
   id: string;
@@ -15,7 +12,7 @@ type Variant = {
   priceMinor: number;
   quantity: number;
 };
-const initial: VariantActionState = {};
+const initial: SaveVariantState & DeleteVariantState = {};
 
 function VariantField({
   label,
@@ -49,7 +46,7 @@ export function VariantManager({
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Variant | null>(null);
   const [state, action, pending] = useActionState(
-    async (previous: VariantActionState, formData: FormData) => {
+    async (previous: SaveVariantState, formData: FormData) => {
       const result = await saveVariant(previous, formData);
       if (result.ok) setOpen(false);
       return result;

@@ -10,11 +10,13 @@ import {
   hasAvailablePerfumes,
   hasPublishedPerfumes,
   listPerfumes,
-  parsePreferences,
-  parseScent,
   preferenceSummary,
   recommendPerfumes,
 } from "@/features/catalogue/public-catalogue";
+import {
+  parsePreferences,
+  parseScent,
+} from "@/features/catalogue/parsers/public-preferences-query.parser";
 import { prisma } from "@/db/prisma";
 
 const perfume = (overrides: Record<string, unknown> = {}) =>

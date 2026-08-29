@@ -5,7 +5,9 @@ import { redirect } from "next/navigation";
 import { getCurrentAdmin } from "@/lib/auth/admin";
 import { prisma } from "@/db/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { parsePerfumeInput, parseStagedVariants, publishingErrors } from "../fields";
+import { parsePerfumeForm } from "../parsers/perfume-form.parser";
+import { parseStagedVariants } from "../parsers/staged-variants-form.parser";
+import { getPublishingErrors } from "../validators/publishing.validator";
 export type PerfumeActionState = { errors?: Record<string, string>; message?: string };
 const allowedImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 function stagedImage(formData: FormData) {
@@ -27,7 +29,7 @@ export async function savePerfume(
   if (!(await getCurrentAdmin()))
     return { message: "You are not authorized to manage the catalogue." };
   const id = formData.get("id");
-  const { input, errors } = parsePerfumeInput(formData);
+  const { input, errors } = parsePerfumeForm(formData);
   if (!input || Object.keys(errors).length) return { errors };
   const existing =
     typeof id === "string" && id
@@ -46,7 +48,7 @@ export async function savePerfume(
   const image = stagedImage(formData);
   if (image.error) return { errors: { primaryImage: image.error } };
   const variants = existing?.variants ?? staged.variants;
-  const publish = publishingErrors(
+  const publish = getPublishingErrors(
     input,
     existing?.images.length ?? (image.file ? 1 : 0),
     variants.filter((variant) => variant.quantity > 0 && variant.priceMinor >= 0).length,

@@ -1,3 +1,3 @@
 "use client";
 
-export { Checkout } from "./presentations";
+export { Checkout } from "./components/Checkout";

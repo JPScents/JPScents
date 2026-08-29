@@ -14,7 +14,7 @@ vi.mock("next/image", () => ({
   default: ({ alt }: { alt?: string }) => <span data-image-alt={alt} />,
 }));
 
-import { VariantPurchaseControls } from "@/features/catalogue/components/public/PublicControls";
+import { VariantPurchaseControls } from "@/features/catalogue/components/public/VariantPurchaseControls";
 import { ScentCharacterSelect } from "@/features/catalogue/components/public/ScentCharacterSelect";
 import { HelpMeChoose } from "@/features/catalogue/components/public/HelpMeChoose";
 import { CatalogueProductCard } from "@/features/catalogue/components/public/CatalogueProductCard";

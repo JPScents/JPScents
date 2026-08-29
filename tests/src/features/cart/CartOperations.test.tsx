@@ -1,8 +1,8 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const { resolveCartItems } = vi.hoisted(() => ({
-  resolveCartItems: vi.fn(async (items: Array<{ perfumeVariantId: string; quantity: number }>) =>
+const { resolveCart } = vi.hoisted(() => ({
+  resolveCart: vi.fn(async (items: Array<{ perfumeVariantId: string; quantity: number }>) =>
     items.map((item) => ({
       ...item,
       name: "Santal Veil",
@@ -15,7 +15,7 @@ const { resolveCartItems } = vi.hoisted(() => ({
     })),
   ),
 }));
-vi.mock("@/features/cart/cart-resolver.server", () => ({ resolveCartItems }));
+vi.mock("@/features/cart/actions/resolve-cart.action", () => ({ resolveCart }));
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
     <a href={href} {...props}>

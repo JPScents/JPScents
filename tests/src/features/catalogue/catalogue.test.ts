@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
-import {
-  normalizeSizeValue,
-  parseNairaToMinor,
-  parsePerfumeInput,
-  parseStagedVariants,
-  parseVariantInput,
-  publishingErrors,
-} from "@/features/catalogue/fields";
+import { parsePerfumeForm } from "@/features/catalogue/parsers/perfume-form.parser";
+import { parseStagedVariants } from "@/features/catalogue/parsers/staged-variants-form.parser";
+import { parseVariantForm } from "@/features/catalogue/parsers/variant-form.parser";
+import { parseNairaToMinor } from "@/features/catalogue/utils/price.utils";
+import { normalizeSizeValue } from "@/features/catalogue/utils/size.utils";
+import { getPublishingErrors } from "@/features/catalogue/validators/publishing.validator";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 
 describe("catalogue validation", () => {
@@ -14,9 +12,9 @@ describe("catalogue validation", () => {
     const draft = new FormData();
     draft.set("name", "Quiet Fig");
     draft.set("slug", "quiet-fig");
-    expect(parsePerfumeInput(draft).errors).toEqual({});
+    expect(parsePerfumeForm(draft).errors).toEqual({});
     draft.set("status", "PUBLISHED");
-    expect(parsePerfumeInput(draft).errors.scentCue).toBeDefined();
+    expect(parsePerfumeForm(draft).errors.scentCue).toBeDefined();
   });
   it("parses Naira strings without floating point arithmetic", () => {
     expect(parseNairaToMinor("1250.50")).toBe(125050);
@@ -24,7 +22,7 @@ describe("catalogue validation", () => {
     form.set("sizeValue", "50");
     form.set("price", "100.00");
     form.set("quantity", "0");
-    expect(parseVariantInput(form).input).toEqual({
+    expect(parseVariantForm(form).input).toEqual({
       sizeValue: "50",
       priceMinor: 10000,
       quantity: 0,
@@ -36,7 +34,7 @@ describe("catalogue validation", () => {
     form.set("sizeValue", "50");
     form.set("price", "100");
     form.set("quantity", "1.5");
-    expect(parseVariantInput(form).errors.quantity).toBeDefined();
+    expect(parseVariantForm(form).errors.quantity).toBeDefined();
   });
   it("validates staged variants before the first create", () => {
     expect(
@@ -73,8 +71,8 @@ describe("catalogue validation", () => {
     form.append("scentCharacters", "FRESH");
     form.append("occasions", "EVERYDAY");
     form.append("timesOfDay", "DAY");
-    const parsed = parsePerfumeInput(form);
-    expect(publishingErrors(parsed.input!, 0, 1).form).toContain("primary image");
-    expect(publishingErrors(parsed.input!, 1, 0).form).toContain("in-stock");
+    const parsed = parsePerfumeForm(form);
+    expect(getPublishingErrors(parsed.input!, 0, 1).form).toContain("primary image");
+    expect(getPublishingErrors(parsed.input!, 1, 0).form).toContain("in-stock");
   });
 });

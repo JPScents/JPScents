@@ -1,3 +1,3 @@
 "use client";
 
-export { VariantPurchaseControls } from "./components/public/PublicControls";
+export { VariantPurchaseControls } from "./components/public/VariantPurchaseControls";

@@ -4,11 +4,14 @@ import Image from "next/image";
 import { useActionState } from "react";
 import {
   removePrimaryImage,
+  type RemovePrimaryImageState,
+} from "../../actions/remove-primary-image.admin.action";
+import {
   savePrimaryImage,
-  type ImageActionState,
-} from "../../actions/image.admin.action";
+  type SavePrimaryImageState,
+} from "../../actions/save-primary-image.admin.action";
 
-const initial: ImageActionState = {};
+const initial: SavePrimaryImageState & RemovePrimaryImageState = {};
 
 export function PrimaryImageManager({
   perfumeId,

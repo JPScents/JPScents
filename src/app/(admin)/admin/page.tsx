@@ -1,11 +1,18 @@
-import { BestsellerSelector, getEligibleBestsellerCandidates } from "@/features/catalogue";
-import { AdminOverview, getAdminOverview } from "@/features/orders";
+import {
+  BestsellerSelector,
+  getCatalogueAdminOverview,
+  getEligibleBestsellerCandidates,
+} from "@/features/catalogue";
+import { AdminOverview } from "@/components/admin-overview/AdminOverview";
+import { getOrdersAdminOverview } from "@/features/orders";
 
 export default async function AdminPage() {
-  const [overview, candidates] = await Promise.all([
-    getAdminOverview(),
+  const [ordersOverview, catalogueOverview, candidates] = await Promise.all([
+    getOrdersAdminOverview(),
+    getCatalogueAdminOverview(),
     getEligibleBestsellerCandidates(),
   ]);
+  const overview = { ...ordersOverview, ...catalogueOverview };
   return (
     <AdminOverview
       overview={overview}

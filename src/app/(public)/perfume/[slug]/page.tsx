@@ -12,7 +12,7 @@ import {
   preferenceLabel,
   type PublicPerfumeDetail,
 } from "@/features/catalogue";
-import { VariantPurchaseControls } from "./VariantPurchaseControls";
+import { VariantPurchaseControls } from "@/components/perfume-detail/VariantPurchaseControls";
 
 export const dynamic = "force-dynamic";
 
@@ -165,72 +165,72 @@ export default async function PerfumeDetailPage({ params }: { params: Promise<{ 
   return (
     <>
       <MotionReveal priority>
-      <div className="mx-auto max-w-public-container px-public-gutter-mobile pt-5 text-sm text-jp-text-secondary lg:px-public-gutter-desktop">
-        <Link href={siteConfig.routes.perfumes} className="underline">
-          Perfumes
-        </Link>{" "}
-        <span aria-hidden="true">/</span> <span>{perfume.name}</span>
-      </div>
+        <div className="mx-auto max-w-public-container px-public-gutter-mobile pt-5 text-sm text-jp-text-secondary lg:px-public-gutter-desktop">
+          <Link href={siteConfig.routes.perfumes} className="underline">
+            Perfumes
+          </Link>{" "}
+          <span aria-hidden="true">/</span> <span>{perfume.name}</span>
+        </div>
       </MotionReveal>
       <MotionReveal priority>
-      <section className="mx-auto grid max-w-public-container gap-8 px-public-gutter-mobile py-8 lg:grid-cols-2 lg:px-public-gutter-desktop lg:py-14">
-        <div className="relative aspect-[4/5] overflow-hidden bg-jp-stone">
-          {perfume.primaryImageUrl ? (
-            <Image
-              src={perfume.primaryImageUrl}
-              alt={perfume.primaryImageAlt}
-              fill
-              loading="eager"
-              unoptimized
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              className="object-contain"
-            />
-          ) : (
-            <ProductBottlePlaceholder className="absolute inset-0" />
-          )}
-        </div>
-        <div className="lg:py-8">
-          {perfume.label ? (
-            <p className="text-sm uppercase tracking-[.18em] text-jp-olive">
-              {perfume.label} perfume
-            </p>
-          ) : null}
-          <div className="mt-3 flex items-end justify-between gap-4">
-            <h1 className="font-display text-[44px] leading-[46px] lg:text-[72px] lg:leading-[76px]">
-              {perfume.name}
-            </h1>
-            <p className="shrink-0 text-lg font-medium">{perfume.startingPrice}</p>
+        <section className="mx-auto grid max-w-public-container gap-8 px-public-gutter-mobile py-8 lg:grid-cols-2 lg:px-public-gutter-desktop lg:py-14">
+          <div className="relative aspect-[4/5] overflow-hidden bg-jp-stone">
+            {perfume.primaryImageUrl ? (
+              <Image
+                src={perfume.primaryImageUrl}
+                alt={perfume.primaryImageAlt}
+                fill
+                loading="eager"
+                unoptimized
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-contain"
+              />
+            ) : (
+              <ProductBottlePlaceholder className="absolute inset-0" />
+            )}
           </div>
-          <p className="mt-4 text-sm font-medium">{availability}</p>
-          <p className="mt-5 text-xl text-jp-text-secondary">{perfume.scentCue}</p>
-          <p className="mt-6 leading-7 text-jp-text-secondary">{perfume.description}</p>
-          <VariantPurchaseControls variants={perfume.variants} />
-          <MobileDetailAccordions perfume={perfume} />
-        </div>
-      </section>
+          <div className="lg:py-8">
+            {perfume.label ? (
+              <p className="text-sm uppercase tracking-[.18em] text-jp-olive">
+                {perfume.label} perfume
+              </p>
+            ) : null}
+            <div className="mt-3 flex items-end justify-between gap-4">
+              <h1 className="font-display text-[44px] leading-[46px] lg:text-[72px] lg:leading-[76px]">
+                {perfume.name}
+              </h1>
+              <p className="shrink-0 text-lg font-medium">{perfume.startingPrice}</p>
+            </div>
+            <p className="mt-4 text-sm font-medium">{availability}</p>
+            <p className="mt-5 text-xl text-jp-text-secondary">{perfume.scentCue}</p>
+            <p className="mt-6 leading-7 text-jp-text-secondary">{perfume.description}</p>
+            <VariantPurchaseControls variants={perfume.variants} />
+            <MobileDetailAccordions perfume={perfume} />
+          </div>
+        </section>
       </MotionReveal>
       <MotionReveal>
-      <DesktopProfile perfume={perfume} />
+        <DesktopProfile perfume={perfume} />
       </MotionReveal>
       {related.length > 0 ? (
         <MotionReveal>
-        <section className="bg-jp-surface px-5 py-16 lg:px-[72px] lg:pb-[96px] lg:pt-[92px]">
-          <div className="mx-auto max-w-[1296px]">
-            <p className="text-[11px] font-semibold uppercase leading-[14px] tracking-[.16em] text-jp-olive">
-              You may also like
-            </p>
-            <h2 className="mt-2 font-display text-[44px] leading-[46px] lg:text-[42px]">
-              More available perfumes
-            </h2>
-            <div className="mt-8 grid gap-[68px] lg:grid-cols-3 lg:gap-14">
+          <section className="bg-jp-surface px-5 py-16 lg:px-[72px] lg:pb-[96px] lg:pt-[92px]">
+            <div className="mx-auto max-w-[1296px]">
+              <p className="text-[11px] font-semibold uppercase leading-[14px] tracking-[.16em] text-jp-olive">
+                You may also like
+              </p>
+              <h2 className="mt-2 font-display text-[44px] leading-[46px] lg:text-[42px]">
+                More available perfumes
+              </h2>
+              <div className="mt-8 grid gap-[68px] lg:grid-cols-3 lg:gap-14">
                 {related.map((item, index) => (
                   <MotionReveal key={item.id} delay={Math.min(index, 2) * 0.04}>
                     <GalleryProductCard perfume={item} />
                   </MotionReveal>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
         </MotionReveal>
       ) : null}
     </>

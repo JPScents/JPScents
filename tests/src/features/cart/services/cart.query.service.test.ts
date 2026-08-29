@@ -4,7 +4,7 @@ const { findMany } = vi.hoisted(() => ({ findMany: vi.fn() }));
 vi.mock("@/db/prisma", () => ({ prisma: { perfumeVariant: { findMany } } }));
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: vi.fn() }));
 
-import { resolveCartItems } from "@/features/cart/cart-resolver.server";
+import { resolveCartItems } from "@/features/cart/services/cart.query.service";
 
 describe("resolveCartItems", () => {
   it("preserves requested order and classifies missing, unavailable, and over-quantity lines from current published data", async () => {

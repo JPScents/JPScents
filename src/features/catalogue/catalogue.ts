@@ -3,23 +3,10 @@ import "server-only";
 import { Prisma, type ScentCharacter } from "@/db/generated/client";
 import { prisma } from "@/db/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { scentCharacters } from "./fields";
+import { scentCharacters } from "./constants";
 
-export {
-  scentCharacters,
-  occasions,
-  timesOfDay,
-  parsePerfumeInput,
-  parseVariantInput,
-  publishingErrors,
-} from "./fields";
-export type { PerfumeInput, VariantInput } from "./fields";
-
-export type CatalogueFilters = {
-  query?: string;
-  availability?: "all" | "available" | "unavailable";
-  placement?: "all" | "featured" | "bestseller";
-};
+import type { CatalogueFilters } from "./types";
+export type { CatalogueFilters } from "./types";
 
 const details = {
   images: { orderBy: { position: "asc" } },
@@ -142,4 +129,23 @@ export async function getEligibleBestsellerCandidates(query = "") {
       }),
     })),
   );
+}
+
+export async function getCatalogueAdminOverview() {
+  const [totalPerfumes, availablePerfumes, zeroStockVariants, attention, bestseller] =
+    await Promise.all([
+      prisma.perfume.count(),
+      prisma.perfume.count({
+        where: { status: "PUBLISHED", variants: { some: { quantity: { gt: 0 } } } },
+      }),
+      prisma.perfumeVariant.count({ where: { quantity: 0 } }),
+      prisma.perfume.findMany({
+        where: { OR: [{ status: "DRAFT" }, { variants: { none: { quantity: { gt: 0 } } } }] },
+        select: { id: true, name: true, status: true },
+        take: 5,
+        orderBy: { updatedAt: "desc" },
+      }),
+      prisma.perfume.findFirst({ where: { isBestseller: true }, select: { id: true, name: true } }),
+    ]);
+  return { totalPerfumes, availablePerfumes, zeroStockVariants, attention, bestseller };
 }

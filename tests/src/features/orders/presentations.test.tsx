@@ -40,12 +40,8 @@ vi.mock("next/image", () => ({
   default: () => null,
 }));
 
-import {
-  AdminOrders,
-  AdminOverview,
-  Checkout,
-  Confirmation,
-} from "@/features/orders/presentations";
+import { AdminOverview } from "@/components/admin-overview/AdminOverview";
+import { AdminOrders, Checkout, Confirmation } from "@/features/orders";
 
 const placedOrder = {
   reference: "JP-ABCDEFG",

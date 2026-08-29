@@ -18,13 +18,12 @@ vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 
 import { setBestseller } from "@/features/catalogue/actions/bestseller.admin.action";
-import {
-  removePrimaryImage,
-  savePrimaryImage,
-} from "@/features/catalogue/actions/image.admin.action";
+import { removePrimaryImage } from "@/features/catalogue/actions/remove-primary-image.admin.action";
+import { savePrimaryImage } from "@/features/catalogue/actions/save-primary-image.admin.action";
 import { savePerfume } from "@/features/catalogue/actions/save-perfume.admin.action";
-import { deleteVariant, saveVariant } from "@/features/catalogue/actions/variants.admin.action";
-import { imageInputError } from "@/features/catalogue/fields";
+import { deleteVariant } from "@/features/catalogue/actions/delete-variant.admin.action";
+import { saveVariant } from "@/features/catalogue/actions/save-variant.admin.action";
+import { validateImageInput } from "@/features/catalogue/schemas/image.schema";
 
 describe("catalogue mutation boundaries", () => {
   beforeEach(() => {
@@ -63,9 +62,9 @@ describe("catalogue mutation boundaries", () => {
     const valid = new File(["image"], "bottle.webp", { type: "image/webp" });
     const invalidType = new File(["image"], "bottle.gif", { type: "image/gif" });
 
-    expect(imageInputError(valid, "Amber bottle")).toBeUndefined();
-    expect(imageInputError(valid, "")).toBe("Useful alt text is required.");
-    expect(imageInputError(invalidType, "Amber bottle")).toBe(
+    expect(validateImageInput(valid, "Amber bottle")).toBeUndefined();
+    expect(validateImageInput(valid, "")).toBe("Useful alt text is required.");
+    expect(validateImageInput(invalidType, "Amber bottle")).toBe(
       "Use JPEG, PNG, or WebP up to 5 MiB.",
     );
   });

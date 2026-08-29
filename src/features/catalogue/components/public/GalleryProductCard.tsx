@@ -6,7 +6,7 @@ import { motion, useReducedMotion } from "motion/react";
 
 import { ProductBottlePlaceholder } from "@/components/shared/public/ProductBottlePlaceholder";
 import { siteConfig } from "@/config/site";
-import type { PublicPerfumeCard } from "../../public-catalogue";
+import type { PublicPerfumeCard } from "../../types";
 
 export function GalleryProductCard({ perfume }: { perfume: PublicPerfumeCard }) {
   const reduceMotion = useReducedMotion();

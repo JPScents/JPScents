@@ -2,96 +2,24 @@ import "server-only";
 
 import {
   Prisma,
-  type Occasion,
   type Perfume,
   type PerfumeImage,
   type PerfumeVariant,
   type ScentCharacter,
-  type TimeOfDay,
 } from "@/db/generated/client";
 import { prisma } from "@/db/prisma";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 import { preferenceLabel } from "./public-preferences";
+import type { HelpPreferences, PublicPerfumeDetail, Recommendation } from "./types";
+import { mapPublicPerfumeCard } from "./mappers/public-perfume.mapper";
 export { preferenceLabel, preferenceSummary } from "./public-preferences";
-
-type PerfumeRow = Perfume & { images: PerfumeImage[]; variants: PerfumeVariant[] };
-
-export type PublicPerfumeCard = {
-  id: string;
-  slug: string;
-  name: string;
-  scentCue: string;
-  scentCharacters: ScentCharacter[];
-  primaryImageUrl?: string;
-  primaryImageAlt: string;
-  startingPriceMinor?: number;
-  startingPrice: string;
-  isAvailable: boolean;
-  label?: "Bestseller" | "Featured";
-};
-
-export type PublicPerfumeDetail = PublicPerfumeCard & {
-  description: string;
-  occasions: Occasion[];
-  timesOfDay: TimeOfDay[];
-  variants: Array<{
-    id: string;
-    sizeLabel: string;
-    priceMinor: number;
-    price: string;
-    quantity: number;
-    isAvailable: boolean;
-  }>;
-};
-
-export type HelpPreferences = {
-  scentCharacters: ScentCharacter[];
-  occasions: Occasion[];
-  timeOfDay?: TimeOfDay;
-};
-export type Recommendation = PublicPerfumeCard & { matchReason: string; score: number };
 
 const detailInclude = {
   images: { orderBy: { position: "asc" } },
   variants: { orderBy: { sizeValue: "asc" } },
 } as const;
 
-async function signedImageUrl(path?: string) {
-  if (!path) return undefined;
-  if (path.startsWith("/")) return path;
-  try {
-    const supabase = await createSupabaseServerClient();
-    const signed = await supabase.storage.from("perfume-images").createSignedUrl(path, 3600);
-    return signed.error ? undefined : signed.data.signedUrl;
-  } catch {
-    return undefined;
-  }
-}
-
-async function projectCard(perfume: PerfumeRow): Promise<PublicPerfumeCard> {
-  const availableVariants = perfume.variants.filter((variant) => variant.quantity > 0);
-  const startingPriceMinor = availableVariants.length
-    ? Math.min(...availableVariants.map((variant) => variant.priceMinor))
-    : undefined;
-  const primaryImage = perfume.images[0];
-  return {
-    id: perfume.id,
-    slug: perfume.slug,
-    name: perfume.name,
-    scentCue: perfume.scentCue,
-    scentCharacters: perfume.scentCharacters,
-    primaryImageUrl: await signedImageUrl(primaryImage?.path),
-    primaryImageAlt: primaryImage?.altText || "",
-    startingPriceMinor,
-    startingPrice:
-      startingPriceMinor === undefined
-        ? "Unavailable"
-        : `From ${formatNairaFromMinor(startingPriceMinor)}`,
-    isAvailable: availableVariants.length > 0,
-    label: perfume.isBestseller ? "Bestseller" : perfume.isFeatured ? "Featured" : undefined,
-  };
-}
+type PerfumeRow = Perfume & { images: PerfumeImage[]; variants: PerfumeVariant[] };
 
 async function publishedRows(where: Prisma.PerfumeWhereInput = {}) {
   return prisma.perfume.findMany({
@@ -121,8 +49,8 @@ export async function getFeaturedPerfumes() {
     available.find((perfume) => perfume.isBestseller) ??
     available.find((perfume) => perfume.isFeatured) ??
     available[0];
-  const products = await Promise.all(available.slice(0, 3).map(projectCard));
-  return { hero: hero ? await projectCard(hero) : undefined, products };
+  const products = await Promise.all(available.slice(0, 3).map(mapPublicPerfumeCard));
+  return { hero: hero ? await mapPublicPerfumeCard(hero) : undefined, products };
 }
 
 export async function listPerfumes(filters: { scentCharacter?: ScentCharacter } = {}) {
@@ -131,7 +59,7 @@ export async function listPerfumes(filters: { scentCharacter?: ScentCharacter } 
       filters.scentCharacter ? { scentCharacters: { has: filters.scentCharacter } } : {},
     ),
   );
-  return Promise.all(rows.map(projectCard));
+  return Promise.all(rows.map(mapPublicPerfumeCard));
 }
 
 export async function hasPublishedPerfumes() {
@@ -155,7 +83,7 @@ export async function getPerfumeBySlug(slug: string): Promise<PublicPerfumeDetai
     include: detailInclude,
   });
   if (!perfume) return null;
-  const card = await projectCard(perfume);
+  const card = await mapPublicPerfumeCard(perfume);
   return {
     ...card,
     description: perfume.description,
@@ -187,7 +115,7 @@ export async function getRelatedPerfumes(perfume: PublicPerfumeDetail, limit = 3
       a.name.localeCompare(b.name)
     );
   });
-  return Promise.all(rows.slice(0, limit).map(projectCard));
+  return Promise.all(rows.slice(0, limit).map(mapPublicPerfumeCard));
 }
 
 export async function recommendPerfumes(
@@ -227,40 +155,9 @@ export async function recommendPerfumes(
     );
   return Promise.all(
     ranked.slice(0, limit).map(async (item) => ({
-      ...(await projectCard(item.perfume)),
+      ...(await mapPublicPerfumeCard(item.perfume)),
       score: item.score,
       matchReason: item.matchReason,
     })),
   );
-}
-
-export const publicScentCharacters = ["FRESH", "WARM", "SWEET", "WOODY"] as const;
-export const publicOccasions = ["EVERYDAY", "WORK", "DATE_NIGHT", "SPECIAL_OCCASION"] as const;
-export const publicTimes = ["DAY", "NIGHT"] as const;
-
-export function parseScent(value: string | string[] | undefined): ScentCharacter | undefined {
-  return typeof value === "string" && publicScentCharacters.includes(value as ScentCharacter)
-    ? (value as ScentCharacter)
-    : undefined;
-}
-
-export function parsePreferences(
-  params: Record<string, string | string[] | undefined>,
-): HelpPreferences {
-  const values = (key: string, allowed: readonly string[]) =>
-    (Array.isArray(params[key])
-      ? params[key]
-      : typeof params[key] === "string"
-        ? params[key].split(",")
-        : []
-    ).filter((value): value is string => allowed.includes(value));
-  const time =
-    typeof params.time === "string" && publicTimes.includes(params.time as TimeOfDay)
-      ? (params.time as TimeOfDay)
-      : undefined;
-  return {
-    scentCharacters: values("scent", publicScentCharacters) as ScentCharacter[],
-    occasions: values("occasion", publicOccasions) as Occasion[],
-    timeOfDay: time,
-  };
 }

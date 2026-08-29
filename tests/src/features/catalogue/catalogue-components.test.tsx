@@ -4,20 +4,20 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/catalogue/actions/bestseller.admin.action", () => ({ setBestseller: vi.fn() }));
 vi.mock("@/features/catalogue/actions/save-perfume.admin.action", () => ({ savePerfume: vi.fn() }));
-vi.mock("@/features/catalogue/actions/variants.admin.action", () => ({
-  saveVariant: vi.fn(),
+vi.mock("@/features/catalogue/actions/save-variant.admin.action", () => ({ saveVariant: vi.fn() }));
+vi.mock("@/features/catalogue/actions/delete-variant.admin.action", () => ({
   deleteVariant: vi.fn(),
 }));
-vi.mock("@/features/catalogue/actions/image.admin.action", () => ({
+vi.mock("@/features/catalogue/actions/save-primary-image.admin.action", () => ({
   savePrimaryImage: vi.fn(),
+}));
+vi.mock("@/features/catalogue/actions/remove-primary-image.admin.action", () => ({
   removePrimaryImage: vi.fn(),
 }));
 
 import { BestsellerSelector } from "@/features/catalogue/components/admin/BestsellerSelector";
-import {
-  ProductPreview,
-  StagedVariantManager,
-} from "@/features/catalogue/components/admin/PerfumeEditor";
+import { ProductPreview } from "@/features/catalogue/components/admin/ProductPreview";
+import { StagedVariantManager } from "@/features/catalogue/components/admin/StagedVariantManager";
 import { PerfumeList } from "@/features/catalogue/components/admin/PerfumeList";
 
 function StagedFixture() {

@@ -8,7 +8,7 @@ import type { Occasion, ScentCharacter, TimeOfDay } from "@/db/generated/client"
 import { siteConfig } from "@/config/site";
 import { RecommendationCard } from "./RecommendationCard";
 import { ScentCharacterSelect } from "./ScentCharacterSelect";
-import type { PublicPerfumeCard } from "../../public-catalogue";
+import type { PublicPerfumeCard } from "../../types";
 import { preferenceSummary } from "../../public-preferences";
 type Props = {
   initial: { scentCharacters: ScentCharacter[]; occasions: Occasion[]; timeOfDay?: TimeOfDay };
