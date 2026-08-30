@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { forwardRef } from "react";
 import { Minus, Plus } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 
@@ -47,16 +48,20 @@ function QuantityStepper({ line }: { line: ReturnType<typeof useCart>["lines"][n
   );
 }
 
-export function CartLine({ line }: { line: ReturnType<typeof useCart>["lines"][number] }) {
+export const CartLine = forwardRef<
+  HTMLElement,
+  { line: ReturnType<typeof useCart>["lines"][number] }
+>(function CartLine({ line }, ref) {
   const { removeItem, changeQuantity } = useCart();
   const reduceMotion = useReducedMotion();
   const name = line.name ?? "Unavailable perfume";
   return (
     <motion.article
+      ref={ref}
       layout="position"
       initial={reduceMotion ? false : { opacity: 0.99, y: 2 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -2 }}
+      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
       transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: "easeOut" }}
       className="flex gap-4 border-b py-5"
     >
@@ -83,15 +88,27 @@ export function CartLine({ line }: { line: ReturnType<typeof useCart>["lines"][n
             ) : null}
           </div>
           {line.unitPriceMinor !== undefined ? (
-            <p className="shrink-0 text-sm font-semibold">
-              {formatNairaFromMinor(line.unitPriceMinor)}
-            </p>
+            <div className="shrink-0 text-right">
+              <p className="text-[11px] uppercase tracking-[.12em] text-jp-text-secondary">
+                Unit price
+              </p>
+              <p className="mt-1 text-sm font-semibold">
+                {formatNairaFromMinor(line.unitPriceMinor)}
+              </p>
+            </div>
           ) : null}
         </div>
         {line.isValid ? (
           <div className="mt-4 flex items-center justify-between gap-3">
             <QuantityStepper line={line} />
-            <p className="text-sm font-medium">{formatNairaFromMinor(line.lineAmountMinor)}</p>
+            <div className="text-right">
+              <p className="text-[11px] uppercase tracking-[.12em] text-jp-text-secondary">
+                Line total
+              </p>
+              <p className="mt-1 text-sm font-medium">
+                {formatNairaFromMinor(line.lineAmountMinor)}
+              </p>
+            </div>
           </div>
         ) : (
           <div className="mt-4">
@@ -120,4 +137,4 @@ export function CartLine({ line }: { line: ReturnType<typeof useCart>["lines"][n
       </div>
     </motion.article>
   );
-}
+});

@@ -8,7 +8,7 @@ import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 import { useCart } from "../CartProvider";
 
 export function CartSummary({ preview = false }: { preview?: boolean }) {
-  const { count, subtotalMinor, hasInvalidLines, resolutionState } = useCart();
+  const { count, subtotalMinor, hasInvalidLines, resolutionState, setOpen } = useCart();
   const blockedMessage =
     resolutionState === "resolving"
       ? "Checking current availability…"
@@ -33,7 +33,11 @@ export function CartSummary({ preview = false }: { preview?: boolean }) {
           href={siteConfig.routes.checkout}
           aria-disabled={hasInvalidLines}
           onClick={(event) => {
-            if (hasInvalidLines) event.preventDefault();
+            if (hasInvalidLines) {
+              event.preventDefault();
+              return;
+            }
+            setOpen(false);
           }}
           className={`mt-4 flex h-12 items-center justify-center bg-jp-text-primary text-sm font-semibold uppercase tracking-[.08em] text-jp-surface ${hasInvalidLines ? "pointer-events-none opacity-45" : ""}`}
         >

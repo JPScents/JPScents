@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const { resolveCart } = vi.hoisted(() => ({
@@ -86,6 +86,24 @@ describe("cart operations and presentation", () => {
     expect(add).toHaveFocus();
   });
 
+  it("closes the Cart preview when Checkout navigation begins", async () => {
+    render(
+      <CartProvider>
+        <Controls />
+        <CartPreview />
+      </CartProvider>,
+    );
+    await act(async () => undefined);
+    fireEvent.click(screen.getByText("Add"));
+    await screen.findByText("Santal Veil");
+
+    const checkout = screen.getByRole("link", { name: "Checkout" });
+    checkout.addEventListener("click", (event) => event.preventDefault(), { once: true });
+    fireEvent.click(checkout);
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
   it("blocks Checkout for an invalid resolved cart line", async () => {
     render(
       <CartProvider>
@@ -101,6 +119,39 @@ describe("cart operations and presentation", () => {
       ),
     );
     expect(screen.getByText("Resolve unavailable items before Checkout.")).toBeInTheDocument();
+  });
+
+  it("labels the unit price separately from the line total", async () => {
+    render(
+      <CartProvider>
+        <Controls />
+        <FullCart />
+      </CartProvider>,
+    );
+    await act(async () => undefined);
+    fireEvent.click(screen.getByText("Add"));
+    await screen.findByText("Unit price");
+    expect(screen.getByText("Line total")).toBeInTheDocument();
+  });
+
+  it("keeps the cart surface visible while a removal refreshes availability", async () => {
+    render(
+      <CartProvider>
+        <Controls />
+        <FullCart />
+      </CartProvider>,
+    );
+    await act(async () => undefined);
+    fireEvent.click(screen.getByText("Add"));
+    fireEvent.click(screen.getByText("Add invalid"));
+    const removeButtons = await screen.findAllByRole("button", {
+      name: "Remove Santal Veil from cart",
+    });
+    resolveCart.mockImplementationOnce(() => new Promise<never>(() => undefined));
+    fireEvent.click(removeButtons[0]);
+
+    await screen.findByText("Checking current availability…");
+    expect(screen.getByRole("heading", { name: "Review your choices." })).toBeInTheDocument();
   });
 
   it("continues in memory when browser storage reads or writes are denied", async () => {

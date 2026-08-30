@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useSyncExternalStore } from "react";
-import { AnimatePresence } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import {
   Dialog,
@@ -36,6 +36,7 @@ export function CartPreview() {
   const isDesktop = useDesktopViewport();
   const focusBeforeOpen = useRef<HTMLElement | null>(null);
   const wasOpen = useRef(false);
+  const reduceMotion = useReducedMotion();
   useEffect(() => {
     if (isOpen)
       focusBeforeOpen.current =
@@ -55,44 +56,59 @@ export function CartPreview() {
         <DialogTitle className="mt-2">Your cart</DialogTitle>
         <DialogDescription className="sr-only">Review items in your cart.</DialogDescription>
         <DialogCloseButton />
-        {resolutionState === "resolving" && count ? (
-          <p className="mt-6 text-sm text-jp-text-secondary" role="status">
-            Checking your cart…
-          </p>
-        ) : resolutionState === "error" && count ? (
-          <p className="mt-6 text-sm text-destructive" role="alert">
-            We could not check your cart. Checkout is unavailable until it is resolved.
-          </p>
-        ) : lines.length ? (
-          <div className="mt-5">
-            <AnimatePresence initial={false}>
-              {lines.map((line) => (
-                <CartLine key={line.perfumeVariantId} line={line} />
-              ))}
-            </AnimatePresence>
-            <CartSummary preview />
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <DialogClose asChild>
-                <Link
-                  href={siteConfig.routes.perfumes}
-                  className="flex h-11 items-center justify-center border text-sm font-semibold"
-                >
-                  Continue Browsing
-                </Link>
-              </DialogClose>
-              <DialogClose asChild>
-                <Link
-                  href={siteConfig.routes.cart}
-                  className="flex h-11 items-center justify-center border text-sm font-semibold"
-                >
-                  View Full Cart
-                </Link>
-              </DialogClose>
-            </div>
-          </div>
-        ) : (
-          <p className="mt-6 text-sm text-jp-text-secondary">Your cart is empty.</p>
-        )}
+        <AnimatePresence initial={false} mode="wait">
+          {resolutionState === "resolving" && count && !lines.length ? (
+            <p className="mt-6 text-sm text-jp-text-secondary" role="status">
+              Checking your cart…
+            </p>
+          ) : resolutionState === "error" && count && !lines.length ? (
+            <p className="mt-6 text-sm text-destructive" role="alert">
+              We could not check your cart. Checkout is unavailable until it is resolved.
+            </p>
+          ) : lines.length ? (
+            <motion.div
+              key="cart"
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
+              transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: "easeOut" }}
+              className="mt-5"
+            >
+              <AnimatePresence initial={false} mode="popLayout">
+                {lines.map((line) => (
+                  <CartLine key={line.perfumeVariantId} line={line} />
+                ))}
+              </AnimatePresence>
+              <CartSummary preview />
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <DialogClose asChild>
+                  <Link
+                    href={siteConfig.routes.perfumes}
+                    className="flex h-11 items-center justify-center border text-sm font-semibold"
+                  >
+                    Continue Browsing
+                  </Link>
+                </DialogClose>
+                <DialogClose asChild>
+                  <Link
+                    href={siteConfig.routes.cart}
+                    className="flex h-11 items-center justify-center border text-sm font-semibold"
+                  >
+                    View Full Cart
+                  </Link>
+                </DialogClose>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.p
+              key="empty"
+              initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: "easeOut" }}
+              className="mt-6 text-sm text-jp-text-secondary"
+            >
+              Your cart is empty.
+            </motion.p>
+          )}
+        </AnimatePresence>
       </DialogContent>
     </Dialog>
   );

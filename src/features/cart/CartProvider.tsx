@@ -138,8 +138,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [items, persist],
   );
   const removeItem = useCallback(
-    (perfumeVariantId: string) =>
-      persist(items.filter((item) => item.perfumeVariantId !== perfumeVariantId)),
+    (perfumeVariantId: string) => {
+      setLines((current) => current.filter((line) => line.perfumeVariantId !== perfumeVariantId));
+      persist(items.filter((item) => item.perfumeVariantId !== perfumeVariantId));
+    },
     [items, persist],
   );
   const clearCart = useCallback(() => persist([]), [persist]);
