@@ -22,6 +22,16 @@ import { CatalogueProductCard } from "@/features/catalogue/components/public/Cat
 afterEach(cleanup);
 
 describe("public catalogue controls", () => {
+  it("requires at least one preference before showing recommendations", () => {
+    push.mockReset();
+    render(<HelpMeChoose initial={{ scentCharacters: [], occasions: [] }} submitted={false} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Recommend perfumes" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Choose at least one preference");
+    expect(push).not.toHaveBeenCalled();
+  });
+
   it("preselects exactly one available variant and constrains quantity to stock", () => {
     render(
       <VariantPurchaseControls

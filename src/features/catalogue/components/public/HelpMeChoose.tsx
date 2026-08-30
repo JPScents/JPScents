@@ -37,12 +37,18 @@ export function HelpMeChoose({ initial, results, submitted, catalogueAvailable =
   const [scentCharacters, setScentCharacters] = useState(initial.scentCharacters);
   const [occasionValues, setOccasions] = useState(initial.occasions);
   const [timeOfDay, setTime] = useState<TimeOfDay | undefined>(initial.timeOfDay);
+  const [validationError, setValidationError] = useState("");
   const reduceMotion = useReducedMotion();
   const summary = preferenceSummary({ scentCharacters, occasions: occasionValues, timeOfDay });
   useEffect(() => {
     if (submitted) resultsHeading.current?.focus();
   }, [submitted]);
   function submit() {
+    if (!scentCharacters.length && !occasionValues.length && !timeOfDay) {
+      setValidationError("Choose at least one preference to receive a useful recommendation.");
+      return;
+    }
+    setValidationError("");
     const params = new URLSearchParams();
     if (scentCharacters.length) params.set("scent", scentCharacters.join(","));
     if (occasionValues.length) params.set("occasion", occasionValues.join(","));
@@ -222,11 +228,17 @@ export function HelpMeChoose({ initial, results, submitted, catalogueAvailable =
           </fieldset>
           <motion.button
             type="submit"
+            aria-describedby={validationError ? "preference-error" : undefined}
             className="mt-10 w-full bg-jp-text-primary px-6 py-4 text-sm text-jp-surface sm:w-auto"
             whileTap={reduceMotion ? undefined : { scale: 0.99 }}
           >
             Recommend perfumes
           </motion.button>
+          {validationError ? (
+            <p id="preference-error" className="mt-3 text-sm text-destructive" role="alert">
+              {validationError}
+            </p>
+          ) : null}
           <p className="mt-4 text-sm text-jp-text-secondary lg:hidden">
             You can adjust these preferences on the results page.
           </p>
