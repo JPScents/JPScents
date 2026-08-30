@@ -32,7 +32,7 @@ Prepare ignored `.env.production.local` from `.env.production.example`:
 | -------------------------------------- | ----------------------------------------------- | --------------- |
 | `DATABASE_URL`                         | Supavisor transaction-pooler runtime connection | Production only |
 | `DIRECT_URL`                           | Direct or session-pooler migration connection   | Never           |
-| `NEXT_PUBLIC_SITE_URL`                 | Canonical HTTPS application origin              | Production only |
+| `NEXT_PUBLIC_SITE_URL`                 | `https://jpscents.shop` canonical HTTPS origin  | Production only |
 | `NEXT_PUBLIC_SUPABASE_URL`             | Hosted Supabase project URL                     | Production only |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser-safe project key                        | Production only |
 | `SUPABASE_SECRET_KEY`                  | Admin provisioning via Auth Admin API           | Never           |
@@ -55,7 +55,7 @@ Do not run reset or demo-seed commands with the production environment selected.
 
 1. Import the client-owned GitHub repository into the client-owned Vercel account.
 2. Keep the detected Next.js defaults: install `npm install`/`npm ci`, build `npm run build`, and no custom output directory.
-3. Add only the variables marked “Production only” above to Vercel Production.
+3. Add only the variables marked “Production only” above to Vercel Production. Set `NEXT_PUBLIC_SITE_URL=https://jpscents.shop` exactly.
 4. Do not point Preview deployments at the production Supabase project. Use a separate staging project or leave data-backed previews unavailable.
 5. Run `npm run release:check` locally, then deploy from `main`.
 6. After any environment-variable change, redeploy; existing deployments retain their old values.
@@ -63,10 +63,12 @@ Do not run reset or demo-seed commands with the production environment selected.
 
 ## Search and sharing launch checks
 
-1. Set `NEXT_PUBLIC_SITE_URL` in Vercel Production to the final canonical HTTPS origin, including the chosen `www` or non-`www` host. Do not add it to Preview environments; previews are deliberately marked non-indexable.
-2. Submit `https://<final-domain>/sitemap.xml` in Google Search Console after the production deployment is live.
+1. Set `NEXT_PUBLIC_SITE_URL=https://jpscents.shop` in Vercel Production. This apex URL is the sole canonical origin. Never guess a `www.<project>.vercel.app` hostname or use `www.jpscents.shop` as the canonical origin. Do not add this value to Preview environments; previews are deliberately marked non-indexable.
+2. Submit `https://jpscents.shop/sitemap.xml` in Google Search Console after the production deployment is live.
 3. Validate one published perfume URL with [Google Rich Results Test](https://search.google.com/test/rich-results) or the [Schema Markup Validator](https://validator.schema.org/). Confirm its Product and breadcrumb data match the published product and current variant availability.
-4. Check the homepage and one published perfume in the intended social-share debuggers. The share image URLs are stable application routes; private product-storage URLs must never appear in page metadata.
+4. Disable Vercel Production Deployment Protection for the public production site, or configure it so unauthenticated social crawlers can reach pages and metadata endpoints. A Vercel sign-in wall prevents link unfurls.
+5. Check the homepage and one published perfume in the intended social-share debuggers. Confirm both the Open Graph and Twitter image endpoints return `200 image/png` without cookies or authentication. The share image URLs are stable application routes; private product-storage URLs must never appear in page metadata.
+6. If `www.jpscents.shop` is also attached in Vercel, keep it as a redirect-only alias. Requests permanently redirect to `https://jpscents.shop`; do not configure it as the canonical domain.
 
 Search Console site verification, business contact details, social profiles, delivery/returns policies, and product manufacturer or identifier data remain client-owned and are intentionally not published until confirmed.
 

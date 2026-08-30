@@ -54,6 +54,20 @@ for (const name of ["NEXT_PUBLIC_SITE_URL", "NEXT_PUBLIC_SUPABASE_URL"]) {
   }
 }
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+if (production && siteUrl) {
+  try {
+    const hostname = new URL(siteUrl).hostname;
+    if (/^www\..+\.vercel\.app$/i.test(hostname)) {
+      problems.push(
+        "NEXT_PUBLIC_SITE_URL cannot use a guessed www.<project>.vercel.app hostname. Use the exact live public production origin.",
+      );
+    }
+  } catch {
+    // The URL-format failure is already reported above.
+  }
+}
+
 const adminEmail = process.env.JP_SCENTS_ADMIN_EMAIL?.trim();
 if (adminEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail)) {
   problems.push("JP_SCENTS_ADMIN_EMAIL must be a valid email address.");
@@ -64,7 +78,7 @@ if (whatsappNumber && !/^\d{7,15}$/.test(whatsappNumber)) {
   problems.push("JP_SCENTS_WHATSAPP_NUMBER must contain 7 to 15 digits in international format.");
 }
 
-if (production && process.env.NEXT_PUBLIC_SITE_URL?.includes("localhost")) {
+if (production && siteUrl?.includes("localhost")) {
   problems.push("NEXT_PUBLIC_SITE_URL cannot use localhost in production.");
 }
 
