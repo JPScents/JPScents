@@ -25,8 +25,8 @@ export function PrimaryImageManager({
   return (
     <section className="mt-4">
       <p className="text-sm text-jp-text-secondary">
-        JPEG, PNG, or WebP. Maximum 5 MiB. Private images are rendered through an authorized signed
-        URL.
+        JPEG, PNG, or WebP. Maximum 5 MiB. Catalogue images are delivered through short-lived links;
+        only an authenticated Admin can upload, replace, or remove them.
       </p>
       <div className="mt-5 grid gap-5 md:grid-cols-[11rem_1fr]">
         <div className="flex min-h-48 items-center justify-center border border-dashed bg-jp-stone p-3">

@@ -5,7 +5,7 @@ import { randomBytes } from "crypto";
 import { OrderStatus, Prisma } from "@/db/generated/client";
 import { prisma } from "@/db/prisma";
 import { commerceConfig } from "@/config/commerce";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getPerfumeImageUrl } from "@/lib/supabase/storage";
 
 import { parseCheckoutInput } from "./parsers/checkout.parser";
 import type { OrderCartLine, OrderFilters } from "./types";
@@ -59,17 +59,6 @@ const orderInclude = {
 
 class OrderConflict extends Error {}
 
-async function signedImageUrl(path?: string) {
-  if (!path) return undefined;
-  try {
-    const supabase = await createSupabaseServerClient();
-    const result = await supabase.storage.from("perfume-images").createSignedUrl(path, 3600);
-    return result.error ? undefined : result.data.signedUrl;
-  } catch {
-    return undefined;
-  }
-}
-
 async function projectOrder(
   order: Prisma.OrderGetPayload<{ include: typeof orderInclude }>,
   includePrivate = false,
@@ -82,7 +71,7 @@ async function projectOrder(
       name: item.perfumeVariant.perfume.name,
       slug: item.perfumeVariant.perfume.slug,
       sizeLabel: `${item.perfumeVariant.sizeValue.toString()} ${item.perfumeVariant.sizeUnit === "ML" ? "mL" : item.perfumeVariant.sizeUnit || "unit"}`,
-      imageUrl: await signedImageUrl(item.perfumeVariant.perfume.images[0]?.path),
+      imageUrl: await getPerfumeImageUrl(item.perfumeVariant.perfume.images[0]?.path),
     })),
   );
   return {

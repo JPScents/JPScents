@@ -2,7 +2,7 @@ import "server-only";
 
 import { Prisma, type ScentCharacter } from "@/db/generated/client";
 import { prisma } from "@/db/prisma";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getPerfumeImageUrl } from "@/lib/supabase/storage";
 import { scentCharacters } from "./constants";
 
 import type { CatalogueFilters } from "./types";
@@ -12,14 +12,6 @@ const details = {
   images: { orderBy: { position: "asc" } },
   variants: { orderBy: { sizeValue: "asc" } },
 } satisfies Prisma.PerfumeInclude;
-
-async function signedImageUrl(path: string | undefined) {
-  if (!path) return undefined;
-
-  const supabase = await createSupabaseServerClient();
-  const signed = await supabase.storage.from("perfume-images").createSignedUrl(path, 3600);
-  return signed.error ? undefined : signed.data.signedUrl;
-}
 
 export async function listAdminPerfumes(filters: CatalogueFilters = {}) {
   const rows = await prisma.perfume.findMany({ include: details, orderBy: { updatedAt: "desc" } });
@@ -36,7 +28,7 @@ export async function listAdminPerfumes(filters: CatalogueFilters = {}) {
       const isAvailable = perfume.status === "PUBLISHED" && availableVariantCount > 0;
       return {
         ...perfume,
-        primaryImageUrl: await signedImageUrl(perfume.images[0]?.path),
+        primaryImageUrl: await getPerfumeImageUrl(perfume.images[0]?.path),
         variantCount: perfume.variants.length,
         availableVariantCount,
         totalQuantity,
@@ -71,7 +63,7 @@ export async function getAdminPerfume(id: string) {
       id: image.id,
       path: image.path,
       altText: image.altText,
-      signedUrl: await signedImageUrl(image.path),
+      signedUrl: await getPerfumeImageUrl(image.path),
     })),
   );
   const variants = perfume.variants.map((variant) => ({
@@ -120,8 +112,10 @@ export async function getEligibleBestsellerCandidates(query = "") {
   });
   return Promise.all(
     rows.map(async (perfume) => ({
-      ...perfume,
-      primaryImageUrl: await signedImageUrl(perfume.images[0]?.path),
+      id: perfume.id,
+      name: perfume.name,
+      scentCharacters: perfume.scentCharacters,
+      primaryImageUrl: await getPerfumeImageUrl(perfume.images[0]?.path),
       variantCount: perfume.variants.length,
       totalQuantity: perfume.variants.reduce((total, variant) => total + variant.quantity, 0),
       orderCount: await prisma.orderItem.count({

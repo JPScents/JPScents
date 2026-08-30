@@ -1,17 +1,6 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getPerfumeImageUrl } from "@/lib/supabase/storage";
 
 import type { ResolvedCartLine } from "../types";
-
-async function signedImageUrl(path?: string) {
-  if (!path) return undefined;
-  try {
-    const supabase = await createSupabaseServerClient();
-    const result = await supabase.storage.from("perfume-images").createSignedUrl(path, 3600);
-    return result.error ? undefined : result.data.signedUrl;
-  } catch {
-    return undefined;
-  }
-}
 
 export async function mapResolvedCartLine(
   variant: {
@@ -37,7 +26,7 @@ export async function mapResolvedCartLine(
     name: variant.perfume.name,
     slug: variant.perfume.slug,
     sizeLabel: `${variant.sizeValue.toString()} mL`,
-    imageUrl: await signedImageUrl(image?.path),
+    imageUrl: await getPerfumeImageUrl(image?.path),
     imageAlt: image?.altText || `${variant.perfume.name} bottle`,
     unitPriceMinor: variant.priceMinor,
     stock,

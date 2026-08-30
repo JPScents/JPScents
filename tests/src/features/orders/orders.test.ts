@@ -8,13 +8,6 @@ const mocks = vi.hoisted(() => ({
   findUniqueOrThrow: vi.fn(),
   update: vi.fn(),
   listOrders: vi.fn(),
-  storage: {
-    from: vi.fn(() => ({
-      createSignedUrl: vi
-        .fn()
-        .mockResolvedValue({ data: { signedUrl: "https://signed.example/bottle" }, error: null }),
-    })),
-  },
 }));
 
 vi.mock("@/db/prisma", () => ({
@@ -33,10 +26,9 @@ vi.mock("@/db/prisma", () => ({
     ),
   },
 }));
-vi.mock("@/lib/supabase/server", () => ({
-  createSupabaseServerClient: vi.fn(async () => ({ storage: mocks.storage })),
+vi.mock("@/lib/supabase/storage", () => ({
+  getPerfumeImageUrl: vi.fn(async () => "https://signed.example/bottle"),
 }));
-
 import {
   createOrder,
   getOrderConfirmation,
@@ -134,9 +126,17 @@ describe("orders", () => {
     );
     expect(mocks.create.mock.calls[0][0].data.reference).toMatch(/^JP-[23456789A-HJ-NP-Z]{7}$/);
     expect(result).toMatchObject({
-      order: { items: [{ sizeLabel: "50 mL", imageUrl: "https://signed.example/bottle" }] },
+      order: {
+        items: [
+          {
+            sizeLabel: "50 mL",
+            imageUrl: "https://signed.example/bottle",
+          },
+        ],
+      },
     });
-    expect(JSON.stringify(result)).not.toContain("private/path.jpg");
+    if (!("order" in result) || !result.order) throw new Error("Expected an order result.");
+    expect(result.order.items[0]).not.toHaveProperty("path");
   });
 
   it("returns an existing idempotent order without stock mutation and protects confirmation by token", async () => {
