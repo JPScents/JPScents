@@ -15,9 +15,17 @@ const statusLabel = (status: string) =>
     .replaceAll("_", " ")
     .toLowerCase()
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
-function whatsappUrl(number: string | undefined, reference: string, items: PublicOrder["items"]) {
+function whatsappUrl(
+  number: string | undefined,
+  customerName: string | undefined,
+  reference: string,
+  items: PublicOrder["items"],
+) {
   if (!number || !/^\d{7,15}$/.test(number)) return undefined;
-  return `https://wa.me/${number}?text=${encodeURIComponent(`Hello JPScents, I’m following up on order ${reference} (${items.map((item) => `${item.name} ${item.sizeLabel} ×${item.quantity}`).join(", ")}).`)}`;
+  const context = items
+    .map((item) => `${item.name} ${item.sizeLabel} ×${item.quantity}`)
+    .join(", ");
+  return `https://wa.me/${number}?text=${encodeURIComponent(`Hello ${customerName || "there"}, this is JPScents following up on your order ${reference} (${context}). How can we help?`)}`;
 }
 
 type AdminOrder = PublicOrder & {
@@ -49,7 +57,7 @@ export function AdminOrderDetail({ order }: { order: AdminOrder | null }) {
         </Link>
       </section>
     );
-  const url = whatsappUrl(order.whatsappNumber, order.reference, order.items);
+  const url = whatsappUrl(order.whatsappNumber, order.customerName, order.reference, order.items);
   return (
     <section>
       <Link href={siteConfig.routes.adminOrders} className="text-sm">
@@ -111,7 +119,7 @@ export function AdminOrderDetail({ order }: { order: AdminOrder | null }) {
                 rel="noreferrer"
                 className="mt-5 inline-block border px-4 py-3 text-sm font-semibold"
               >
-                Continue on WhatsApp
+                Message customer on WhatsApp
               </a>
             ) : null}
           </section>

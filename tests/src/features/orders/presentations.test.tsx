@@ -41,7 +41,7 @@ vi.mock("next/image", () => ({
 }));
 
 import { AdminOverview } from "@/components/admin-overview/AdminOverview";
-import { AdminOrders, Checkout, Confirmation } from "@/features/orders";
+import { AdminOrderDetail, AdminOrders, Checkout, Confirmation } from "@/features/orders";
 
 const placedOrder = {
   reference: "JP-ABCDEFG",
@@ -118,6 +118,27 @@ describe("order presentations", () => {
     expect(screen.getByRole("link", { name: "Clear filters" })).toHaveAttribute(
       "href",
       "/admin/orders",
+    );
+  });
+
+  it("opens WhatsApp as JPScents following up with the customer", () => {
+    render(
+      <AdminOrderDetail
+        order={{
+          ...placedOrder,
+          customerName: "Amara Okafor",
+          whatsappNumber: "2348012345678",
+          deliveryArea: "Lekki",
+          deliveryAddress: "12 Palm Avenue",
+          events: [],
+        }}
+      />,
+    );
+
+    const messageCustomer = screen.getByRole("link", { name: "Message customer on WhatsApp" });
+    expect(messageCustomer).toHaveAttribute("href", expect.stringContaining("wa.me/2348012345678"));
+    expect(new URL(messageCustomer.getAttribute("href")!).searchParams.get("text")).toContain(
+      "Hello Amara Okafor, this is JPScents following up on your order JP-ABCDEFG",
     );
   });
 

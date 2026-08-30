@@ -45,6 +45,7 @@ export function VariantManager({
 }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Variant | null>(null);
+  const [variantToDelete, setVariantToDelete] = useState<Variant | null>(null);
   const [state, action, pending] = useActionState(
     async (previous: SaveVariantState, formData: FormData) => {
       const result = await saveVariant(previous, formData);
@@ -53,7 +54,14 @@ export function VariantManager({
     },
     initial,
   );
-  const [deleted, deleteAction] = useActionState(deleteVariant, initial);
+  const [deleted, deleteAction, deleting] = useActionState(
+    async (previous: DeleteVariantState, formData: FormData) => {
+      const result = await deleteVariant(previous, formData);
+      if (result.ok) setVariantToDelete(null);
+      return result;
+    },
+    initial,
+  );
   const begin = (variant?: Variant) => {
     setEditing(variant ?? null);
     setOpen(true);
@@ -89,20 +97,13 @@ export function VariantManager({
                 <button type="button" className="underline" onClick={() => begin(variant)}>
                   Edit
                 </button>
-                <form
-                  className="inline"
-                  action={deleteAction}
-                  onSubmit={(event) => {
-                    if (!window.confirm("Delete this unreferenced variant? This cannot be undone."))
-                      event.preventDefault();
-                  }}
+                <button
+                  className="ml-3 text-destructive underline"
+                  type="button"
+                  onClick={() => setVariantToDelete(variant)}
                 >
-                  <input type="hidden" name="id" value={variant.id} />
-                  <input type="hidden" name="perfumeId" value={perfumeId} />
-                  <button className="ml-3 text-destructive underline" type="submit">
-                    Delete
-                  </button>
-                </form>
+                  Delete
+                </button>
               </span>
             </div>
           ))}
@@ -162,6 +163,43 @@ export function VariantManager({
             {pending ? "Saving…" : "Save variant"}
           </button>
         </form>
+      </ModalShell>
+      <ModalShell
+        open={Boolean(variantToDelete)}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen && !deleting) setVariantToDelete(null);
+        }}
+        title="Delete variant?"
+        description={
+          variantToDelete
+            ? `Remove the ${variantToDelete.sizeValue.toString()} mL variant. This cannot be undone.`
+            : undefined
+        }
+      >
+        <form action={deleteAction} className="flex flex-wrap justify-end gap-3">
+          <input type="hidden" name="id" value={variantToDelete?.id ?? ""} />
+          <input type="hidden" name="perfumeId" value={perfumeId} />
+          <button
+            className="h-10 border border-jp-admin-border px-4 text-sm font-semibold"
+            disabled={deleting}
+            type="button"
+            onClick={() => setVariantToDelete(null)}
+          >
+            Cancel
+          </button>
+          <button
+            className="h-10 bg-destructive px-4 text-sm font-semibold text-white"
+            disabled={deleting}
+            type="submit"
+          >
+            {deleting ? "Deleting…" : "Delete variant"}
+          </button>
+        </form>
+        {deleted.message ? (
+          <p role="alert" className="mt-3 text-sm text-destructive">
+            {deleted.message}
+          </p>
+        ) : null}
       </ModalShell>
     </section>
   );

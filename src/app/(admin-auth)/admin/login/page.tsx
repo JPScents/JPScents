@@ -1,4 +1,7 @@
 import { BrandLogo } from "@/components/shared/BrandLogo";
+import { siteConfig } from "@/config/site";
+import { getCurrentAdmin } from "@/lib/auth/admin";
+import { redirect } from "next/navigation";
 
 import { LoginForm } from "./LoginForm";
 
@@ -7,6 +10,7 @@ export default async function AdminLoginPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
+  if (await getCurrentAdmin()) redirect(siteConfig.routes.admin);
   const { error } = await searchParams;
 
   return (
