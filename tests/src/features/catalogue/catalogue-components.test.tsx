@@ -65,6 +65,22 @@ describe("catalogue editor interactions", () => {
     expect(slug).toHaveValue("citrus-linen-limited");
   });
 
+  it("uses chip controls for featured, status, and perfume attributes", () => {
+    render(<PerfumeEditor />);
+    const featured = screen.getByRole("checkbox", { name: "Feature on homepage" });
+    const published = screen.getByRole("radio", { name: "Published" });
+    const fresh = screen.getByRole("checkbox", { name: "Fresh" });
+
+    expect(screen.queryByRole("combobox", { name: "Status" })).not.toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Draft" })).toBeChecked();
+    fireEvent.click(featured);
+    fireEvent.click(published);
+    fireEvent.click(fresh);
+    expect(featured).toBeChecked();
+    expect(published).toBeChecked();
+    expect(fresh).toBeChecked();
+  });
+
   it("stages and removes variants through ModalShell, retaining validation feedback", async () => {
     render(<StagedFixture />);
     fireEvent.click(screen.getByRole("button", { name: "Add variant" }));

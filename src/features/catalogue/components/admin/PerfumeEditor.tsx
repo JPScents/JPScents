@@ -35,6 +35,38 @@ function slugFromName(name: string) {
     .replace(/(^-|-$)/g, "");
 }
 
+function SelectionChip({
+  checked,
+  children,
+  form,
+  name,
+  type,
+  value,
+}: {
+  checked: boolean;
+  children: React.ReactNode;
+  form: string;
+  name: string;
+  type: "checkbox" | "radio";
+  value: string;
+}) {
+  return (
+    <label className="cursor-pointer">
+      <input
+        className="peer sr-only"
+        defaultChecked={checked}
+        form={form}
+        name={name}
+        type={type}
+        value={value}
+      />
+      <span className="inline-flex min-h-10 items-center border border-jp-admin-border bg-white px-4 text-sm text-jp-text-primary transition-colors peer-checked:border-jp-admin-action peer-checked:bg-jp-admin-action peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-jp-admin-action">
+        {children}
+      </span>
+    </label>
+  );
+}
+
 function ChoiceGroup({
   name,
   title,
@@ -57,19 +89,16 @@ function ChoiceGroup({
       </legend>
       <div className="mt-3 flex flex-wrap gap-2">
         {options.map((value) => (
-          <label
+          <SelectionChip
             key={value}
-            className="flex items-center gap-2 border border-jp-admin-border bg-white px-3 py-2 text-sm"
+            checked={selected.includes(value)}
+            form={form}
+            name={name}
+            type="checkbox"
+            value={value}
           >
-            <input
-              form={form}
-              name={name}
-              type="checkbox"
-              value={value}
-              defaultChecked={selected.includes(value)}
-            />
             {labels[value]}
-          </label>
+          </SelectionChip>
         ))}
       </div>
       {error ? (
@@ -229,28 +258,43 @@ export function PerfumeEditor({ perfume }: { perfume?: Perfume }) {
                 className="min-h-32 border border-jp-admin-border bg-white p-3"
               />
             </Field>
-            <div className="grid gap-5 sm:grid-cols-2">
-              <Field label="Status">
-                <select
-                  form={formId}
-                  name="status"
-                  defaultValue={perfume?.status ?? "DRAFT"}
-                  className="h-10 border border-jp-admin-border bg-white px-3"
-                >
-                  <option value="DRAFT">Draft</option>
-                  <option value="PUBLISHED">Published</option>
-                </select>
-              </Field>
-              <label className="flex items-center gap-3 self-end border border-jp-admin-border bg-white px-3 py-2.5 text-sm">
-                <input
+            <fieldset>
+              <legend className="text-sm font-medium">Featured</legend>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <SelectionChip
+                  checked={perfume?.isFeatured ?? false}
                   form={formId}
                   name="isFeatured"
                   type="checkbox"
-                  defaultChecked={perfume?.isFeatured}
-                />
-                Feature on homepage
-              </label>
-            </div>
+                  value="on"
+                >
+                  Feature on homepage
+                </SelectionChip>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend className="text-sm font-medium">Status</legend>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <SelectionChip
+                  checked={(perfume?.status ?? "DRAFT") === "DRAFT"}
+                  form={formId}
+                  name="status"
+                  type="radio"
+                  value="DRAFT"
+                >
+                  Draft
+                </SelectionChip>
+                <SelectionChip
+                  checked={perfume?.status === "PUBLISHED"}
+                  form={formId}
+                  name="status"
+                  type="radio"
+                  value="PUBLISHED"
+                >
+                  Published
+                </SelectionChip>
+              </div>
+            </fieldset>
             <ChoiceGroup
               form={formId}
               name="scentCharacters"
