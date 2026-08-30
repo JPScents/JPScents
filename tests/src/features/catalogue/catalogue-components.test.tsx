@@ -1,6 +1,6 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useRef, useState } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/catalogue/actions/bestseller.admin.action", () => ({ setBestseller: vi.fn() }));
 vi.mock("@/features/catalogue/actions/save-perfume.admin.action", () => ({ savePerfume: vi.fn() }));
@@ -19,6 +19,9 @@ import { BestsellerSelector } from "@/features/catalogue/components/admin/Bestse
 import { ProductPreview } from "@/features/catalogue/components/admin/ProductPreview";
 import { StagedVariantManager } from "@/features/catalogue/components/admin/StagedVariantManager";
 import { PerfumeList } from "@/features/catalogue/components/admin/PerfumeList";
+import { PerfumeEditor } from "@/features/catalogue/components/admin/PerfumeEditor";
+
+afterEach(cleanup);
 
 function StagedFixture() {
   const [variants, setVariants] = useState<
@@ -49,6 +52,19 @@ function PreviewFixture() {
 }
 
 describe("catalogue editor interactions", () => {
+  it("generates a slug from a new perfume name until the slug is edited", () => {
+    render(<PerfumeEditor />);
+    const name = screen.getByRole("textbox", { name: /Name/ });
+    const slug = screen.getByRole("textbox", { name: /Slug/ });
+
+    fireEvent.change(name, { target: { value: "Citrus Linen" } });
+    expect(slug).toHaveValue("citrus-linen");
+
+    fireEvent.change(slug, { target: { value: "citrus-linen-limited" } });
+    fireEvent.change(name, { target: { value: "Citrus Linen Extrait" } });
+    expect(slug).toHaveValue("citrus-linen-limited");
+  });
+
   it("stages and removes variants through ModalShell, retaining validation feedback", async () => {
     render(<StagedFixture />);
     fireEvent.click(screen.getByRole("button", { name: "Add variant" }));

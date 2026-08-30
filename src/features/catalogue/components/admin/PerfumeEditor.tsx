@@ -26,6 +26,15 @@ const labels: Record<string, string> = {
   NIGHT: "Night",
 };
 
+function slugFromName(name: string) {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
 function ChoiceGroup({
   name,
   title,
@@ -106,6 +115,9 @@ export function PerfumeEditor({ perfume }: { perfume?: Perfume }) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [stagedVariants, setStagedVariants] = useState<StagedVariant[]>([]);
   const [imagePreview, setImagePreview] = useState<string>();
+  const [name, setName] = useState(perfume?.name ?? "");
+  const [slug, setSlug] = useState(perfume?.slug ?? "");
+  const [slugEdited, setSlugEdited] = useState(Boolean(perfume));
   useEffect(() => {
     const preventUnload = (event: BeforeUnloadEvent) => {
       if (dirty) event.preventDefault();
@@ -166,7 +178,12 @@ export function PerfumeEditor({ perfume }: { perfume?: Perfume }) {
                   form={formId}
                   name="name"
                   required
-                  defaultValue={perfume?.name}
+                  value={name}
+                  onChange={(event) => {
+                    const nextName = event.target.value;
+                    setName(nextName);
+                    if (!perfume && !slugEdited) setSlug(slugFromName(nextName));
+                  }}
                   className="h-10 border border-jp-admin-border bg-white px-3"
                 />
               </Field>
@@ -179,7 +196,11 @@ export function PerfumeEditor({ perfume }: { perfume?: Perfume }) {
                   form={formId}
                   name="slug"
                   required
-                  defaultValue={perfume?.slug}
+                  value={slug}
+                  onChange={(event) => {
+                    setSlugEdited(true);
+                    setSlug(event.target.value);
+                  }}
                   className="h-10 border border-jp-admin-border bg-white px-3"
                 />
               </Field>
