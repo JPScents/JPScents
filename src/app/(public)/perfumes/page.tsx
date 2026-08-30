@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 
 import { EmptyState } from "@/components/shared/EmptyState";
 import { MotionReveal } from "@/components/shared/MotionReveal";
@@ -13,6 +14,13 @@ import {
 import { siteConfig } from "@/config/site";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Available perfumes",
+  description:
+    "Browse the current JPScents perfume collection by scent character and availability.",
+  alternates: { canonical: siteConfig.routes.perfumes },
+};
 
 export default async function PerfumesPage({
   searchParams,

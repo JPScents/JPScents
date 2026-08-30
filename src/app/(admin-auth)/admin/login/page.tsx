@@ -2,8 +2,14 @@ import { BrandLogo } from "@/components/shared/BrandLogo";
 import { siteConfig } from "@/config/site";
 import { getCurrentAdmin } from "@/lib/auth/admin";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 
 import { LoginForm } from "./LoginForm";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+  alternates: { canonical: null },
+};
 
 export default async function AdminLoginPage({
   searchParams,

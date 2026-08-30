@@ -1,9 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CircleHelp } from "lucide-react";
+import type { Metadata } from "next";
 
 import { EmptyState } from "@/components/shared/EmptyState";
 import { HomepageFaqRows } from "@/components/home/HomepageFaqRows";
+import { JsonLd } from "@/components/shared/JsonLd";
 import { MotionReveal } from "@/components/shared/MotionReveal";
 import { siteConfig } from "@/config/site";
 import { ProductBottlePlaceholder } from "@/components/shared/public/ProductBottlePlaceholder";
@@ -16,6 +18,12 @@ import {
 } from "@/features/catalogue";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: { absolute: "JPScents | Perfume, chosen with care." },
+  description: "Browse available perfumes and find a fragrance that feels right for you.",
+  alternates: { canonical: siteConfig.routes.home },
+};
 
 const primaryButton =
   "inline-flex h-[52px] items-center justify-center bg-jp-text-primary px-6 text-sm font-semibold text-jp-surface lg:text-xs lg:font-bold lg:uppercase lg:tracking-[.08em]";
@@ -485,6 +493,26 @@ export default async function HomePage() {
   const { hero, products } = await getFeaturedPerfumes();
   return (
     <>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "WebSite",
+              name: siteConfig.name,
+              url: siteConfig.url.toString(),
+              description: siteConfig.description,
+            },
+            {
+              "@type": ["OnlineStore", "Organization"],
+              name: siteConfig.name,
+              url: siteConfig.url.toString(),
+              description: siteConfig.description,
+              logo: `${siteConfig.url.toString()}brand/jp-scents-logo.png`,
+            },
+          ],
+        }}
+      />
       <HomepageHero hero={hero} />
       <FeaturedPerfumes products={products} />
       {hero ? (

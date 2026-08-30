@@ -23,6 +23,7 @@ export {
   getRelatedPerfumes,
   hasAvailablePerfumes,
   hasPublishedPerfumes,
+  listPublishedPerfumeSitemapEntries,
   listPerfumes,
   recommendPerfumes,
 } from "./public-catalogue";

@@ -44,6 +44,7 @@ describe("Admin magic-link confirmation", () => {
 
     expect(exchangeCodeForSession).toHaveBeenCalledWith("one-time-code");
     expect(response.headers.get("location")).toBe("https://jpscents.test/admin");
+    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
     expect(signOut).not.toHaveBeenCalled();
   });
 
@@ -79,6 +80,7 @@ describe("Admin magic-link confirmation", () => {
     expect(response.headers.get("location")).toBe(
       "https://jpscents.test/admin/login?error=invalid",
     );
+    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
   });
 
   it("rejects unapproved email-token types", async () => {

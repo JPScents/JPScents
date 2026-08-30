@@ -1,10 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 
-import { siteConfig } from "@/config/site";
+import { absoluteUrl, siteConfig } from "@/config/site";
 import { ProductBottlePlaceholder } from "@/components/shared/public/ProductBottlePlaceholder";
 import { MotionReveal } from "@/components/shared/MotionReveal";
+import { JsonLd } from "@/components/shared/JsonLd";
 import {
   GalleryProductCard,
   getPerfumeBySlug,
@@ -15,6 +17,86 @@ import {
 import { VariantPurchaseControls } from "@/components/perfume-detail/VariantPurchaseControls";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const perfume = await getPerfumeBySlug(slug);
+  if (!perfume) notFound();
+
+  const url = absoluteUrl(siteConfig.routes.perfume(perfume.slug));
+  const description = perfume.description || perfume.scentCue;
+
+  return {
+    title: perfume.name,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      locale: "en_NG",
+      siteName: siteConfig.name,
+      title: perfume.name,
+      description,
+      url,
+    },
+    twitter: { card: "summary_large_image", title: perfume.name, description },
+  };
+}
+
+function ProductJsonLd({ perfume }: { perfume: PublicPerfumeDetail }) {
+  const url = absoluteUrl(siteConfig.routes.perfume(perfume.slug));
+  const offers = perfume.variants.map((variant) => ({
+    "@type": "Offer",
+    name: `${perfume.name} ${variant.sizeLabel}`,
+    price: (variant.priceMinor / 100).toFixed(2),
+    priceCurrency: "NGN",
+    availability: `https://schema.org/${variant.isAvailable ? "InStock" : "OutOfStock"}`,
+    url,
+  }));
+
+  return (
+    <JsonLd
+      data={{
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: perfume.name,
+        description: perfume.description || perfume.scentCue,
+        image: absoluteUrl(`${siteConfig.routes.perfume(perfume.slug)}/opengraph-image`),
+        url,
+        ...(offers.length ? { offers } : {}),
+      }}
+    />
+  );
+}
+
+function BreadcrumbJsonLd({ perfume }: { perfume: PublicPerfumeDetail }) {
+  return (
+    <JsonLd
+      data={{
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: absoluteUrl() },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Perfumes",
+            item: absoluteUrl(siteConfig.routes.perfumes),
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: perfume.name,
+            item: absoluteUrl(siteConfig.routes.perfume(perfume.slug)),
+          },
+        ],
+      }}
+    />
+  );
+}
 
 function ProfileRows({ perfume }: { perfume: PublicPerfumeDetail }) {
   const rows = [
@@ -164,6 +246,8 @@ export default async function PerfumeDetailPage({ params }: { params: Promise<{ 
 
   return (
     <>
+      <ProductJsonLd perfume={perfume} />
+      <BreadcrumbJsonLd perfume={perfume} />
       <MotionReveal priority>
         <div className="mx-auto max-w-public-container px-public-gutter-mobile pt-5 text-sm text-jp-text-secondary lg:px-public-gutter-desktop">
           <Link href={siteConfig.routes.perfumes} className="underline">

@@ -7,6 +7,13 @@ import {
 
 export const dynamic = "force-dynamic";
 
+export const metadata: Metadata = {
+  title: "Find my scent",
+  description:
+    "Share the scent character, occasion, and time you enjoy to narrow the available perfumes.",
+  alternates: { canonical: siteConfig.routes.helpMeChoose },
+};
+
 export default async function HelpMeChoosePage({
   searchParams,
 }: {
@@ -28,3 +35,6 @@ export default async function HelpMeChoosePage({
     />
   );
 }
+import type { Metadata } from "next";
+
+import { siteConfig } from "@/config/site";

@@ -32,10 +32,14 @@ export async function GET(request: NextRequest) {
 
   if (!verified) {
     await supabase.auth.signOut({ scope: "local" });
-    return NextResponse.redirect(
+    const response = NextResponse.redirect(
       new URL(`${siteConfig.routes.adminLogin}?error=invalid`, request.url),
     );
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return response;
   }
 
-  return NextResponse.redirect(new URL(siteConfig.routes.admin, request.url));
+  const response = NextResponse.redirect(new URL(siteConfig.routes.admin, request.url));
+  response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  return response;
 }

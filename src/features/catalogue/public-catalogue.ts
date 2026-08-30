@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 
 import {
   Prisma,
@@ -77,7 +78,7 @@ export async function hasAvailablePerfumes() {
   );
 }
 
-export async function getPerfumeBySlug(slug: string): Promise<PublicPerfumeDetail | null> {
+export const getPerfumeBySlug = cache(async (slug: string): Promise<PublicPerfumeDetail | null> => {
   const perfume = await prisma.perfume.findFirst({
     where: { slug, status: "PUBLISHED" },
     include: detailInclude,
@@ -98,6 +99,14 @@ export async function getPerfumeBySlug(slug: string): Promise<PublicPerfumeDetai
       isAvailable: variant.quantity > 0,
     })),
   };
+});
+
+export async function listPublishedPerfumeSitemapEntries() {
+  return prisma.perfume.findMany({
+    where: { status: "PUBLISHED" },
+    select: { slug: true, updatedAt: true },
+    orderBy: { slug: "asc" },
+  });
 }
 
 export async function getRelatedPerfumes(perfume: PublicPerfumeDetail, limit = 3) {

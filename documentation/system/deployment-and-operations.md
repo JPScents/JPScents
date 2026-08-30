@@ -61,6 +61,15 @@ Do not run reset or demo-seed commands with the production environment selected.
 6. After any environment-variable change, redeploy; existing deployments retain their old values.
 7. Smoke-test `/`, `/perfumes`, `/help-me-choose`, `/cart`, `/checkout`, `/admin/login`, a Magic Link callback, an Admin image, and an order through `/checkout/confirm`.
 
+## Search and sharing launch checks
+
+1. Set `NEXT_PUBLIC_SITE_URL` in Vercel Production to the final canonical HTTPS origin, including the chosen `www` or non-`www` host. Do not add it to Preview environments; previews are deliberately marked non-indexable.
+2. Submit `https://<final-domain>/sitemap.xml` in Google Search Console after the production deployment is live.
+3. Validate one published perfume URL with [Google Rich Results Test](https://search.google.com/test/rich-results) or the [Schema Markup Validator](https://validator.schema.org/). Confirm its Product and breadcrumb data match the published product and current variant availability.
+4. Check the homepage and one published perfume in the intended social-share debuggers. The share image URLs are stable application routes; private product-storage URLs must never appear in page metadata.
+
+Search Console site verification, business contact details, social profiles, delivery/returns policies, and product manufacturer or identifier data remain client-owned and are intentionally not published until confirmed.
+
 No `vercel.json` is required. Next.js is deployed with Vercel’s standard framework integration.
 
 ## Release checklist

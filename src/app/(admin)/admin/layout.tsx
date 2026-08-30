@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
@@ -6,6 +7,10 @@ import { siteConfig } from "@/config/site";
 import { getCurrentAdmin } from "@/lib/auth/admin";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+  alternates: { canonical: null },
+};
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const admin = await getCurrentAdmin();
