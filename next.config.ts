@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["127.0.0.1"],
   logging: {
     // Server Function arguments can contain checkout contact and delivery data.
     serverFunctions: false,

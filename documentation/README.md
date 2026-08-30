@@ -29,6 +29,7 @@ Implementation tasks and milestones are created only after the extraction pass i
 ## Structure
 
 - `system` — workflow, architecture, data contracts, and durable design rules
+- `system/deployment-and-operations.md` — release checks and the local/Supabase/Vercel handover runbook
 - `foundations` — implemented application-wide foundations
 - `components` — reusable component-family extraction references
 - `pages/public` — public page and flow extraction references

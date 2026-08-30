@@ -27,7 +27,8 @@ export async function requestMagicLink(_: LoginState, formData: FormData): Promi
     return { status: "sent", message: sentMessage };
   }
 
-  const origin = (await headers()).get("origin");
+  const origin =
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() || (await headers()).get("origin")?.trim();
   if (!origin) {
     return {
       status: "error",
@@ -55,13 +56,20 @@ export async function requestMagicLink(_: LoginState, formData: FormData): Promi
     };
   }
 
-  await supabase.auth.signInWithOtp({
+  const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
       emailRedirectTo: callbackUrl.toString(),
       shouldCreateUser: false,
     },
   });
+
+  if (error) {
+    return {
+      status: "error",
+      message: "We couldn’t send the sign-in link. Please try again.",
+    };
+  }
 
   return { status: "sent", message: sentMessage };
 }
