@@ -31,7 +31,14 @@ describe("PublicShell", () => {
     expect(screen.getAllByRole("navigation", { name: "Footer navigation" })).toHaveLength(2);
     screen
       .getAllByRole("navigation", { name: "Footer navigation" })
-      .forEach((footer) => expect(footer).toHaveTextContent("Perfumes·Help Me Choose·Cart"));
+      .forEach((footer) => expect(within(footer).getAllByRole("link")).toHaveLength(3));
+    expect(
+      screen.getByText("Curated perfumes, clear choices, and a simple way to place your order."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "How ordering works" })).toHaveAttribute(
+      "href",
+      "/#how-ordering-works",
+    );
     expect(screen.getByRole("link", { name: "Open cart, 0 items" })).toHaveAttribute(
       "href",
       "/cart",

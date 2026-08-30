@@ -4,12 +4,12 @@
 
 - Source visual truth: Paper Final Site (`01M1176ZB9DXCTZEH57YQGHY2Q`, page `3-0`), Homepage desktop/mobile and Product Detail desktop/mobile frames.
 - Source exports:
-  - `/Users/freemancodz/Downloads/01 · Homepage · Desktop@0.5x.png`
-  - `/Users/freemancodz/Downloads/12 · Homepage · Mobile.png`
-  - `/Users/freemancodz/Downloads/Ordering reassurance FAQs@0.5x.png`
-  - `/Users/freemancodz/Downloads/Mobile FAQ.png`
-  - `/Users/freemancodz/Downloads/Frame@0.5x.png` (desktop perfume profile)
-  - `/Users/freemancodz/Downloads/Frame (4).png` (mobile perfume disclosures)
+  - `01 · Homepage · Desktop@0.5x.png`
+  - `12 · Homepage · Mobile.png`
+  - `Ordering reassurance FAQs@0.5x.png`
+  - `Mobile FAQ.png`
+  - `Frame@0.5x.png` (desktop perfume profile)
+  - `Frame (4).png` (mobile perfume disclosures)
 - Verified implementation: `http://localhost:3002` from the production build, using the opt-in local Paper-aligned demo catalogue.
 - Implementation captures and combined comparisons: `output/playwright/`.
 
@@ -73,5 +73,13 @@ No actionable P0, P1, or P2 differences remain in the requested homepage, Homepa
 ## Follow-up polish
 
 - [P3] Replace all controlled bottle artwork, demo catalogue content, prices, and provisional FAQ answers when the client supplies confirmed content. Production remains empty unless real catalogue records are added.
+
+## Branding addendum — 29 August 2026
+
+- Source visual: client-supplied `JP SCENTS LOGO.jpg` (1019 × 720).
+- The logo artwork was extracted from its white canvas into transparent original-colour and light variants without changing its geometry or wording.
+- The original charcoal UI treatment remains in place. The sampled brand red (`#b22b2c`) is available only as a restrained accent and is not used as the general UI or footer background.
+- Desktop public header, shared public footer, and Admin sign-in were visually checked. The original-colour logo integrates cleanly with light surfaces and the light logo remains legible on the dark footer.
+- No actionable P0, P1, or P2 branding issues remain.
 
 final result: passed

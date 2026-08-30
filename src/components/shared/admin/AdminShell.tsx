@@ -5,6 +5,7 @@ import { Menu, Store } from "lucide-react";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { BrandLogo } from "@/components/shared/BrandLogo";
 import { MotionPage } from "@/components/shared/MotionPage";
 import {
   Dialog,
@@ -49,8 +50,8 @@ export function AdminShell({ children, email }: { children: ReactNode; email: st
     <Dialog>
       <div className="min-h-screen bg-jp-admin-canvas text-jp-text-primary lg:grid lg:grid-cols-[15.5rem_1fr]">
         <aside className="hidden min-h-screen bg-jp-admin-sidebar px-5 py-7 text-sidebar-foreground lg:block">
-          <Link href={siteConfig.routes.admin} className="font-display text-3xl">
-            JPScents
+          <Link href={siteConfig.routes.admin} aria-label="JP Scents Admin overview">
+            <BrandLogo className="w-24" tone="light" />
           </Link>
           <p className="mt-2 text-xs text-sidebar-foreground/70">Admin</p>
           <div className="mt-10">{nav}</div>
@@ -63,7 +64,7 @@ export function AdminShell({ children, email }: { children: ReactNode; email: st
           </Link>
         </aside>
         <div>
-          <header className="flex h-header-mobile items-center justify-between border-b bg-jp-admin-surface px-5 lg:h-20 lg:justify-end lg:px-admin-content">
+          <header className="relative flex h-header-mobile items-center justify-between border-b bg-jp-admin-surface px-5 lg:h-20 lg:justify-end lg:px-admin-content">
             <DialogTrigger asChild>
               <button
                 className="inline-flex size-11 items-center justify-center lg:hidden"
@@ -73,12 +74,22 @@ export function AdminShell({ children, email }: { children: ReactNode; email: st
                 <Menu className="size-5" aria-hidden="true" />
               </button>
             </DialogTrigger>
+            <Link
+              href={siteConfig.routes.admin}
+              aria-label="JP Scents Admin overview"
+              className="absolute left-1/2 -translate-x-1/2 lg:hidden"
+            >
+              <BrandLogo className="w-10" />
+            </Link>
             <span className="text-sm text-jp-text-secondary">{email ?? "Admin"}</span>
           </header>
           <DialogContent
             animation="from-left"
             className="inset-y-0 left-0 h-full w-[min(20rem,calc(100%-2.5rem))] max-w-none translate-x-0 translate-y-0 border-y-0 border-l-0 bg-jp-admin-sidebar text-sidebar-foreground lg:hidden"
           >
+            <Link href={siteConfig.routes.admin} aria-label="JP Scents Admin overview">
+              <BrandLogo className="w-16" tone="light" />
+            </Link>
             <DialogTitle className="text-sidebar-foreground">Admin navigation</DialogTitle>
             <DialogDescription className="sr-only">
               Choose an Admin workspace page.

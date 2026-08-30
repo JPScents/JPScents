@@ -36,6 +36,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
 
   --color-jp-canvas: var(--jp-public-canvas);
+  --color-jp-brand: var(--jp-brand);
   --color-jp-surface: var(--jp-public-surface);
   --color-jp-stone: var(--jp-stone);
   --color-jp-green-surface: var(--jp-green-surface);
@@ -74,6 +75,8 @@
 
 :root {
   color-scheme: light;
+
+  --jp-brand: #b22b2c;
 
   --background: #f6f2e9;
   --foreground: #24241f;
