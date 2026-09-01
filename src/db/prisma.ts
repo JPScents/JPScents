@@ -17,8 +17,18 @@ function getPrisma() {
     throw new Error("DATABASE_URL is required for the server database client.");
   }
 
-  const client = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
-  if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = client;
+  const client = new PrismaClient({
+    adapter: new PrismaPg({
+      connectionString: databaseUrl,
+      // A serverless instance only needs one local connection. Supavisor handles
+      // pooling across instances; a larger per-instance pool exhausts the small
+      // production database before an order transaction can acquire a connection.
+      max: 1,
+      connectionTimeoutMillis: 15_000,
+      idleTimeoutMillis: 10_000,
+    }),
+  });
+  globalForPrisma.prisma = client;
   return client;
 }
 
