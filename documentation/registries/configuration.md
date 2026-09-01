@@ -21,4 +21,4 @@
 | Admin sign-in          | Supabase email magic link; pre-provisioned user only; `/auth/confirm` callback       | Confirmed                                 |
 | Initial data           | empty catalogue and Orders; demo fixtures are explicit local opt-in only             | Confirmed                                 |
 
-Secrets and environment-specific credentials never belong in this registry or committed config. The trusted Admin email is an identity allowlist value, not a password or credential.
+Secrets and environment-specific credentials never belong in this registry or committed config. The primary and optional secondary Admin emails are identity allowlist values, not passwords or credentials.

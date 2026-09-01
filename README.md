@@ -8,7 +8,7 @@ The application uses Next.js, Tailwind CSS, shadcn/ui foundations, Prisma, and S
 
 - `npm run setup:local` — start local Supabase and recreate an empty database
 - `npm run setup:local:demo` — recreate locally, then add deliberate demo fixtures
-- `npm run admin:provision` — create or promote the configured trusted Admin
+- `npm run admin:provision` — create or promote the configured primary and optional secondary Admins
 - `npm run dev` — start local development
 - `npm run db:migrate:deploy` — apply committed Prisma migrations to the selected database
 - `npm run db:seed:demo` — opt in to deterministic development fixtures
@@ -31,7 +31,7 @@ Start with [Prisma setup](prisma/README.md), [Supabase setup](supabase/README.md
 - The application deliberately supports an empty catalogue. Public and Admin routes show clear preparation/zero states until confirmed products are added.
 - Configure the client-confirmed WhatsApp business number and final delivery-area policy.
 - Add confirmed catalogue, photography, logo, FAQ, and policy content; demo fixtures are never loaded by the normal reset.
-- Provision the submitted JPScents email in Supabase Auth with trusted `app_metadata.role=admin`, configure the exact `/auth/confirm` redirect, and connect production SMTP. Admin sign-in is passwordless and never creates users.
+- Provision the submitted JPScents email and any temporary secondary Admin in Supabase Auth with trusted `app_metadata.role=admin`, configure the exact `/auth/confirm` redirect, and connect production SMTP. Admin sign-in is passwordless and never creates users.
 - Connect the client-owned Supabase and Vercel projects using the deployment runbook; online payment remains intentionally out of scope.
 
 ## Project operating system

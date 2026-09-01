@@ -36,7 +36,8 @@ Prepare ignored `.env.production.local` from `.env.production.example`:
 | `NEXT_PUBLIC_SUPABASE_URL`             | Hosted Supabase project URL                     | Production only |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser-safe project key                        | Production only |
 | `SUPABASE_SECRET_KEY`                  | Admin provisioning via Auth Admin API           | Never           |
-| `JP_SCENTS_ADMIN_EMAIL`                | Exact trusted Magic Link identity               | Production only |
+| `JP_SCENTS_ADMIN_EMAIL`                | Primary trusted Magic Link identity             | Production only |
+| `JP_SCENTS_SECONDARY_ADMIN_EMAIL`      | Optional temporary trusted Admin identity       | Production only |
 | `JP_SCENTS_WHATSAPP_NUMBER`            | International digits-only business number       | Production only |
 
 Then:
@@ -46,8 +47,12 @@ Then:
 3. Run `APP_ENV_FILE=.env.production.local npm run db:migrate:status` and review the target.
 4. Run `APP_ENV_FILE=.env.production.local npm run db:migrate:deploy`.
 5. Configure Auth Site URL, the exact `/auth/confirm` redirect, disabled public signup, the checked-in Magic Link template, and production SMTP.
-6. Run `APP_ENV_FILE=.env.production.local npm run admin:provision`.
+6. Run `APP_ENV_FILE=.env.production.local npm run admin:provision`. This provisions the primary Admin and the optional secondary Admin when configured.
 7. Test Admin Magic Link sign-in and a real image upload before launch.
+
+For temporary production testing, set `JP_SCENTS_SECONDARY_ADMIN_EMAIL`, provision the Admin, add the same variable to Vercel Production, and redeploy. Revoke access by removing the Vercel variable and redeploying; optionally remove that Auth user or its Admin role in Supabase afterward. The primary Admin remains unchanged.
+
+Resend's email log confirms whether Supabase handed off a message and whether the recipient mail server accepted, delayed, bounced, or rejected it. It does not prove inbox placement or that the Magic Link callback created an authorized Admin session, so complete at least one real secondary-Admin sign-in. Keep Resend link tracking disabled for Supabase Auth emails so the single-use URL is not rewritten.
 
 Do not run reset or demo-seed commands with the production environment selected.
 

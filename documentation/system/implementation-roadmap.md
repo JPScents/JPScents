@@ -38,7 +38,7 @@ All agents work locally on the shared `main` branch, one at a time. There are no
 
 - The Supabase CLI and Docker provide the local Postgres, Auth, Storage, and Studio stack during development.
 - Prisma ORM 7 is pinned and owns application schema declarations, generated client, migrations, and database connection. Both runtime and migration tooling use local Postgres until a production deployment exists.
-- Supabase Auth protects Admin. Authorization requires the exact submitted JPScents email and trusted server-side `app_metadata`, never user-editable metadata.
+- Supabase Auth protects Admin. Authorization requires an email on the configured primary/optional-secondary allowlist and trusted server-side `app_metadata`, never user-editable metadata.
 - Supabase Storage owns product images; upload authorization remains Admin-only.
 - Application data is accessed through the Next.js server and Prisma, not directly from the browser Data API.
 - No payment service, queue, worker, microservice, generic repository framework, or speculative online-payment layer is introduced.

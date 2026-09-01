@@ -73,6 +73,18 @@ if (adminEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail)) {
   problems.push("JP_SCENTS_ADMIN_EMAIL must be a valid email address.");
 }
 
+const secondaryAdminEmail = process.env.JP_SCENTS_SECONDARY_ADMIN_EMAIL?.trim();
+if (secondaryAdminEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(secondaryAdminEmail)) {
+  problems.push("JP_SCENTS_SECONDARY_ADMIN_EMAIL must be a valid email address when set.");
+}
+if (
+  adminEmail &&
+  secondaryAdminEmail &&
+  adminEmail.toLowerCase() === secondaryAdminEmail.toLowerCase()
+) {
+  problems.push("JP_SCENTS_SECONDARY_ADMIN_EMAIL must differ from JP_SCENTS_ADMIN_EMAIL.");
+}
+
 const whatsappNumber = process.env.JP_SCENTS_WHATSAPP_NUMBER?.trim();
 if (whatsappNumber && !/^\d{7,15}$/.test(whatsappNumber)) {
   problems.push("JP_SCENTS_WHATSAPP_NUMBER must contain 7 to 15 digits in international format.");

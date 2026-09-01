@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 
-import { adminConfig } from "@/config/admin";
+import { isTrustedAdminEmail } from "@/config/admin";
 import { siteConfig } from "@/config/site";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -23,7 +23,7 @@ export async function requestMagicLink(_: LoginState, formData: FormData): Promi
   }
 
   // Do not reveal the trusted address or ask Supabase to create other users.
-  if (email !== adminConfig.trustedEmail) {
+  if (!isTrustedAdminEmail(email)) {
     return { status: "sent", message: sentMessage };
   }
 
