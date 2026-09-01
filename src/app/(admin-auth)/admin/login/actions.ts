@@ -49,7 +49,11 @@ export async function requestMagicLink(_: LoginState, formData: FormData): Promi
   let supabase;
   try {
     supabase = await createSupabaseServerClient();
-  } catch {
+  } catch (error) {
+    console.error(
+      "[admin-auth] Supabase client is unavailable:",
+      error instanceof Error ? error.message : "Unknown configuration error",
+    );
     return {
       status: "error",
       message: "Sign-in is temporarily unavailable. Please try again.",
@@ -65,6 +69,11 @@ export async function requestMagicLink(_: LoginState, formData: FormData): Promi
   });
 
   if (error) {
+    console.error("[admin-auth] Magic Link request failed:", {
+      code: error.code,
+      message: error.message,
+      status: error.status,
+    });
     return {
       status: "error",
       message: "We couldn’t send the sign-in link. Please try again.",
