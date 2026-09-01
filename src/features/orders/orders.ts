@@ -104,62 +104,65 @@ export async function createOrder(linesRaw: unknown, checkoutRaw: unknown, submi
   if (typeof submissionKey !== "string" || !UUID.test(submissionKey))
     return { error: "Unable to safely place this order. Please refresh and try again." } as const;
   try {
-    const result = await prisma.$transaction(async (tx) => {
-      const duplicate = await tx.order.findUnique({
-        where: { submissionKey },
-        include: orderInclude,
-      });
-      if (duplicate) return { order: duplicate, duplicate: true };
-      const variants = await tx.perfumeVariant.findMany({
-        where: {
-          id: { in: lines.map((line) => line.perfumeVariantId) },
-          perfume: { status: "PUBLISHED" },
-        },
-      });
-      if (variants.length !== lines.length)
-        throw new OrderConflict("One or more perfumes are no longer available.");
-      const byId = new Map(variants.map((variant) => [variant.id, variant]));
-      for (const line of lines) {
-        const updated = await tx.perfumeVariant.updateMany({
+    const result = await prisma.$transaction(
+      async (tx) => {
+        const duplicate = await tx.order.findUnique({
+          where: { submissionKey },
+          include: orderInclude,
+        });
+        if (duplicate) return { order: duplicate, duplicate: true };
+        const variants = await tx.perfumeVariant.findMany({
           where: {
-            id: line.perfumeVariantId,
-            quantity: { gte: line.quantity },
+            id: { in: lines.map((line) => line.perfumeVariantId) },
             perfume: { status: "PUBLISHED" },
           },
-          data: { quantity: { decrement: line.quantity } },
         });
-        if (updated.count !== 1)
-          throw new OrderConflict(
-            "One or more perfumes are no longer available in the requested quantity.",
-          );
-      }
-      const subtotalMinor = lines.reduce(
-        (total, line) => total + byId.get(line.perfumeVariantId)!.priceMinor * line.quantity,
-        0,
-      );
-      const created = await tx.order.create({
-        data: {
-          reference: reference(),
-          confirmationToken: token(),
-          submissionKey,
-          ...input,
-          subtotalMinor,
-          items: {
-            create: lines.map((line) => ({
-              perfumeVariantId: line.perfumeVariantId,
-              quantity: line.quantity,
-              unitPriceMinor: byId.get(line.perfumeVariantId)!.priceMinor,
-            })),
+        if (variants.length !== lines.length)
+          throw new OrderConflict("One or more perfumes are no longer available.");
+        const byId = new Map(variants.map((variant) => [variant.id, variant]));
+        for (const line of lines) {
+          const updated = await tx.perfumeVariant.updateMany({
+            where: {
+              id: line.perfumeVariantId,
+              quantity: { gte: line.quantity },
+              perfume: { status: "PUBLISHED" },
+            },
+            data: { quantity: { decrement: line.quantity } },
+          });
+          if (updated.count !== 1)
+            throw new OrderConflict(
+              "One or more perfumes are no longer available in the requested quantity.",
+            );
+        }
+        const subtotalMinor = lines.reduce(
+          (total, line) => total + byId.get(line.perfumeVariantId)!.priceMinor * line.quantity,
+          0,
+        );
+        const created = await tx.order.create({
+          data: {
+            reference: reference(),
+            confirmationToken: token(),
+            submissionKey,
+            ...input,
+            subtotalMinor,
+            items: {
+              create: lines.map((line) => ({
+                perfumeVariantId: line.perfumeVariantId,
+                quantity: line.quantity,
+                unitPriceMinor: byId.get(line.perfumeVariantId)!.priceMinor,
+              })),
+            },
+            statusEvents: { create: { toStatus: "NEW" } },
           },
-          statusEvents: { create: { toStatus: "NEW" } },
-        },
-      });
-      const complete = await tx.order.findUniqueOrThrow({
-        where: { id: created.id },
-        include: orderInclude,
-      });
-      return { order: complete, duplicate: false };
-    });
+        });
+        const complete = await tx.order.findUniqueOrThrow({
+          where: { id: created.id },
+          include: orderInclude,
+        });
+        return { order: complete, duplicate: false };
+      },
+      { maxWait: 10_000, timeout: 15_000 },
+    );
     return {
       order: await projectOrder(result.order),
       confirmationToken: result.order.confirmationToken,
