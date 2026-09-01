@@ -263,6 +263,49 @@ export async function updateOrderStatus(referenceValue: string, nextStatus: unkn
   }
 }
 
+export async function deleteOrder(referenceValue: string) {
+  if (!referenceValue.trim()) return { error: "Order not found." } as const;
+  try {
+    return await prisma.$transaction(
+      async (tx) => {
+        const order = await tx.order.findUnique({
+          where: { reference: referenceValue },
+          include: { items: true },
+        });
+        if (!order) return { error: "Order not found." } as const;
+
+        const quantitiesByVariant = new Map<string, number>();
+        for (const item of order.items) {
+          quantitiesByVariant.set(
+            item.perfumeVariantId,
+            (quantitiesByVariant.get(item.perfumeVariantId) ?? 0) + item.quantity,
+          );
+        }
+        for (const [perfumeVariantId, quantity] of quantitiesByVariant) {
+          const restored = await tx.perfumeVariant.updateMany({
+            where: { id: perfumeVariantId },
+            data: { quantity: { increment: quantity } },
+          });
+          if (restored.count !== 1) throw new OrderConflict("Unable to restore order stock.");
+        }
+
+        await tx.orderStatusEvent.deleteMany({ where: { orderId: order.id } });
+        await tx.orderItem.deleteMany({ where: { orderId: order.id } });
+        await tx.order.delete({ where: { id: order.id } });
+        return { ok: true } as const;
+      },
+      { maxWait: 10_000, timeout: 15_000 },
+    );
+  } catch (error) {
+    const failure = error as { name?: string; code?: string };
+    console.error("[orders] deleteOrder transaction failed", {
+      name: failure?.name,
+      code: failure?.code,
+    });
+    return { error: "Unable to delete this order. No changes were made." } as const;
+  }
+}
+
 export async function getOrdersAdminOverview() {
   const start = new Date();
   start.setHours(0, 0, 0, 0);

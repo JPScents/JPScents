@@ -7,6 +7,9 @@ const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   findUniqueOrThrow: vi.fn(),
   update: vi.fn(),
+  delete: vi.fn(),
+  deleteManyEvents: vi.fn(),
+  deleteManyItems: vi.fn(),
   listOrders: vi.fn(),
 }));
 
@@ -20,7 +23,10 @@ vi.mock("@/db/prisma", () => ({
           create: mocks.create,
           findUniqueOrThrow: mocks.findUniqueOrThrow,
           update: mocks.update,
+          delete: mocks.delete,
         },
+        orderStatusEvent: { deleteMany: mocks.deleteManyEvents },
+        orderItem: { deleteMany: mocks.deleteManyItems },
         perfumeVariant: { findMany: mocks.findMany, updateMany: mocks.updateMany },
       }),
     ),
@@ -31,6 +37,7 @@ vi.mock("@/lib/supabase/storage", () => ({
 }));
 import {
   createOrder,
+  deleteOrder,
   getOrderConfirmation,
   listOrders,
   normalizeWhatsappNumber,
@@ -201,5 +208,42 @@ describe("orders", () => {
       }),
     );
     expect(mocks.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("restores each linked variant once before deleting an order and its dependents", async () => {
+    mocks.findUnique.mockResolvedValueOnce({
+      id: "order",
+      items: [
+        { perfumeVariantId: id, quantity: 1 },
+        { perfumeVariantId: id, quantity: 2 },
+        { perfumeVariantId: "22222222-2222-4222-8222-222222222222", quantity: 3 },
+      ],
+    });
+
+    await expect(deleteOrder("JP-ABC")).resolves.toEqual({ ok: true });
+    expect(mocks.updateMany).toHaveBeenCalledTimes(2);
+    expect(mocks.updateMany).toHaveBeenCalledWith({
+      where: { id },
+      data: { quantity: { increment: 3 } },
+    });
+    expect(mocks.deleteManyEvents).toHaveBeenCalledWith({ where: { orderId: "order" } });
+    expect(mocks.deleteManyItems).toHaveBeenCalledWith({ where: { orderId: "order" } });
+    expect(mocks.delete).toHaveBeenCalledWith({ where: { id: "order" } });
+  });
+
+  it("reports missing orders and keeps deletion generic when the transaction fails", async () => {
+    await expect(deleteOrder("JP-MISSING")).resolves.toEqual({ error: "Order not found." });
+    mocks.findUnique.mockResolvedValueOnce({
+      id: "order",
+      items: [{ perfumeVariantId: id, quantity: 1 }],
+    });
+    mocks.updateMany.mockRejectedValueOnce(new Error("database detail"));
+
+    await expect(deleteOrder("JP-ABC")).resolves.toEqual({
+      error: "Unable to delete this order. No changes were made.",
+    });
+    expect(mocks.deleteManyEvents).not.toHaveBeenCalled();
+    expect(mocks.deleteManyItems).not.toHaveBeenCalled();
+    expect(mocks.delete).not.toHaveBeenCalled();
   });
 });

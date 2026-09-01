@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   submitOrder: vi.fn(),
+  deleteOrderAdmin: vi.fn(),
   clearCart: vi.fn(),
   cart: {
     items: [{ perfumeVariantId: "11111111-1111-4111-8111-111111111111", quantity: 1 }],
@@ -25,6 +26,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/features/orders/actions/change-order-status.admin.action", () => ({
   changeOrderStatus: vi.fn(),
 }));
+vi.mock("@/features/orders/actions/delete-order.admin.action", () => ({
+  deleteOrderAdmin: mocks.deleteOrderAdmin,
+}));
 vi.mock("@/features/orders/actions/submit-order.action", () => ({
   submitOrder: mocks.submitOrder,
   changeOrderStatus: vi.fn(),
@@ -38,6 +42,9 @@ vi.mock("next/link", () => ({
 }));
 vi.mock("next/image", () => ({
   default: () => null,
+}));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: vi.fn() }),
 }));
 
 import { AdminOverview } from "@/components/admin-overview/AdminOverview";
@@ -139,6 +146,30 @@ describe("order presentations", () => {
     expect(messageCustomer).toHaveAttribute("href", expect.stringContaining("wa.me/2348012345678"));
     expect(new URL(messageCustomer.getAttribute("href")!).searchParams.get("text")).toContain(
       "Hello Amara Okafor, this is JPScents following up on your order JP-ABCDEFG",
+    );
+  });
+
+  it("requires explicit deletion confirmation and exposes deletion failures", async () => {
+    mocks.deleteOrderAdmin.mockResolvedValue({ error: "Order not found." });
+    render(
+      <AdminOrderDetail
+        order={{
+          ...placedOrder,
+          customerName: "Amara Okafor",
+          whatsappNumber: "2348012345678",
+          deliveryArea: "Lekki",
+          deliveryAddress: "12 Palm Avenue",
+          events: [],
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete order" }));
+    expect(screen.getByRole("heading", { name: "Delete this order?" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Delete order" }));
+    await waitFor(() => expect(mocks.deleteOrderAdmin).toHaveBeenCalledWith("JP-ABCDEFG"));
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent("Order not found."),
     );
   });
 
