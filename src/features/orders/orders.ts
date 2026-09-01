@@ -166,6 +166,21 @@ export async function createOrder(linesRaw: unknown, checkoutRaw: unknown, submi
       duplicate: result.duplicate,
     } as const;
   } catch (error) {
+    if (!(error instanceof OrderConflict)) {
+      const failure = error as {
+        name?: string;
+        code?: string;
+        cause?: { kind?: string; code?: string; constraint?: string; table?: string };
+      };
+      console.error("[orders] createOrder transaction failed", {
+        name: failure?.name,
+        code: failure?.code,
+        causeKind: failure?.cause?.kind,
+        causeCode: failure?.cause?.code,
+        constraint: failure?.cause?.constraint,
+        table: failure?.cause?.table,
+      });
+    }
     return {
       error:
         error instanceof OrderConflict
