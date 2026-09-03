@@ -19,10 +19,10 @@ Implementation tasks and milestones are created only after the extraction pass i
 
 ## Extracted system summary
 
-- **Features:** `catalogue`, `cart`, and `orders` only. Checkout belongs to Orders; Homepage and Admin Overview are route compositions.
+- **Features:** `catalogue`, `cart`, `customers`, and `orders`. Checkout belongs to Orders; Customer records and Admin operations belong to Customers; Homepage and Admin Overview are route compositions.
 - **Public routes:** `/`, `/perfumes`, `/perfume/{slug}`, `/cart`, `/checkout`, `/checkout/confirm`, and `/help-me-choose`.
-- **Admin routes:** `/admin`, Perfume list/create/edit, and Order list/detail. Authentication routing remains provider-dependent.
-- **Persisted domain:** Perfume, PerfumeVariant, Order, OrderItem, and OrderStatusEvent. Cart remains client-side.
+- **Admin routes:** `/admin`, Perfume list/create/edit, Order list/detail, and Customer list/create/detail/edit. Authentication routing remains provider-dependent.
+- **Persisted domain:** Perfume, PerfumeVariant, Customer, Order, OrderItem, and OrderStatusEvent. Cart remains client-side.
 - **Shared UI:** public/Admin shells and a small `ModalShell`; feature-specific components stay with their owning feature.
 - **Implementation gate:** the two remaining unchecked checklist items are consolidated approval and milestone authoring after approval. `Run Active Milestone` then executes an authored active contract.
 

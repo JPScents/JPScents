@@ -11,11 +11,11 @@
 
 ## Data and domain
 
-- **Entities:** Cart/CartItem, PerfumeVariant, Order, OrderItem, OrderStatusEvent.
+- **Entities:** Cart/CartItem, PerfumeVariant, Customer, Order, OrderItem, OrderStatusEvent.
 - **Displayed:** resolved cart review, merchandise subtotal, delivery confirmation note.
-- **Entered:** name, WhatsApp number, optional email, delivery area/address, optional note.
+- **Entered:** name, WhatsApp number, optional email, state, mapped city or custom `Other` city, delivery address, optional note.
 - **Derived:** authoritative item amounts, subtotal, initial status/reference/token, stock decrements.
-- **Configuration:** delivery areas, locale/currency, reference generation.
+- **Configuration:** Nigerian states, mapped cities, `Other` city limit, locale/currency, reference generation.
 
 ## Operations
 
@@ -28,7 +28,7 @@
 
 - Public shell, Field/Select/Textarea, Checkout Summary, Place Order action, failure message.
 - Desktop uses form plus sticky/adjacent summary; mobile is a disciplined single column.
-- Contact/Delivery groups remain Orders-owned.
+- Contact and delivery groups update the Customer record; the new Order references that Customer.
 
 ## Behaviour and presentation
 
@@ -46,7 +46,7 @@
 - **Confirmed:** checkout belongs to Orders.
 - **Confirmed:** payment is not collected online.
 - **Confirmed:** delivery cost remains “confirmed after ordering” until deterministic rules exist.
-- **Open:** delivery-area values, exact phone normalization, data-retention/privacy wording, cancellation stock restoration.
+- **Open:** data-retention/privacy wording.
 
 ## Approval
 

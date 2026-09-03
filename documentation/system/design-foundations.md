@@ -28,4 +28,4 @@ Use shadcn Dialog through `ModalShell`. The shell owns accessible title/descript
 
 ## Asset rule
 
-Do not treat placeholder bottle imagery, generated scent-character images, logo text treatments, prices, catalogue names, or operational counts as confirmed client content. Final brand assets, product photography, catalogue data, WhatsApp number, delivery areas, FAQ answers, and policy copy remain content dependencies.
+Do not treat placeholder bottle imagery, generated scent-character images, logo text treatments, prices, catalogue names, or operational counts as confirmed client content. Final brand assets, product photography, catalogue data, WhatsApp number, FAQ answers, and policy copy remain content dependencies. Checkout delivery state/city choices are maintained application configuration.

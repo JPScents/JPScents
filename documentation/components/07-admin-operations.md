@@ -5,13 +5,13 @@
 | Field   | Value                                                                                                |
 | ------- | ---------------------------------------------------------------------------------------------------- |
 | Type    | Admin component family                                                                               |
-| Sources | Workspace `Admin Operations`; Admin Overview, Perfumes, Orders                                       |
+| Sources | Workspace `Admin Operations`; Admin Overview, Perfumes, Orders, Customers                            |
 | Access  | Protected Admin                                                                                      |
 | Purpose | Provide dense, calm operational lists, filters, status indicators, and responsive row/card patterns. |
 
 ## Data and domain
 
-- **Entities:** Perfume, PerfumeVariant, Order.
+- **Entities:** Perfume, PerfumeVariant, Customer, Order.
 - **Displayed:** operational projections only: counts, status, dates, customer summary, stock totals, merchandising flags.
 - **Derived:** available-variant count, total quantity, item count, attention counts.
 
@@ -25,7 +25,7 @@
 ## Components
 
 - Admin toolbar/topbar, search field, filter controls, fixed-lane desktop rows, order status badge, mobile order card.
-- Perfume rows and Order rows are separate domain components sharing only table/card primitives.
+- Perfume, Order, and Customer rows are separate domain components sharing only table/card primitives.
 - Table-to-card responsive transformation is explicit; do not horizontally squeeze desktop tables.
 
 ## Behaviour and presentation

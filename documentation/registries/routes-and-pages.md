@@ -16,14 +16,17 @@ Help Me Choose results use route state/search parameters on `/help-me-choose`; t
 
 ## Protected Admin routes
 
-| Route                       | Page           | Ownership         | Status    |
-| --------------------------- | -------------- | ----------------- | --------- |
-| `/admin`                    | Overview       | route composition | Confirmed |
-| `/admin/perfumes`           | Perfume list   | catalogue         | Confirmed |
-| `/admin/perfumes/new`       | Create Perfume | catalogue         | Confirmed |
-| `/admin/perfumes/{id}`      | Edit Perfume   | catalogue         | Confirmed |
-| `/admin/orders`             | Order list     | orders            | Confirmed |
-| `/admin/orders/{reference}` | Order Detail   | orders            | Confirmed |
+| Route                       | Page                 | Ownership         | Status    |
+| --------------------------- | -------------------- | ----------------- | --------- |
+| `/admin`                    | Overview             | route composition | Confirmed |
+| `/admin/perfumes`           | Perfume list         | catalogue         | Confirmed |
+| `/admin/perfumes/new`       | Create Perfume       | catalogue         | Confirmed |
+| `/admin/perfumes/{id}`      | Edit Perfume         | catalogue         | Confirmed |
+| `/admin/orders`             | Order list           | orders            | Confirmed |
+| `/admin/orders/{reference}` | Order Detail         | orders            | Confirmed |
+| `/admin/customers`          | Customer list        | orders            | Confirmed |
+| `/admin/customers/new`      | Create Customer      | orders            | Confirmed |
+| `/admin/customers/{id}`     | Customer detail/edit | orders            | Confirmed |
 
 ## Authentication routes
 

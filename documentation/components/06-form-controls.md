@@ -12,7 +12,7 @@
 ## Data and domain
 
 - **Entered:** customer/delivery fields; Perfume fields; enum arrays; status; variant fields.
-- **Configuration:** delivery areas, enum labels, field limits, currency and measurement unit.
+- **Configuration:** Nigerian state/city mapping, `Other` city limit, enum labels, currency and measurement unit.
 
 ## Operations
 
@@ -41,7 +41,7 @@
 
 - **Confirmed:** enum arrays use controlled multi-selection, not free-form tags.
 - **Assumed:** checkout email remains optional.
-- **Open:** final delivery-area options and field limits.
+- **Confirmed:** checkout state/city choices use the maintained Nigeria location mapping; `Other` requires a custom city of at most 80 characters.
 
 ## Approval
 

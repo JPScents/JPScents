@@ -5,9 +5,11 @@
 - Perfume: unique usable slug, required public content, controlled enum arrays, valid publication prerequisites.
 - Variant: positive size, supported unit, non-negative integer price and quantity, unique size per Perfume.
 - Cart: positive integer line quantity, not above currently resolved quantity, valid published parent and variant.
-- Checkout: required customer/contact/delivery fields, normalized WhatsApp number, valid optional email, at least one valid Cart line.
+- Checkout: required name, normalized WhatsApp number, valid normalized optional email, Nigerian state, mapped city or `Other` custom city (maximum 80 characters), delivery address, and at least one valid Cart line.
+- Customer identity: checkout creates only when neither identifier exists; it updates a WhatsApp-matched Customer, retains email when omitted, and rejects conflicting WhatsApp/email ownership without merging records.
 - Order creation: repeat all catalogue, price, quantity, and publication checks on the server; enforce idempotency.
-- Admin status and merchandising writes: authenticated, authorised, and constrained to valid values/eligible Perfumes.
+- Customer Admin writes: authenticated; unique normalized WhatsApp and optional email; deletion is blocked when Order history exists.
+- Admin status and merchandising writes: authenticated, authorised, and constrained to valid values/eligible Perfumes. Cancellation is a separate explicit confirmation action.
 
 ## Accessibility
 

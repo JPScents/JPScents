@@ -4,6 +4,7 @@
 | ------------------------------ | -------------------------------------------------------------------------- |
 | Perfume → PerfumeVariant       | One-to-many; at least one orderable variant is required before publication |
 | Perfume → recommendation enums | Many selections within each controlled enum group                          |
+| Customer → Order               | One-to-many; each Order references one Customer                            |
 | Order → OrderItem              | One-to-many; at least one line                                             |
 | Order → OrderStatusEvent       | One-to-many chronological activity history                                 |
 | OrderItem → PerfumeVariant     | Many-to-one stable reference                                               |
@@ -13,3 +14,5 @@
 | Featured → Perfume             | Zero-to-many; Admin-maintained                                             |
 
 Names, slugs, images, and size labels are not copied into CartItem or OrderItem. `OrderItem.unitPriceMinor` is retained because it is the immutable price agreed when the Order was created.
+
+Customer contact and delivery fields are current Customer data, not Order snapshots. Checkout must not merge distinct Customer records when its WhatsApp number and email identify different records.

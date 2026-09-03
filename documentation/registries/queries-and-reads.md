@@ -19,6 +19,8 @@ Names describe feature operations, not API contracts or required files.
 - `getOrderConfirmation` — confirmation-safe Order view accessed with an unguessable token.
 - `listOrders` — Admin search/filter list.
 - `getOrderByReference` — protected operational Order detail and activity.
+- `listCustomers` — protected Customer list with name, WhatsApp, or email search and Order counts.
+- `getCustomerById` — protected Customer detail with current delivery details and Order history.
 - `getAdminOverview` — operational counts, recent Orders, catalogue attention, and current Bestseller.
 
 Admin-session resolution is an infrastructure read whose exact shape depends on the chosen authentication provider. Export Orders remains an open requirement rather than a confirmed query.

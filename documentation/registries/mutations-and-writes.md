@@ -11,8 +11,14 @@ Names describe cohesive operations, not endpoints.
 
 ## Order writes
 
-- `createOrder` — idempotently validate Cart, create Order/items/status event, and decrement variant quantities atomically.
+- `createOrder` — idempotently validate Cart, find or create/update the Customer, create Order/items/status event, and decrement variant quantities atomically.
 - `updateOrderStatus` — protected status change plus activity event.
+- `cancelOrder` — atomically mark an Order `CANCELLED`, restore each ordered Variant quantity once, record the activity event, and retain history.
+
+## Customer Admin writes
+
+- `saveCustomer` — create or update current customer contact and delivery details while preserving unique identifiers.
+- `removeCustomer` — delete only a Customer with no Order history.
 
 ## Catalogue Admin writes
 

@@ -19,11 +19,12 @@
 
 ## Feature boundaries
 
-| Feature     | Owns                                                                                                                   | Does not own                                  |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| `catalogue` | Perfumes, variants, product discovery, related/featured/bestseller selection, Help Me Choose, Admin perfume management | Cart persistence, checkout, Orders            |
-| `cart`      | Client cart state, persistence, quantities, removal, preview/full-cart presentation                                    | Product truth, stock mutation, Order creation |
-| `orders`    | Checkout, cart revalidation, Order creation, confirmation, WhatsApp handoff, Admin order operations                    | Catalogue editing, client cart storage        |
+| Feature     | Owns                                                                                                                   | Does not own                                                                  |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `catalogue` | Perfumes, variants, product discovery, related/featured/bestseller selection, Help Me Choose, Admin perfume management | Cart persistence, checkout, Orders                                            |
+| `cart`      | Client cart state, persistence, quantities, removal, preview/full-cart presentation                                    | Product truth, stock mutation, Order creation                                 |
+| `customers` | Customer identity, contact/delivery records, Customer Admin operations, and customer resolution for checkout           | Order lifecycle, cart state, catalogue data                                   |
+| `orders`    | Checkout, cart revalidation, Order creation, confirmation, WhatsApp handoff, Admin order operations                    | Customer persistence/Admin operations, catalogue editing, client cart storage |
 
 Checkout belongs to Orders because its successful result is a persisted Order. Homepage and Admin Overview are route compositions, not additional features.
 
@@ -40,6 +41,7 @@ src/
   features/
     catalogue/
     cart/
+    customers/
     orders/
   db/                   # database client, schema/migrations, seeds
 tests/                  # mirrors source ownership
@@ -56,7 +58,7 @@ shared UI/capabilities -> no feature workflows
 database infrastructure -> no feature workflows
 ```
 
-Features do not import another feature's internals. Route composition may combine feature outputs. Catalogue provides resolved perfume/variant projections used by Cart and Orders without Cart copying catalogue state.
+Features do not import another feature's internals. Route composition may combine feature outputs. Orders uses the Customers public entry point only for customer resolution during checkout; Customer persistence and Admin operations remain inside Customers. Catalogue provides resolved perfume/variant projections used by Cart and Orders without Cart copying catalogue state.
 
 ## Shared UI boundary
 
@@ -72,4 +74,4 @@ Features do not import another feature's internals. Route composition may combin
 - production Auth-user provisioning, callback allowlist, and SMTP handoff for the confirmed Admin email;
 - product-image limits and deletion/retirement rules;
 - production Supabase/deployment target;
-- exact stock restoration behaviour when an Order is cancelled.
+- production monitoring for the one-time stock restoration performed when an Order is cancelled.
