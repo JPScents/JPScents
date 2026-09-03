@@ -5,10 +5,7 @@ function firstConfigured(...values: Array<string | undefined>) {
 }
 
 export function getSupabaseConfig() {
-  const url = firstConfigured(
-    process.env.SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-  );
+  const url = firstConfigured(process.env.SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_URL);
   const publishableKey = firstConfigured(
     process.env.SUPABASE_PUBLISHABLE_KEY,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
