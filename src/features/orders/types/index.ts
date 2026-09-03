@@ -5,7 +5,8 @@ export type CheckoutInput = {
   customerName: string;
   whatsappNumber: string;
   email?: string;
-  deliveryArea: string;
+  deliveryState: string;
+  deliveryCity: string;
   deliveryAddress: string;
   orderNote?: string;
 };

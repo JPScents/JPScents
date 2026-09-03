@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   submitOrder: vi.fn(),
-  deleteOrderAdmin: vi.fn(),
+  cancelOrderAdmin: vi.fn(),
   clearCart: vi.fn(),
   cart: {
     items: [{ perfumeVariantId: "11111111-1111-4111-8111-111111111111", quantity: 1 }],
@@ -26,8 +26,8 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/features/orders/actions/change-order-status.admin.action", () => ({
   changeOrderStatus: vi.fn(),
 }));
-vi.mock("@/features/orders/actions/delete-order.admin.action", () => ({
-  deleteOrderAdmin: mocks.deleteOrderAdmin,
+vi.mock("@/features/orders/actions/cancel-order.admin.action", () => ({
+  cancelOrderAdmin: mocks.cancelOrderAdmin,
 }));
 vi.mock("@/features/orders/actions/submit-order.action", () => ({
   submitOrder: mocks.submitOrder,
@@ -135,7 +135,8 @@ describe("order presentations", () => {
           ...placedOrder,
           customerName: "Amara Okafor",
           whatsappNumber: "2348012345678",
-          deliveryArea: "Lekki",
+          deliveryState: "Lagos",
+          deliveryCity: "Lekki",
           deliveryAddress: "12 Palm Avenue",
           events: [],
         }}
@@ -149,28 +150,27 @@ describe("order presentations", () => {
     );
   });
 
-  it("requires explicit deletion confirmation and exposes deletion failures", async () => {
-    mocks.deleteOrderAdmin.mockResolvedValue({ error: "Order not found." });
+  it("requires explicit cancellation confirmation and exposes cancellation failures", async () => {
+    mocks.cancelOrderAdmin.mockResolvedValue({ error: "Order not found." });
     render(
       <AdminOrderDetail
         order={{
           ...placedOrder,
           customerName: "Amara Okafor",
           whatsappNumber: "2348012345678",
-          deliveryArea: "Lekki",
+          deliveryState: "Lagos",
+          deliveryCity: "Lekki",
           deliveryAddress: "12 Palm Avenue",
           events: [],
         }}
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete order" }));
-    expect(screen.getByRole("heading", { name: "Delete this order?" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Delete order" }));
-    await waitFor(() => expect(mocks.deleteOrderAdmin).toHaveBeenCalledWith("JP-ABCDEFG"));
-    await waitFor(() =>
-      expect(screen.getByRole("alert")).toHaveTextContent("Order not found."),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Cancel order" }));
+    expect(screen.getByRole("heading", { name: "Cancel this order?" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel order" }));
+    await waitFor(() => expect(mocks.cancelOrderAdmin).toHaveBeenCalledWith("JP-ABCDEFG"));
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Order not found."));
   });
 
   it("makes an empty Admin overview actionable without implying the catalogue is healthy", () => {

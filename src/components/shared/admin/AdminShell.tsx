@@ -24,6 +24,7 @@ const navigation = [
   { href: siteConfig.routes.admin, label: "Overview" },
   { href: siteConfig.routes.adminPerfumes, label: "Perfumes" },
   { href: siteConfig.routes.adminOrders, label: "Orders" },
+  { href: siteConfig.routes.adminCustomers, label: "Customers" },
 ];
 
 export function AdminShell({ children, email }: { children: ReactNode; email: string | null }) {

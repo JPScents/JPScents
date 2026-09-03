@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({
   getCurrentAdmin: vi.fn(),
   createOrder: vi.fn(),
   updateOrderStatus: vi.fn(),
-  deleteOrder: vi.fn(),
+  cancelOrder: vi.fn(),
   revalidatePath: vi.fn(),
 }));
 vi.mock("next/headers", () => ({ cookies: vi.fn(async () => mocks.cookies) }));
@@ -14,10 +14,10 @@ vi.mock("@/lib/auth/admin", () => ({ getCurrentAdmin: mocks.getCurrentAdmin }));
 vi.mock("@/features/orders/orders", () => ({
   createOrder: mocks.createOrder,
   updateOrderStatus: mocks.updateOrderStatus,
-  deleteOrder: mocks.deleteOrder,
+  cancelOrder: mocks.cancelOrder,
 }));
 import { changeOrderStatus } from "@/features/orders/actions/change-order-status.admin.action";
-import { deleteOrderAdmin } from "@/features/orders/actions/delete-order.admin.action";
+import { cancelOrderAdmin } from "@/features/orders/actions/cancel-order.admin.action";
 import { submitOrder } from "@/features/orders/actions/submit-order.action";
 
 describe("order server actions", () => {
@@ -29,15 +29,15 @@ describe("order server actions", () => {
     });
     expect(mocks.updateOrderStatus).not.toHaveBeenCalled();
   });
-  it("authorizes deletion before restoring stock and revalidates affected admin pages", async () => {
+  it("authorizes cancellation before restoring stock and revalidates affected admin pages", async () => {
     mocks.getCurrentAdmin.mockResolvedValue(null);
-    await expect(deleteOrderAdmin("JP-1")).resolves.toEqual({ error: "You are not authorized." });
-    expect(mocks.deleteOrder).not.toHaveBeenCalled();
+    await expect(cancelOrderAdmin("JP-1")).resolves.toEqual({ error: "You are not authorized." });
+    expect(mocks.cancelOrder).not.toHaveBeenCalled();
 
     mocks.getCurrentAdmin.mockResolvedValue({ id: "admin", email: "admin@example.com" });
-    mocks.deleteOrder.mockResolvedValue({ ok: true });
-    await expect(deleteOrderAdmin("JP-1")).resolves.toEqual({ ok: true });
-    expect(mocks.deleteOrder).toHaveBeenCalledWith("JP-1");
+    mocks.cancelOrder.mockResolvedValue({ ok: true });
+    await expect(cancelOrderAdmin("JP-1")).resolves.toEqual({ ok: true });
+    expect(mocks.cancelOrder).toHaveBeenCalledWith("JP-1");
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin");
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin/orders");
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin/orders/JP-1");

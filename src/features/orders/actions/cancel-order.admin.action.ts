@@ -4,14 +4,15 @@ import { revalidatePath } from "next/cache";
 
 import { getCurrentAdmin } from "@/lib/auth/admin";
 
-import { deleteOrder } from "../orders";
+import { cancelOrder } from "../orders";
 
-export async function deleteOrderAdmin(reference: unknown) {
+export async function cancelOrderAdmin(reference: unknown) {
   if (!(await getCurrentAdmin())) return { error: "You are not authorized." } as const;
-  if (typeof reference !== "string" || !reference.trim()) return { error: "Order not found." } as const;
+  if (typeof reference !== "string" || !reference.trim())
+    return { error: "Order not found." } as const;
   const orderReference = reference.trim();
-  const result = await deleteOrder(orderReference);
-  if ("ok" in result) {
+  const result = await cancelOrder(orderReference);
+  if ("ok" in result || "unchanged" in result) {
     revalidatePath("/admin");
     revalidatePath("/admin/orders");
     revalidatePath(`/admin/orders/${orderReference}`);

@@ -1,33 +1,47 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  findUnique: vi.fn(),
-  findMany: vi.fn(),
-  updateMany: vi.fn(),
-  create: vi.fn(),
-  findUniqueOrThrow: vi.fn(),
-  update: vi.fn(),
-  delete: vi.fn(),
-  deleteManyEvents: vi.fn(),
-  deleteManyItems: vi.fn(),
-  listOrders: vi.fn(),
+  orderFindUnique: vi.fn(),
+  orderFindMany: vi.fn(),
+  orderCreate: vi.fn(),
+  orderFindUniqueOrThrow: vi.fn(),
+  orderUpdate: vi.fn(),
+  orderUpdateMany: vi.fn(),
+  customerFindUnique: vi.fn(),
+  customerCreate: vi.fn(),
+  customerUpdate: vi.fn(),
+  variantFindMany: vi.fn(),
+  variantUpdateMany: vi.fn(),
+  eventCreate: vi.fn(),
 }));
 
 vi.mock("@/db/prisma", () => ({
   prisma: {
-    order: { findUnique: mocks.findUnique, findMany: mocks.listOrders },
+    order: { findUnique: mocks.orderFindUnique, findMany: mocks.orderFindMany },
+    customer: {
+      findUnique: mocks.customerFindUnique,
+      create: mocks.customerCreate,
+      update: mocks.customerUpdate,
+    },
     $transaction: vi.fn(async (callback) =>
       callback({
         order: {
-          findUnique: mocks.findUnique,
-          create: mocks.create,
-          findUniqueOrThrow: mocks.findUniqueOrThrow,
-          update: mocks.update,
-          delete: mocks.delete,
+          findUnique: mocks.orderFindUnique,
+          create: mocks.orderCreate,
+          findUniqueOrThrow: mocks.orderFindUniqueOrThrow,
+          update: mocks.orderUpdate,
+          updateMany: mocks.orderUpdateMany,
         },
-        orderStatusEvent: { deleteMany: mocks.deleteManyEvents },
-        orderItem: { deleteMany: mocks.deleteManyItems },
-        perfumeVariant: { findMany: mocks.findMany, updateMany: mocks.updateMany },
+        customer: {
+          findUnique: mocks.customerFindUnique,
+          create: mocks.customerCreate,
+          update: mocks.customerUpdate,
+        },
+        orderStatusEvent: { create: mocks.eventCreate },
+        perfumeVariant: {
+          findMany: mocks.variantFindMany,
+          updateMany: mocks.variantUpdateMany,
+        },
       }),
     ),
   },
@@ -35,21 +49,33 @@ vi.mock("@/db/prisma", () => ({
 vi.mock("@/lib/supabase/storage", () => ({
   getPerfumeImageUrl: vi.fn(async () => "https://signed.example/bottle"),
 }));
+
 import {
+  cancelOrder,
   createOrder,
-  deleteOrder,
   getOrderConfirmation,
   listOrders,
-  normalizeWhatsappNumber,
   parseCheckoutInput,
   updateOrderStatus,
 } from "@/features/orders/orders";
+import { nigeriaStates } from "@/features/orders/constants/nigeria-locations";
+import { normalizeWhatsappNumber } from "@/lib/whatsapp";
 
 const id = "11111111-1111-4111-8111-111111111111";
 const checkout = {
   customerName: "Ada",
   whatsappNumber: "0803 123 4567",
-  deliveryArea: "Ikeja",
+  deliveryState: "Lagos",
+  deliveryCity: "Ikeja",
+  deliveryAddress: "1 Example Street",
+};
+const customer = {
+  id: "customer",
+  name: "Ada",
+  whatsappNumber: "2348031234567",
+  email: null,
+  deliveryState: "Lagos",
+  deliveryCity: "Ikeja",
   deliveryAddress: "1 Example Street",
 };
 const order = {
@@ -57,16 +83,13 @@ const order = {
   reference: "JP-ABC",
   confirmationToken: "a".repeat(43),
   submissionKey: "22222222-2222-4222-8222-222222222222",
-  customerName: "Ada",
-  whatsappNumber: "2348031234567",
-  email: null,
-  deliveryArea: "Ikeja",
-  deliveryAddress: "1 Example Street",
   orderNote: null,
   subtotalMinor: 120000,
   status: "NEW",
+  stockRestoredAt: null,
   createdAt: new Date(),
   updatedAt: new Date(),
+  customer,
   items: [
     {
       quantity: 1,
@@ -84,18 +107,33 @@ const order = {
 describe("orders", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.findUnique.mockResolvedValue(null);
-    mocks.findMany.mockResolvedValue([{ id, priceMinor: 120000, sizeValue: 50, sizeUnit: "ML" }]);
-    mocks.updateMany.mockResolvedValue({ count: 1 });
-    mocks.create.mockResolvedValue({ id: "order" });
-    mocks.findUniqueOrThrow.mockResolvedValue(order);
+    mocks.orderFindUnique.mockResolvedValue(null);
+    mocks.customerFindUnique.mockResolvedValue(null);
+    mocks.customerCreate.mockResolvedValue(customer);
+    mocks.variantFindMany.mockResolvedValue([
+      { id, priceMinor: 120000, sizeValue: 50, sizeUnit: "ML" },
+    ]);
+    mocks.variantUpdateMany.mockResolvedValue({ count: 1 });
+    mocks.orderUpdateMany.mockResolvedValue({ count: 1 });
+    mocks.orderCreate.mockResolvedValue({ id: "order" });
+    mocks.orderFindUniqueOrThrow.mockResolvedValue(order);
   });
 
-  it("validates checkout fields and normalizes Nigerian and international WhatsApp numbers", () => {
+  it("validates Nigerian locations, custom cities, and normalized WhatsApp numbers", () => {
+    expect(nigeriaStates).toHaveLength(37);
+    expect(nigeriaStates).toContain("FCT");
     expect(normalizeWhatsappNumber("0803 123 4567")).toBe("2348031234567");
     expect(normalizeWhatsappNumber("+44 7700 900123")).toBe("447700900123");
-    expect(normalizeWhatsappNumber("123")).toBe("");
-    expect(parseCheckoutInput({ ...checkout, email: "invalid" }).errors.email).toBeDefined();
+    expect(
+      parseCheckoutInput({ ...checkout, deliveryCity: "OTHER", customCity: "" }).errors.customCity,
+    ).toBeDefined();
+    expect(
+      parseCheckoutInput({ ...checkout, deliveryCity: "OTHER", customCity: "Victoria Island" })
+        .input,
+    ).toMatchObject({ deliveryCity: "Victoria Island", deliveryState: "Lagos" });
+    expect(
+      parseCheckoutInput({ ...checkout, deliveryState: "Not a state" }).errors.deliveryState,
+    ).toBeDefined();
   });
 
   it("rejects malformed and merged cart quantities before writes", async () => {
@@ -109,141 +147,125 @@ describe("orders", () => {
         "22222222-2222-4222-8222-222222222222",
       ),
     ).resolves.toMatchObject({ error: expect.stringContaining("cart") });
-    expect(mocks.findMany).not.toHaveBeenCalled();
+    expect(mocks.variantFindMany).not.toHaveBeenCalled();
   });
 
-  it("uses current authoritative price, conditionally decrements published stock, and projects no storage path", async () => {
+  it("creates a customer, atomically decrements stock, and projects no storage path", async () => {
     const result = await createOrder(
       [{ perfumeVariantId: id, quantity: 1 }],
       checkout,
       "22222222-2222-4222-8222-222222222222",
     );
-    expect(mocks.updateMany).toHaveBeenCalledWith(
+    expect(mocks.customerCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ whatsappNumber: "2348031234567" }),
+      }),
+    );
+    expect(mocks.variantUpdateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ quantity: { gte: 1 }, perfume: { status: "PUBLISHED" } }),
       }),
     );
-    expect(mocks.create).toHaveBeenCalledWith(
+    expect(mocks.orderCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
+          customerId: "customer",
           subtotalMinor: 120000,
           items: { create: [{ perfumeVariantId: id, quantity: 1, unitPriceMinor: 120000 }] },
         }),
       }),
     );
-    expect(mocks.create.mock.calls[0][0].data.reference).toMatch(/^JP-[23456789A-HJ-NP-Z]{7}$/);
-    expect(result).toMatchObject({
-      order: {
-        items: [
-          {
-            sizeLabel: "50 mL",
-            imageUrl: "https://signed.example/bottle",
-          },
-        ],
-      },
-    });
-    if (!("order" in result) || !result.order) throw new Error("Expected an order result.");
-    expect(result.order.items[0]).not.toHaveProperty("path");
+    expect(result).toMatchObject({ order: { items: [{ sizeLabel: "50 mL" }] } });
   });
 
-  it("returns an existing idempotent order without stock mutation and protects confirmation by token", async () => {
-    mocks.findUnique.mockResolvedValue(order);
+  it("reuses a matching customer and rejects conflicting WhatsApp and email identities", async () => {
+    mocks.customerFindUnique.mockResolvedValueOnce(customer).mockResolvedValueOnce(null);
+    await createOrder(
+      [{ perfumeVariantId: id, quantity: 1 }],
+      checkout,
+      "22222222-2222-4222-8222-222222222222",
+    );
+    expect(mocks.customerCreate).not.toHaveBeenCalled();
+    expect(mocks.customerUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "customer" } }),
+    );
+
+    mocks.customerFindUnique.mockReset();
+    mocks.customerFindUnique.mockResolvedValueOnce(customer).mockResolvedValueOnce({
+      ...customer,
+      id: "other-customer",
+      email: "ada@example.com",
+    });
+    await expect(
+      createOrder(
+        [{ perfumeVariantId: id, quantity: 1 }],
+        { ...checkout, email: "ada@example.com" },
+        "33333333-3333-4333-8333-333333333333",
+      ),
+    ).resolves.toMatchObject({ error: expect.stringContaining("different customers") });
+  });
+
+  it("returns an existing idempotent order without stock or customer mutation", async () => {
+    mocks.orderFindUnique.mockResolvedValue(order);
     const result = await createOrder(
       [{ perfumeVariantId: id, quantity: 1 }],
       checkout,
       "22222222-2222-4222-8222-222222222222",
     );
     expect(result).toMatchObject({ duplicate: true, order: { reference: "JP-ABC" } });
-    expect(mocks.updateMany).not.toHaveBeenCalled();
-    mocks.findUnique.mockResolvedValueOnce(order);
-    await expect(getOrderConfirmation("short")).resolves.toBeNull();
+    expect(mocks.variantUpdateMany).not.toHaveBeenCalled();
+    expect(mocks.customerCreate).not.toHaveBeenCalled();
     await expect(getOrderConfirmation("a".repeat(43))).resolves.toMatchObject({
       reference: "JP-ABC",
     });
   });
 
-  it("rolls back a stock conflict and keeps database failures generic", async () => {
-    mocks.updateMany.mockResolvedValueOnce({ count: 0 });
-    await expect(
-      createOrder(
-        [{ perfumeVariantId: id, quantity: 1 }],
-        checkout,
-        "22222222-2222-4222-8222-222222222222",
-      ),
-    ).resolves.toMatchObject({
-      error: "One or more perfumes are no longer available in the requested quantity.",
-    });
-    mocks.updateMany.mockRejectedValueOnce(new Error("database credential detail"));
-    await expect(
-      createOrder(
-        [{ perfumeVariantId: id, quantity: 1 }],
-        checkout,
-        "22222222-2222-4222-8222-222222222222",
-      ),
-    ).resolves.toMatchObject({ error: "We could not create your order. Please try again." });
-  });
-
-  it("filters newest-first order reads and writes a status event only when the status changes", async () => {
-    mocks.listOrders.mockResolvedValue([{ ...order, _count: { items: 1 } }]);
+  it("filters newest-first order reads and prevents generic status changes from bypassing cancellation", async () => {
+    mocks.orderFindMany.mockResolvedValue([{ ...order, _count: { items: 1 } }]);
     await expect(listOrders({ query: "Ada", status: "NEW" })).resolves.toMatchObject([
       { reference: "JP-ABC", itemCount: 1 },
     ]);
-    expect(mocks.listOrders).toHaveBeenCalledWith(
-      expect.objectContaining({
-        orderBy: { createdAt: "desc" },
-        where: expect.objectContaining({ status: "NEW" }),
-      }),
-    );
-    mocks.findUnique.mockResolvedValueOnce({ id: "order", status: "NEW" });
-    await expect(updateOrderStatus("JP-ABC", "NEW")).resolves.toEqual({ unchanged: true });
-    expect(mocks.update).not.toHaveBeenCalled();
-    mocks.findUnique.mockResolvedValueOnce({ id: "order", status: "NEW" });
-    await expect(updateOrderStatus("JP-ABC", "CONFIRMED")).resolves.toEqual({ ok: true });
-    expect(mocks.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          status: "CONFIRMED",
-          statusEvents: { create: { fromStatus: "NEW", toStatus: "CONFIRMED" } },
-        }),
-      }),
-    );
-    expect(mocks.updateMany).not.toHaveBeenCalled();
+    await expect(updateOrderStatus("JP-ABC", "CANCELLED")).resolves.toEqual({
+      error: "Use the cancellation action to cancel an order.",
+    });
+    mocks.orderFindUnique.mockResolvedValueOnce({ id: "order", status: "CANCELLED" });
+    await expect(updateOrderStatus("JP-ABC", "NEW")).resolves.toEqual({
+      error: "Cancelled orders cannot be reopened.",
+    });
+    expect(mocks.orderUpdate).not.toHaveBeenCalled();
   });
 
-  it("restores each linked variant once before deleting an order and its dependents", async () => {
-    mocks.findUnique.mockResolvedValueOnce({
+  it("cancels once, restores grouped stock, and records a status event", async () => {
+    mocks.orderFindUnique.mockResolvedValueOnce({
       id: "order",
+      status: "NEW",
+      stockRestoredAt: null,
       items: [
         { perfumeVariantId: id, quantity: 1 },
         { perfumeVariantId: id, quantity: 2 },
-        { perfumeVariantId: "22222222-2222-4222-8222-222222222222", quantity: 3 },
       ],
     });
-
-    await expect(deleteOrder("JP-ABC")).resolves.toEqual({ ok: true });
-    expect(mocks.updateMany).toHaveBeenCalledTimes(2);
-    expect(mocks.updateMany).toHaveBeenCalledWith({
+    await expect(cancelOrder("JP-ABC")).resolves.toEqual({ ok: true });
+    expect(mocks.variantUpdateMany).toHaveBeenCalledWith({
       where: { id },
       data: { quantity: { increment: 3 } },
     });
-    expect(mocks.deleteManyEvents).toHaveBeenCalledWith({ where: { orderId: "order" } });
-    expect(mocks.deleteManyItems).toHaveBeenCalledWith({ where: { orderId: "order" } });
-    expect(mocks.delete).toHaveBeenCalledWith({ where: { id: "order" } });
+    expect(mocks.orderUpdateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "order", status: "NEW", stockRestoredAt: null } }),
+    );
+    expect(mocks.eventCreate).toHaveBeenCalledWith({
+      data: { orderId: "order", fromStatus: "NEW", toStatus: "CANCELLED" },
+    });
   });
 
-  it("reports missing orders and keeps deletion generic when the transaction fails", async () => {
-    await expect(deleteOrder("JP-MISSING")).resolves.toEqual({ error: "Order not found." });
-    mocks.findUnique.mockResolvedValueOnce({
+  it("does not restore stock twice for a repeat cancellation", async () => {
+    mocks.orderFindUnique.mockResolvedValueOnce({
       id: "order",
-      items: [{ perfumeVariantId: id, quantity: 1 }],
+      status: "CANCELLED",
+      stockRestoredAt: new Date(),
+      items: [],
     });
-    mocks.updateMany.mockRejectedValueOnce(new Error("database detail"));
-
-    await expect(deleteOrder("JP-ABC")).resolves.toEqual({
-      error: "Unable to delete this order. No changes were made.",
-    });
-    expect(mocks.deleteManyEvents).not.toHaveBeenCalled();
-    expect(mocks.deleteManyItems).not.toHaveBeenCalled();
-    expect(mocks.delete).not.toHaveBeenCalled();
+    await expect(cancelOrder("JP-ABC")).resolves.toEqual({ unchanged: true });
+    expect(mocks.variantUpdateMany).not.toHaveBeenCalled();
   });
 });

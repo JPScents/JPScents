@@ -6,13 +6,22 @@ import { useState, useTransition } from "react";
 import { siteConfig } from "@/config/site";
 
 import { submitOrder } from "../actions/submit-order.action";
+import {
+  CUSTOM_CITY_MAX_LENGTH,
+  nigeriaLocations,
+  nigeriaStates,
+  OTHER_CITY_VALUE,
+} from "../constants/nigeria-locations";
+import { isNigerianState } from "../utils/delivery-location.utils";
 import { OrderSummary } from "./OrderSummary";
 
 type CheckoutForm = {
   customerName: string;
   whatsappNumber: string;
   email: string;
-  deliveryArea: string;
+  deliveryState: string;
+  deliveryCity: string;
+  customCity: string;
   deliveryAddress: string;
   orderNote: string;
 };
@@ -100,7 +109,9 @@ export function Checkout({ cart }: { cart: CheckoutCart }) {
     customerName: "",
     whatsappNumber: "",
     email: "",
-    deliveryArea: "",
+    deliveryState: "",
+    deliveryCity: "",
+    customCity: "",
     deliveryAddress: "",
     orderNote: "",
   });
@@ -134,6 +145,11 @@ export function Checkout({ cart }: { cart: CheckoutCart }) {
   };
   const update = (field: keyof CheckoutForm, value: string) =>
     setForm((previous) => ({ ...previous, [field]: value }));
+  const updateState = (deliveryState: string) =>
+    setForm((previous) => ({ ...previous, deliveryState, deliveryCity: "", customCity: "" }));
+  const cities = isNigerianState(form.deliveryState)
+    ? nigeriaLocations[form.deliveryState]
+    : undefined;
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
     setMessage("");
@@ -196,12 +212,92 @@ export function Checkout({ cart }: { cart: CheckoutCart }) {
               Delivery details{" "}
               <span className="font-sans text-xs tracking-[.14em] text-jp-olive">02</span>
             </legend>
+            <div className="grid gap-5 lg:grid-cols-2">
+              <label className="grid gap-2 text-sm font-semibold">
+                State
+                <select
+                  value={form.deliveryState}
+                  onChange={(event) => updateState(event.target.value)}
+                  autoComplete="address-level1"
+                  className="h-12 border bg-jp-surface px-3 font-normal"
+                  aria-invalid={Boolean(errors.deliveryState)}
+                  aria-describedby={errors.deliveryState ? "deliveryState-error" : undefined}
+                >
+                  <option value="">Choose your state</option>
+                  {nigeriaStates.map((state) => (
+                    <option key={state} value={state}>
+                      {state}
+                    </option>
+                  ))}
+                </select>
+                {errors.deliveryState ? (
+                  <span
+                    id="deliveryState-error"
+                    role="alert"
+                    className="font-normal text-destructive"
+                  >
+                    {errors.deliveryState}
+                  </span>
+                ) : null}
+              </label>
+              <label className="grid gap-2 text-sm font-semibold">
+                City
+                <select
+                  value={form.deliveryCity}
+                  onChange={(event) => update("deliveryCity", event.target.value)}
+                  autoComplete="address-level2"
+                  disabled={!cities}
+                  className="h-12 border bg-jp-surface px-3 font-normal disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-invalid={Boolean(errors.deliveryCity)}
+                  aria-describedby={errors.deliveryCity ? "deliveryCity-error" : undefined}
+                >
+                  <option value="">{cities ? "Choose your city" : "Choose a state first"}</option>
+                  {cities?.map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                  {cities ? <option value={OTHER_CITY_VALUE}>Other</option> : null}
+                </select>
+                {errors.deliveryCity ? (
+                  <span
+                    id="deliveryCity-error"
+                    role="alert"
+                    className="font-normal text-destructive"
+                  >
+                    {errors.deliveryCity}
+                  </span>
+                ) : null}
+              </label>
+            </div>
+            {form.deliveryCity === OTHER_CITY_VALUE ? (
+              <label className="grid gap-2 text-sm font-semibold">
+                City name
+                <input
+                  value={form.customCity}
+                  onChange={(event) => update("customCity", event.target.value)}
+                  placeholder="Enter your city"
+                  maxLength={CUSTOM_CITY_MAX_LENGTH}
+                  autoComplete="address-level2"
+                  className="h-12 border bg-jp-surface px-3 font-normal"
+                  aria-invalid={Boolean(errors.customCity)}
+                  aria-describedby={errors.customCity ? "customCity-error" : undefined}
+                />
+                <span className="text-xs font-normal text-jp-text-secondary">
+                  Up to {CUSTOM_CITY_MAX_LENGTH} characters.
+                </span>
+                {errors.customCity ? (
+                  <span id="customCity-error" role="alert" className="font-normal text-destructive">
+                    {errors.customCity}
+                  </span>
+                ) : null}
+              </label>
+            ) : null}
             <Fields
               form={form}
               update={update}
               errors={errors}
               fields={[
-                ["deliveryArea", "Delivery area", "Enter your delivery area", "text"],
                 [
                   "deliveryAddress",
                   "Delivery address",

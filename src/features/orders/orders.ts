@@ -6,11 +6,11 @@ import { OrderStatus, Prisma } from "@/db/generated/client";
 import { prisma } from "@/db/prisma";
 import { commerceConfig } from "@/config/commerce";
 import { getPerfumeImageUrl } from "@/lib/supabase/storage";
+import { CustomerIdentityConflict, resolveCustomerForOrder } from "@/features/customers";
 
 import { parseCheckoutInput } from "./parsers/checkout.parser";
 import type { OrderCartLine, OrderFilters } from "./types";
 export { parseCheckoutInput } from "./parsers/checkout.parser";
-export { normalizeWhatsappNumber } from "./utils/whatsapp.utils";
 export const orderStatuses = Object.values(OrderStatus);
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -47,6 +47,7 @@ function token() {
   return randomBytes(32).toString("base64url");
 }
 const orderInclude = {
+  customer: true,
   items: {
     include: {
       perfumeVariant: {
@@ -82,11 +83,12 @@ async function projectOrder(
     items,
     ...(includePrivate
       ? {
-          customerName: order.customerName,
-          whatsappNumber: order.whatsappNumber,
-          email: order.email,
-          deliveryArea: order.deliveryArea,
-          deliveryAddress: order.deliveryAddress,
+          customerName: order.customer.name,
+          whatsappNumber: order.customer.whatsappNumber,
+          email: order.customer.email,
+          deliveryState: order.customer.deliveryState,
+          deliveryCity: order.customer.deliveryCity,
+          deliveryAddress: order.customer.deliveryAddress,
           orderNote: order.orderNote,
           events: order.statusEvents,
         }
@@ -138,12 +140,21 @@ export async function createOrder(linesRaw: unknown, checkoutRaw: unknown, submi
           (total, line) => total + byId.get(line.perfumeVariantId)!.priceMinor * line.quantity,
           0,
         );
+        const customer = await resolveCustomerForOrder(tx, {
+          name: input.customerName,
+          whatsappNumber: input.whatsappNumber,
+          email: input.email,
+          deliveryState: input.deliveryState,
+          deliveryCity: input.deliveryCity,
+          deliveryAddress: input.deliveryAddress,
+        });
         const created = await tx.order.create({
           data: {
+            customerId: customer.id,
             reference: reference(),
             confirmationToken: token(),
             submissionKey,
-            ...input,
+            orderNote: input.orderNote,
             subtotalMinor,
             items: {
               create: lines.map((line) => ({
@@ -169,7 +180,7 @@ export async function createOrder(linesRaw: unknown, checkoutRaw: unknown, submi
       duplicate: result.duplicate,
     } as const;
   } catch (error) {
-    if (!(error instanceof OrderConflict)) {
+    if (!(error instanceof OrderConflict) && !(error instanceof CustomerIdentityConflict)) {
       const failure = error as {
         name?: string;
         code?: string;
@@ -188,7 +199,9 @@ export async function createOrder(linesRaw: unknown, checkoutRaw: unknown, submi
       error:
         error instanceof OrderConflict
           ? error.message
-          : "We could not create your order. Please try again.",
+          : error instanceof CustomerIdentityConflict
+            ? error.message
+            : "We could not create your order. Please try again.",
     } as const;
   }
 }
@@ -211,19 +224,19 @@ export async function listOrders(filters: OrderFilters = {}) {
         ? {
             OR: [
               { reference: { contains: query, mode: "insensitive" } },
-              { customerName: { contains: query, mode: "insensitive" } },
-              { whatsappNumber: { contains: query } },
+              { customer: { name: { contains: query, mode: "insensitive" } } },
+              { customer: { whatsappNumber: { contains: query } } },
             ],
           }
         : {}),
     },
-    include: { _count: { select: { items: true } } },
+    include: { customer: true, _count: { select: { items: true } } },
     orderBy: { createdAt: "desc" },
   });
   return rows.map((order) => ({
     reference: order.reference,
-    customerName: order.customerName,
-    whatsappNumber: order.whatsappNumber,
+    customerName: order.customer.name,
+    whatsappNumber: order.customer.whatsappNumber,
     subtotalMinor: order.subtotalMinor,
     status: order.status,
     createdAt: order.createdAt,
@@ -242,10 +255,14 @@ export async function getOrderByReference(referenceValue: string) {
 export async function updateOrderStatus(referenceValue: string, nextStatus: unknown) {
   if (typeof nextStatus !== "string" || !orderStatuses.includes(nextStatus as OrderStatus))
     return { error: "Choose a valid order status." } as const;
+  if (nextStatus === "CANCELLED")
+    return { error: "Use the cancellation action to cancel an order." } as const;
   try {
     return await prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({ where: { reference: referenceValue } });
       if (!order) return { error: "Order not found." } as const;
+      if (order.status === "CANCELLED")
+        return { error: "Cancelled orders cannot be reopened." } as const;
       if (order.status === nextStatus) return { unchanged: true } as const;
       await tx.order.update({
         where: { id: order.id },
@@ -263,7 +280,7 @@ export async function updateOrderStatus(referenceValue: string, nextStatus: unkn
   }
 }
 
-export async function deleteOrder(referenceValue: string) {
+export async function cancelOrder(referenceValue: string) {
   if (!referenceValue.trim()) return { error: "Order not found." } as const;
   try {
     return await prisma.$transaction(
@@ -273,6 +290,19 @@ export async function deleteOrder(referenceValue: string) {
           include: { items: true },
         });
         if (!order) return { error: "Order not found." } as const;
+        if (order.status === "CANCELLED" && order.stockRestoredAt)
+          return { unchanged: true } as const;
+        if (order.status === "CANCELLED")
+          return {
+            error: "This cancelled order cannot be safely restored automatically.",
+          } as const;
+
+        const claimed = await tx.order.updateMany({
+          where: { id: order.id, status: order.status, stockRestoredAt: null },
+          data: { status: "CANCELLED", stockRestoredAt: new Date() },
+        });
+        if (claimed.count !== 1)
+          return { error: "This order was updated elsewhere. Refresh and try again." } as const;
 
         const quantitiesByVariant = new Map<string, number>();
         for (const item of order.items) {
@@ -289,20 +319,20 @@ export async function deleteOrder(referenceValue: string) {
           if (restored.count !== 1) throw new OrderConflict("Unable to restore order stock.");
         }
 
-        await tx.orderStatusEvent.deleteMany({ where: { orderId: order.id } });
-        await tx.orderItem.deleteMany({ where: { orderId: order.id } });
-        await tx.order.delete({ where: { id: order.id } });
+        await tx.orderStatusEvent.create({
+          data: { orderId: order.id, fromStatus: order.status, toStatus: "CANCELLED" },
+        });
         return { ok: true } as const;
       },
       { maxWait: 10_000, timeout: 15_000 },
     );
   } catch (error) {
     const failure = error as { name?: string; code?: string };
-    console.error("[orders] deleteOrder transaction failed", {
+    console.error("[orders] cancelOrder transaction failed", {
       name: failure?.name,
       code: failure?.code,
     });
-    return { error: "Unable to delete this order. No changes were made." } as const;
+    return { error: "Unable to cancel this order. No changes were made." } as const;
   }
 }
 

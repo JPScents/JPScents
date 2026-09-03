@@ -8,11 +8,11 @@ import { ModalShell } from "@/components/shared/ModalShell";
 import { siteConfig } from "@/config/site";
 
 import { changeOrderStatus } from "../actions/change-order-status.admin.action";
-import { deleteOrderAdmin } from "../actions/delete-order.admin.action";
+import { cancelOrderAdmin } from "../actions/cancel-order.admin.action";
 import type { PublicOrder } from "../types";
 import { OrderSummary } from "./OrderSummary";
 
-const orderStatuses = ["NEW", "CONFIRMED", "AWAITING_PAYMENT", "CANCELLED"];
+const orderStatuses = ["NEW", "CONFIRMED", "AWAITING_PAYMENT"];
 const statusLabel = (status: string) =>
   status
     .replaceAll("_", " ")
@@ -35,7 +35,8 @@ type AdminOrder = PublicOrder & {
   customerName?: string;
   whatsappNumber?: string;
   email?: string | null;
-  deliveryArea?: string;
+  deliveryState?: string;
+  deliveryCity?: string;
   deliveryAddress?: string;
   orderNote?: string | null;
   events?: { id: string; fromStatus: string | null; toStatus: string; createdAt: Date }[];
@@ -44,8 +45,8 @@ type AdminOrder = PublicOrder & {
 export function AdminOrderDetail({ order }: { order: AdminOrder | null }) {
   const router = useRouter();
   const [message, setMessage] = useState("");
-  const [deleteMessage, setDeleteMessage] = useState("");
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [cancellationMessage, setCancellationMessage] = useState("");
+  const [cancellationDialogOpen, setCancellationDialogOpen] = useState(false);
   const [pending, start] = useTransition();
   const [status, setStatus] = useState(order?.status ?? "NEW");
   if (!order)
@@ -132,7 +133,9 @@ export function AdminOrderDetail({ order }: { order: AdminOrder | null }) {
           <section className="border bg-jp-admin-surface p-5">
             <h2 className="font-display text-3xl">Delivery</h2>
             <p className="mt-4 text-sm">
-              <strong>{order.deliveryArea}</strong>
+              <strong>
+                {order.deliveryCity}, {order.deliveryState}
+              </strong>
               <br />
               {order.deliveryAddress}
             </p>
@@ -178,38 +181,38 @@ export function AdminOrderDetail({ order }: { order: AdminOrder | null }) {
             ) : null}
           </section>
           <section className="border border-destructive bg-jp-admin-surface p-5">
-            <h2 className="font-display text-3xl">Delete order</h2>
+            <h2 className="font-display text-3xl">Cancel order</h2>
             <p className="mt-3 text-sm text-jp-text-secondary">
-              Deleting restores its item quantities to stock and permanently removes the order.
+              Cancellation keeps the order history and restores its item quantities to stock.
             </p>
             <button
               className="mt-4 w-full bg-destructive py-3 text-sm font-semibold text-white disabled:opacity-45"
-              disabled={pending}
+              disabled={pending || order.status === "CANCELLED"}
               type="button"
               onClick={() => {
-                setDeleteMessage("");
-                setDeleteDialogOpen(true);
+                setCancellationMessage("");
+                setCancellationDialogOpen(true);
               }}
             >
-              Delete order
+              {order.status === "CANCELLED" ? "Order cancelled" : "Cancel order"}
             </button>
           </section>
         </aside>
       </div>
       <ModalShell
-        open={deleteDialogOpen}
+        open={cancellationDialogOpen}
         onOpenChange={(nextOpen) => {
-          if (!pending) setDeleteDialogOpen(nextOpen);
+          if (!pending) setCancellationDialogOpen(nextOpen);
         }}
-        title="Delete this order?"
-        description={`This permanently removes ${order.reference} and restores its item quantities to stock. This cannot be undone.`}
+        title="Cancel this order?"
+        description={`This keeps ${order.reference} in the order history and restores its item quantities to stock. This cannot be undone.`}
       >
         <div className="flex flex-wrap justify-end gap-3">
           <button
             className="h-10 border border-jp-admin-border px-4 text-sm font-semibold"
             disabled={pending}
             type="button"
-            onClick={() => setDeleteDialogOpen(false)}
+            onClick={() => setCancellationDialogOpen(false)}
           >
             Cancel
           </button>
@@ -219,21 +222,22 @@ export function AdminOrderDetail({ order }: { order: AdminOrder | null }) {
             type="button"
             onClick={() =>
               start(async () => {
-                const result = await deleteOrderAdmin(order.reference);
-                if ("ok" in result) {
-                  router.replace(siteConfig.routes.adminOrders);
+                const result = await cancelOrderAdmin(order.reference);
+                if ("ok" in result || "unchanged" in result) {
+                  setCancellationDialogOpen(false);
+                  router.refresh();
                   return;
                 }
-                setDeleteMessage(result.error ?? "Unable to delete this order.");
+                setCancellationMessage(result.error ?? "Unable to cancel this order.");
               })
             }
           >
-            {pending ? "Deleting…" : "Delete order"}
+            {pending ? "Cancelling…" : "Cancel order"}
           </button>
         </div>
-        {deleteMessage ? (
+        {cancellationMessage ? (
           <p className="mt-3 text-sm text-destructive" role="alert">
-            {deleteMessage}
+            {cancellationMessage}
           </p>
         ) : null}
       </ModalShell>
