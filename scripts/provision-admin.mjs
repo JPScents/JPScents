@@ -28,11 +28,17 @@ async function findUserByEmail(email) {
 
   while (true) {
     const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
 
     const user = data.users.find((candidate) => candidate.email?.trim().toLowerCase() === email);
-    if (user) return user;
-    if (data.users.length < 1000) return undefined;
+    if (user) {
+      return user;
+    }
+    if (data.users.length < 1000) {
+      return undefined;
+    }
     page += 1;
   }
 }
@@ -42,7 +48,9 @@ async function grantAdminRole(user) {
     app_metadata: { ...user.app_metadata, role: "admin" },
     email_confirm: true,
   });
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
 }
 
 async function provisionAdmin(email) {
@@ -56,8 +64,12 @@ async function provisionAdmin(email) {
       email_confirm: true,
       app_metadata: { role: "admin" },
     });
-    if (error) throw error;
-    if (!data.user) throw new Error("Supabase did not return the provisioned Admin user.");
+    if (error) {
+      throw error;
+    }
+    if (!data.user) {
+      throw new Error("Supabase did not return the provisioned Admin user.");
+    }
   }
 
   console.log(`Trusted Admin provisioned for ${email}.`);

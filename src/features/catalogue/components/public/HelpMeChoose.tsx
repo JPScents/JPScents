@@ -1,19 +1,18 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useScentPreferences } from "../../hooks/useScentPreferences";
 import { motion, useReducedMotion } from "motion/react";
 import { EmptyState } from "@/components/shared/EmptyState";
-import type { Occasion, ScentCharacter, TimeOfDay } from "@/db/generated/client";
+import { scentCharacters as scents } from "../../constants/catalogue";
+import type { Occasion, TimeOfDay } from "@/db/generated/client";
 import { siteConfig } from "@/config/site";
 import { RecommendationCard } from "./RecommendationCard";
 import { ScentCharacterSelect } from "./ScentCharacterSelect";
-import type { PublicPerfumeCard } from "../../types";
-import { preferenceSummary } from "../../public-preferences";
+import type { HelpPreferences, Recommendation } from "../../types";
 
 type Props = {
-  initial: { scentCharacters: ScentCharacter[]; occasions: Occasion[]; timeOfDay?: TimeOfDay };
-  results?: Array<PublicPerfumeCard & { matchReason: string; score: number }>;
+  initial: HelpPreferences;
+  results?: Recommendation[];
   submitted: boolean;
   catalogueAvailable?: boolean;
 };
@@ -23,40 +22,28 @@ const occasions: Array<{ value: Occasion; label: string }> = [
   { value: "DATE_NIGHT", label: "Evening" },
   { value: "SPECIAL_OCCASION", label: "Special occasion" },
 ];
-const scents: ScentCharacter[] = ["FRESH", "WARM", "SWEET", "WOODY"];
+
 const times: Array<{ value?: TimeOfDay; label: string }> = [
   { value: "DAY", label: "Day" },
   { value: "NIGHT", label: "Night" },
   { value: undefined, label: "Either" },
 ];
-function toggle<T>(items: T[], value: T) {
-  return items.includes(value) ? items.filter((item) => item !== value) : [...items, value];
-}
 export function HelpMeChoose({ initial, results, submitted, catalogueAvailable = true }: Props) {
-  const router = useRouter();
-  const resultsHeading = useRef<HTMLHeadingElement>(null);
-  const [scentCharacters, setScentCharacters] = useState(initial.scentCharacters);
-  const [occasionValues, setOccasions] = useState(initial.occasions);
-  const [timeOfDay, setTime] = useState<TimeOfDay | undefined>(initial.timeOfDay);
-  const [validationError, setValidationError] = useState("");
+  const {
+    router,
+    resultsHeading,
+    scentCharacters,
+    setScentCharacters,
+    occasionValues,
+    setOccasions,
+    timeOfDay,
+    setTime,
+    validationError,
+    summary,
+    submit,
+    toggle,
+  } = useScentPreferences(initial, submitted);
   const reduceMotion = useReducedMotion();
-  const summary = preferenceSummary({ scentCharacters, occasions: occasionValues, timeOfDay });
-  useEffect(() => {
-    if (submitted) resultsHeading.current?.focus();
-  }, [submitted]);
-  function submit() {
-    if (!scentCharacters.length && !occasionValues.length && !timeOfDay) {
-      setValidationError("Choose at least one preference to receive a useful recommendation.");
-      return;
-    }
-    setValidationError("");
-    const params = new URLSearchParams();
-    if (scentCharacters.length) params.set("scent", scentCharacters.join(","));
-    if (occasionValues.length) params.set("occasion", occasionValues.join(","));
-    if (timeOfDay) params.set("time", timeOfDay);
-    params.set("results", "1");
-    router.push(`${siteConfig.routes.helpMeChoose}?${params.toString()}`);
-  }
   if (!catalogueAvailable) {
     return (
       <section className="mx-auto max-w-public-container px-public-gutter-mobile py-12 lg:px-public-gutter-desktop lg:py-20">

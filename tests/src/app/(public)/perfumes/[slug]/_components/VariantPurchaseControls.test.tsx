@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { PublicPerfumeDetail } from "@/features/catalogue/shared";
+import type { PublicPerfumeDetail } from "@/features/catalogue";
 
 const { addItem } = vi.hoisted(() => ({ addItem: vi.fn() }));
 vi.mock("@/features/cart", () => ({ useCart: () => ({ addItem }) }));
@@ -97,6 +97,21 @@ describe("variant purchase controls", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add to Cart" }));
 
     expect(addItem).toHaveBeenCalledExactlyOnceWith("two", 2, 3);
+  });
+
+  it("rechecks the selected size when current availability changes", () => {
+    const { rerender } = render(<VariantPurchaseControls variants={variants} />);
+    fireEvent.click(screen.getByRole("radio", { name: /50 mL/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Increase quantity" }));
+    rerender(<VariantPurchaseControls variants={[variants[0], { ...variants[1], quantity: 1 }]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Add to Cart" }));
+    expect(addItem).toHaveBeenCalledWith("two", 1, 1);
+    rerender(
+      <VariantPurchaseControls
+        variants={[variants[0], { ...variants[1], quantity: 0, isAvailable: false }]}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Add to Cart" })).toBeDisabled();
   });
 
   it.each([

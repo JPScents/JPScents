@@ -3,7 +3,7 @@ import {
   getCatalogueAdminOverview,
   getEligibleBestsellerCandidates,
 } from "@/features/catalogue/server";
-import { AdminOverview } from "@/components/admin-overview/AdminOverview";
+import { AdminOverview } from "@/app/(admin)/admin/_components/AdminOverview";
 import { getOrdersAdminOverview } from "@/features/orders/server";
 
 export default async function AdminPage() {

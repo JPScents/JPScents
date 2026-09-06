@@ -100,3 +100,13 @@ export type PublicPerfumeDetail = PublicPerfumeCard & {
 };
 
 export type Recommendation = PublicPerfumeCard & { matchReason: string; score: number };
+
+export type VariantActionState = {
+  errors?: Record<string, string>;
+  message?: string;
+  ok?: boolean;
+};
+export type PerfumeActionState = { errors?: Record<string, string>; message?: string };
+export type ImageActionState = { error?: string; ok?: boolean };
+
+export type StagedVariant = { sizeValue: string; price: string; quantity: string };

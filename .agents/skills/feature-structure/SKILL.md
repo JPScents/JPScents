@@ -112,11 +112,13 @@ Use descriptive kebab-case ordinary filenames and the responsibility suffixes ab
 
 ## Locality, public APIs, and the Customers reference
 
-Routes own framework concerns, page composition, and page-only presentation/adapters. Use the route's `_components/`, `_hooks/`, `_types/`, `_utils/`, or `_server/` only for actual contents, with the same semantic rules and names. Domain rules, domain UI, and persistence belong to the feature even with one consumer. Consumer count alone does not decide ownership.
+Routes own framework concerns, page composition, and page-only presentation/adapters. Use the route's `_components/`, `_hooks/`, `_types/`, `_utils/`, `_actions/`, or `_server/` only for actual contents, with the same semantic rules and names. Domain rules, domain UI, and persistence belong to the feature even with one consumer. Consumer count alone does not decide ownership.
 
 For example, a perfume-detail purchase control connecting Catalogue variants to Cart is route-owned. Order creation and reusable checkout behavior remain Orders-owned; the checkout page's Cart-to-Orders adapter is route-local. Promote code only when actual independent consumers need the same behavior.
 
-Use `src/features/customers` as the structural reference: its action, parser, repository, service, components, and types occupy named responsibility folders. It is a reference, not a scaffold or exemption from review. Its `listCustomers` / `getCustomerById` forwarding services do not establish a convention worth copying. Preserve identity-conflict behavior, but its service accepting a transaction client and classifying Prisma errors is not compliant: transaction-dependent resolution and Prisma error translation belong in repository operations. Fixture/test data stays with meaningful tests; do not copy production modules into fixtures or invent a fixture framework.
+Use `src/features/customers` as the structural reference: actions, parsers, repositories, services, components and types occupy named responsibility folders. It is a reference, not a scaffold or exemption. Its read services retain authorization; its repository owns identity-conflict resolution, persistence errors, and transaction participation. Do not add these layers to a frontend feature merely to match its tree.
+
+Fixture data belongs beside meaningful tests and contains only fields needed for the behavior under test. Use a small explicit Customer-shaped value with deterministic identity/contact/delivery fields as the reference. Add a fixture factory only when several tests need the same variations; no copied production modules, fixture service/repository layers, catch-all optional models, or global fixture framework. Demo catalogue data stays with its seed repository; the seed entry owns lifecycle only.
 
 Generic shared infrastructure/utilities/UI primitives must not depend on features. Features may depend one-way on another feature's intentional public API, never its repositories or other internals. Application shells and routes may compose features. Database access belongs to its owning domain: published variant lookup is Catalogue-owned even when Cart requests it.
 
@@ -144,9 +146,11 @@ Mark privileged data/infrastructure modules `server-only`. Use explicit server/c
 From the repository root, run the bundled check for each refactored feature:
 
 ```bash
-node .agents/skills/feature-structure/scripts/check-structure.mjs src/features/orders
+npm run architecture:check
 ```
 
-It checks the root allowlist, folder/file names, empty folders, export-only entry points, and recognizable Prisma client imports/API access outside repositories. It reads TypeScript source in the target feature, not environment files. It does not perform whole-program data-flow analysis: also review indirect client leaks, transaction callbacks/types passed through other layers, affected consumers outside the feature, mixed responsibilities, dead exports, and unnecessary layers. Do not silence violations by aliases, re-exporting a client through a helper, moving everything into `utils/`, adding exceptions, or weakening the check.
+The default command discovers every feature and runs automatically in `npm run check`. It checks the root allowlist, folder/file names, empty folders, export-only entry points, and recognizable Prisma imports/API access outside repositories. It also scans application source and operational scripts/seeds for database boundary violations and enforces public feature imports and generic shared independence. Use an explicit feature-directory argument for a scoped development check.
+
+The checker reads only source files, never environment files. It does not perform whole-program data-flow analysis or prove that a correctly named module contains the right responsibility: review indirect client leaks, mixed responsibilities, transaction clients passed through other layers, oversized projections, dead exports, and unnecessary layers. Client initialization is allowed only in the established infrastructure module and standalone seed entry; review those files to ensure they remain lifecycle-only. Do not silence violations with aliases, re-exported clients, catch-all folders, new exceptions, or weakened checks.
 
 Use the delivery skill's readability and verification requirements. Completion requires a passing structure check for the full target, a resolved responsibility review, meaningful behavioral verification, and a concise report of simplification and any retained justified abstractions. For a focused change rather than a whole-feature refactor, report existing out-of-scope structural violations without expanding the assignment. A standards-only change reports current violations without migrating application code.

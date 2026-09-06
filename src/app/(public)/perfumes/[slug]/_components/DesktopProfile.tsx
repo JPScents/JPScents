@@ -1,4 +1,4 @@
-import { preferenceLabel, type PublicPerfumeDetail } from "@/features/catalogue/shared";
+import { preferenceLabel, type PublicPerfumeDetail } from "@/features/catalogue";
 
 function ProfileRows({ perfume }: { perfume: PublicPerfumeDetail }) {
   const rows = [

@@ -1,5 +1,5 @@
 import { listAdminPerfumes, PerfumeList } from "@/features/catalogue/server";
-import type { CatalogueFilters } from "@/features/catalogue/shared";
+import type { CatalogueFilters } from "@/features/catalogue";
 
 export default async function AdminPerfumesPage({
   searchParams,

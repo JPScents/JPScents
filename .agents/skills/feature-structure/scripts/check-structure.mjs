@@ -40,14 +40,20 @@ const prismaOperations = new Set([
 
 function prismaImportIsForbidden(moduleName, bindings) {
   const name = moduleName.replace(/\\/g, "/").replace(/\.[cm]?[jt]s$/, "");
-  if (/(?:^|\/)db\/prisma$/.test(name) || name.startsWith("@prisma/adapter-")) return true;
+  if (/(?:^|\/)db\/prisma$/.test(name) || name.startsWith("@prisma/adapter-")) {
+    return true;
+  }
 
   const generatedClient =
     /^@prisma\/client(?:\/|$)/.test(name) || /(?:^|\/)db\/generated(?:\/|$)/.test(name);
-  if (!generatedClient) return false;
+  if (!generatedClient) {
+    return false;
+  }
 
   // Named generated models/enums remain usable as data contracts outside repositories.
-  if (!bindings || (!ts.isNamedImports(bindings) && !ts.isNamedExports(bindings))) return true;
+  if (!bindings || (!ts.isNamedImports(bindings) && !ts.isNamedExports(bindings))) {
+    return true;
+  }
   return bindings.elements.some((binding) =>
     prismaSymbols.has((binding.propertyName ?? binding.name).text),
   );
@@ -130,16 +136,24 @@ async function inspectFeature(directory) {
   async function inspectSource(relative, category) {
     const source = await readFile(path.join(directory, relative), "utf8");
     const file = ts.createSourceFile(relative, source, ts.ScriptTarget.Latest, true);
-    if (file.parseDiagnostics.length) report(relative, "invalid TypeScript source");
-    if (category !== "repositories") {
-      for (const violation of prismaBoundaryViolations(file)) report(relative, violation);
+    if (file.parseDiagnostics.length) {
+      report(relative, "invalid TypeScript source");
     }
-    if (!category && rootFiles.has(relative)) inspectEntryPoint(relative, file);
+    if (category !== "repositories") {
+      for (const violation of prismaBoundaryViolations(file)) {
+        report(relative, violation);
+      }
+    }
+    if (!category && rootFiles.has(relative)) {
+      inspectEntryPoint(relative, file);
+    }
   }
 
   async function visit(relative = "", category) {
     const entries = await readdir(path.join(directory, relative), { withFileTypes: true });
-    if (!entries.length) report(relative || ".", "remove empty folders");
+    if (!entries.length) {
+      report(relative || ".", "remove empty folders");
+    }
 
     for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
       const child = relative ? `${relative}/${entry.name}` : entry.name;
@@ -176,22 +190,92 @@ async function inspectFeature(directory) {
   return errors;
 }
 
-const features = process.argv.slice(2);
-if (!features.length) {
-  console.error("Usage: node check-structure.mjs <feature-directory> [...feature-directories]");
-  process.exitCode = 2;
-} else {
-  for (const feature of features) {
-    try {
-      const errors = await inspectFeature(path.resolve(feature));
-      if (errors.length) {
-        console.error(`${feature}:\n${errors.map((error) => `  ${error}`).join("\n")}`);
-        process.exitCode = 1;
-      } else {
-        console.log(`${feature}: structure passed; semantic responsibility review still required`);
+async function inspectApplicationBoundaries(directory = "src") {
+  const errors = [];
+  async function visit(folder) {
+    const entries = await readdir(folder, { withFileTypes: true });
+    for (const entry of entries) {
+      const filename = path.join(folder, entry.name);
+      if (entry.isDirectory()) {
+        if (filename !== "src/db/generated") {
+          await visit(filename);
+        }
+        continue;
       }
-    } catch (error) {
-      console.error(`${feature}: could not inspect structure (${error.code ?? error.name})`);
+      if (!entry.isFile() || !/\.(?:ts|tsx|mjs)$/.test(entry.name)) {
+        continue;
+      }
+      const source = await readFile(filename, "utf8");
+      const file = ts.createSourceFile(filename, source, ts.ScriptTarget.Latest, true);
+      const lifecycleOnly = filename === "src/db/prisma.ts" || filename === "prisma/seed.ts";
+      if (!filename.includes("/repositories/") && !lifecycleOnly) {
+        for (const violation of prismaBoundaryViolations(file)) {
+          errors.push(`${filename}: ${violation}`);
+        }
+      }
+      const owner = /^src\/features\/([^/]+)\//.exec(filename)?.[1];
+      for (const statement of file.statements) {
+        if (
+          (!ts.isImportDeclaration(statement) && !ts.isExportDeclaration(statement)) ||
+          !statement.moduleSpecifier ||
+          !ts.isStringLiteral(statement.moduleSpecifier)
+        ) {
+          continue;
+        }
+        const specifier = statement.moduleSpecifier.text;
+        const target = specifier.startsWith("@/")
+          ? `src/${specifier.slice(2)}`
+          : specifier.startsWith(".")
+            ? path.normalize(path.join(path.dirname(filename), specifier))
+            : specifier;
+        const feature = /^src\/features\/([^/]+)(.*)$/.exec(target);
+        if (feature) {
+          const entry = feature[2].replace(/\.(?:ts|tsx)$/, "");
+          const publicEntry = ["", "/index", "/client", "/server"].includes(entry);
+          if (owner !== feature[1] && !publicEntry) {
+            errors.push(`${filename}: consume ${feature[1]} through its public entry points`);
+          }
+          if (owner === feature[1] && publicEntry) {
+            errors.push(`${filename}: feature internals must not import their own barrel`);
+          }
+          if (/^src\/(?:components|shared|lib|db|config)\//.test(filename)) {
+            errors.push(`${filename}: generic shared code must not depend on features`);
+          }
+        }
+        if (owner && target.startsWith("src/app/")) {
+          errors.push(`${filename}: features must not depend on routes`);
+        }
+      }
+    }
+  }
+  await visit(directory);
+  return errors;
+}
+
+const all = !process.argv.slice(2).length;
+const features = all
+  ? (await readdir("src/features", { withFileTypes: true }))
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => `src/features/${entry.name}`)
+  : process.argv.slice(2);
+for (const feature of features) {
+  try {
+    const errors = await inspectFeature(path.resolve(feature));
+    if (errors.length) {
+      console.error(`${feature}:\n${errors.map((error) => `  ${error}`).join("\n")}`);
+      process.exitCode = 1;
+    } else {
+      console.log(`${feature}: structure passed; semantic responsibility review still required`);
+    }
+  } catch (error) {
+    console.error(`${feature}: could not inspect structure (${error.code ?? error.name})`);
+    process.exitCode = 1;
+  }
+}
+if (all) {
+  for (const directory of ["src", "scripts", "prisma"]) {
+    for (const error of await inspectApplicationBoundaries(directory)) {
+      console.error(error);
       process.exitCode = 1;
     }
   }

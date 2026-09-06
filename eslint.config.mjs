@@ -8,7 +8,7 @@ const eslintConfig = defineConfig([
   {
     files: ["**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
     rules: {
-      curly: ["error", "multi-line", "consistent"],
+      curly: ["error", "all"],
     },
   },
   {

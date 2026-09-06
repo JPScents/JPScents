@@ -1,5 +1,4 @@
-import { AdminOrders } from "@/features/orders";
-import { listOrders } from "@/features/orders/server";
+import { AdminOrders, listOrders } from "@/features/orders/server";
 import { OrderStatus } from "@/db/generated/client";
 
 export default async function AdminOrdersPage({

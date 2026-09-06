@@ -15,8 +15,8 @@
     "lint:fix": "eslint . --fix --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "fix": "npm run lint:fix && npm run format",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm test",
+    "fix": "npm run format && npm run lint:fix && npm run format",
+    "check": "npm run architecture:check && npm run format:check && npm run lint && npm run typecheck && npm test",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "db:generate": "prisma generate",
@@ -35,7 +35,8 @@
     "supabase:reset:demo": "npm run supabase:reset && npm run db:seed:demo",
     "setup:local": "npm run supabase:start && npm run supabase:reset",
     "setup:local:demo": "npm run setup:local && npm run db:seed:demo",
-    "release:check": "npm run check && npm run db:validate && npm run build"
+    "release:check": "npm run check && npm run db:validate && npm run build",
+    "architecture:check": "node .agents/skills/feature-structure/scripts/check-structure.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.9.1",

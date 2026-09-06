@@ -5,11 +5,11 @@ import { useState } from "react";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 
-import { validateVariantInput } from "../../schemas/variant.schema";
-import { parseNairaToMinor } from "../../utils/price.utils";
-import { normalizeSizeValue } from "../../utils/size.utils";
+import { parseVariantInput } from "../../parsers/variant-input.parser";
+import { parseNairaToMinor } from "../../utils/price";
+import { normalizeSizeValue } from "../../utils/size";
 
-type StagedVariant = { sizeValue: string; price: string; quantity: string };
+import type { StagedVariant } from "../../types";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -24,13 +24,16 @@ function VariantTable({
   variants,
   onRemove,
 }: {
-  variants: Array<StagedVariant & { id: string }>;
+  variants: StagedVariant[];
   onRemove: (index: number) => void;
 }) {
   return variants.length ? (
     <div className="mt-4 divide-y border border-jp-admin-border">
       {variants.map((variant, index) => (
-        <div key={variant.id} className="grid gap-2 p-3 text-sm sm:grid-cols-[1fr_1fr_1fr_auto]">
+        <div
+          key={variant.sizeValue}
+          className="grid gap-2 p-3 text-sm sm:grid-cols-[1fr_1fr_1fr_auto]"
+        >
           <span>{variant.sizeValue} mL</span>
           <span>{formatNairaFromMinor(parseNairaToMinor(variant.price) ?? 0)}</span>
           <span>{variant.quantity} in stock</span>
@@ -62,7 +65,7 @@ export function StagedVariantManager({
   const [draft, setDraft] = useState<StagedVariant>({ sizeValue: "", price: "", quantity: "" });
   const [error, setError] = useState("");
   const save = () => {
-    if (!validateVariantInput({ ...draft }).input) {
+    if (!parseVariantInput({ ...draft }).input) {
       setError("Enter a positive size, valid NGN price, and whole quantity.");
       return;
     }
@@ -97,7 +100,7 @@ export function StagedVariantManager({
         </button>
       </div>
       <VariantTable
-        variants={variants.map((variant, index) => ({ ...variant, id: String(index) }))}
+        variants={variants}
         onRemove={(index) => onChange(variants.filter((_, current) => current !== index))}
       />
       <ModalShell

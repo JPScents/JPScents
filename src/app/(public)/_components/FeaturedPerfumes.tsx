@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { MotionReveal } from "@/components/shared/MotionReveal";
-import { ProductCard } from "@/components/shared/public/ProductCard";
+import { ProductCard } from "@/features/catalogue/client";
 import { siteConfig } from "@/config/site";
-import type { PublicPerfumeCard } from "@/features/catalogue/shared";
-import { MobileFeaturedPerfumes } from "./MobileFeaturedPerfumes";
+import type { PublicPerfumeCard } from "@/features/catalogue";
 
 export function FeaturedPerfumes({ products }: { products: PublicPerfumeCard[] }) {
-  if (!products.length) return null;
+  if (!products.length) {
+    return null;
+  }
   return (
     <MotionReveal>
       <section className="border-y bg-[#fbf9f4] px-5 py-[54px] lg:bg-[#f7f3ea] lg:px-[104px] lg:py-[92px]">
@@ -23,8 +24,7 @@ export function FeaturedPerfumes({ products }: { products: PublicPerfumeCard[] }
             </Link>
           </div>
           <div className="mt-6 lg:mt-12">
-            <MobileFeaturedPerfumes products={products} />
-            <div className="hidden grid-cols-3 gap-7 lg:grid">
+            <div className="grid gap-5 lg:grid-cols-3 lg:gap-7">
               {products.map((perfume) => (
                 <ProductCard key={perfume.id} perfume={perfume} />
               ))}

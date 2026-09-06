@@ -1,46 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
 
 import { siteConfig } from "@/config/site";
 
-import { submitOrder } from "../actions/submit-order.action";
+import { useCheckout } from "../hooks/useCheckout";
+import type { CheckoutCart, CheckoutForm } from "../types";
 import {
   CUSTOM_CITY_MAX_LENGTH,
-  nigeriaLocations,
   nigeriaStates,
   OTHER_CITY_VALUE,
 } from "../constants/nigeria-locations";
-import { isNigerianState } from "../utils/delivery-location.utils";
 import { OrderSummary } from "./OrderSummary";
-
-type CheckoutForm = {
-  customerName: string;
-  whatsappNumber: string;
-  email: string;
-  deliveryState: string;
-  deliveryCity: string;
-  customCity: string;
-  deliveryAddress: string;
-  orderNote: string;
-};
-export type CheckoutCart = {
-  items: Array<{ perfumeVariantId: string; quantity: number }>;
-  lines: Array<{
-    perfumeVariantId: string;
-    requestedQuantity: number;
-    name?: string;
-    sizeLabel?: string;
-    unitPriceMinor?: number;
-    lineAmountMinor: number;
-    imageUrl?: string;
-    isValid: boolean;
-  }>;
-  subtotalMinor: number;
-  hasInvalidLines: boolean;
-  clearCart: () => void;
-};
 
 function Fields({
   form,
@@ -76,13 +47,11 @@ function Fields({
               type={type}
               inputMode={key === "whatsappNumber" ? "tel" : undefined}
               autoComplete={
-                key === "customerName"
-                  ? "name"
-                  : key === "email"
-                    ? "email"
-                    : key === "whatsappNumber"
-                      ? "tel"
-                      : undefined
+                (
+                  { customerName: "name", email: "email", whatsappNumber: "tel" } as Partial<
+                    Record<keyof CheckoutForm, string>
+                  >
+                )[key]
               }
               className="h-12 border bg-jp-surface px-3 font-normal"
               aria-invalid={Boolean(errors[key])}
@@ -101,20 +70,7 @@ function Fields({
 }
 
 export function Checkout({ cart }: { cart: CheckoutCart }) {
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [message, setMessage] = useState("");
-  const [pending, start] = useTransition();
-  const [submissionKey] = useState(() => crypto.randomUUID());
-  const [form, setForm] = useState<CheckoutForm>({
-    customerName: "",
-    whatsappNumber: "",
-    email: "",
-    deliveryState: "",
-    deliveryCity: "",
-    customCity: "",
-    deliveryAddress: "",
-    orderNote: "",
-  });
+  const { form, errors, message, pending, cities, update, updateState, submit } = useCheckout(cart);
   if (!cart.items.length || cart.hasInvalidLines) {
     return (
       <section className="mx-auto max-w-public-container px-public-gutter-mobile py-16 lg:px-public-gutter-desktop">
@@ -144,31 +100,6 @@ export function Checkout({ cart }: { cart: CheckoutCart }) {
       })),
     subtotalMinor: cart.subtotalMinor,
   };
-  const update = (field: keyof CheckoutForm, value: string) =>
-    setForm((previous) => ({ ...previous, [field]: value }));
-  const updateState = (deliveryState: string) =>
-    setForm((previous) => ({ ...previous, deliveryState, deliveryCity: "", customCity: "" }));
-  const cities = isNigerianState(form.deliveryState)
-    ? nigeriaLocations[form.deliveryState]
-    : undefined;
-  const submit = (event: React.FormEvent) => {
-    event.preventDefault();
-    setMessage("");
-    start(async () => {
-      const result = await submitOrder(cart.items, form, submissionKey);
-      if ("errors" in result) {
-        setErrors(result.errors ?? {});
-        return;
-      }
-      if ("error" in result) {
-        setErrors({});
-        setMessage(result.error ?? "Unable to place this order.");
-        return;
-      }
-      cart.clearCart();
-      window.location.assign(siteConfig.routes.checkoutConfirmation);
-    });
-  };
   return (
     <section className="mx-auto max-w-public-container px-public-gutter-mobile py-12 lg:px-public-gutter-desktop lg:py-16">
       <div className="border-b pb-8 lg:flex lg:items-end lg:justify-between">
@@ -194,7 +125,7 @@ export function Checkout({ cart }: { cart: CheckoutCart }) {
                 update={update}
                 errors={errors}
                 fields={[
-                  ["customerName", "Full name", "Your name", "name"],
+                  ["customerName", "Full name", "Your name", "text"],
                   ["whatsappNumber", "WhatsApp number", "e.g. 0800 000 0000", "tel"],
                 ]}
               />

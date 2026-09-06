@@ -32,7 +32,7 @@ vi.mock("@/features/orders/client", () => ({
 import { CartPreview } from "@/features/cart";
 import { CartPageContent } from "@/app/(public)/cart/_components/CartPageContent";
 import { Checkout } from "@/app/(public)/checkout/_components/Checkout";
-import { CartProvider, useCart } from "@/features/cart/CartProvider";
+import { CartProvider, useCart } from "@/features/cart/providers/CartProvider";
 
 beforeEach(() => {
   const store = new Map<string, string>();

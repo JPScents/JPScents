@@ -42,10 +42,14 @@ if (
 
 for (const name of ["NEXT_PUBLIC_SITE_URL", "NEXT_PUBLIC_SUPABASE_URL"]) {
   const value = process.env[name];
-  if (!value) continue;
+  if (!value) {
+    continue;
+  }
   try {
     const url = new URL(value);
-    if (production && url.protocol !== "https:") problems.push(`${name} must use HTTPS.`);
+    if (production && url.protocol !== "https:") {
+      problems.push(`${name} must use HTTPS.`);
+    }
     if (url.pathname !== "/" || url.search || url.hash) {
       problems.push(`${name} must be an origin without a path, query, or fragment.`);
     }

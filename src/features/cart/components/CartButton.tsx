@@ -5,7 +5,7 @@ import { ShoppingBag } from "lucide-react";
 
 import { siteConfig } from "@/config/site";
 
-import { useCart } from "../CartProvider";
+import { useCart } from "../providers/CartProvider";
 
 export function CartButton() {
   const { count, setOpen } = useCart();

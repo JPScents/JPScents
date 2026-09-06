@@ -1,4 +1,4 @@
-import { Confirmation } from "@/features/orders";
+import { Confirmation } from "@/features/orders/client";
 import { getOrderConfirmation, readConfirmationCookie } from "@/features/orders/server";
 import type { Metadata } from "next";
 

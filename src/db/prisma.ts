@@ -6,7 +6,9 @@ import { PrismaClient } from "@/db/generated/client";
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 function getPrisma() {
-  if (globalForPrisma.prisma) return globalForPrisma.prisma;
+  if (globalForPrisma.prisma) {
+    return globalForPrisma.prisma;
+  }
 
   const databaseUrl =
     process.env.DATABASE_URL ??

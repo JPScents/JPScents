@@ -21,7 +21,9 @@ function whatsappUrl(
   reference: string,
   items: PublicOrder["items"],
 ) {
-  if (!number || !/^\d{7,15}$/.test(number)) return undefined;
+  if (!number || !/^\d{7,15}$/.test(number)) {
+    return undefined;
+  }
   const context = items
     .map((item) => `${item.name} ${item.sizeLabel} ×${item.quantity}`)
     .join(", ");
@@ -194,7 +196,9 @@ export function AdminOrderDetail({ order }: { order: AdminOrder | null }) {
       <ModalShell
         open={cancellationDialogOpen}
         onOpenChange={(nextOpen) => {
-          if (!pending) setCancellationDialogOpen(nextOpen);
+          if (!pending) {
+            setCancellationDialogOpen(nextOpen);
+          }
         }}
         title="Cancel this order?"
         description={`This keeps ${order.reference} in the order history and restores its item quantities to stock. This cannot be undone.`}

@@ -7,20 +7,18 @@ export {
   getCatalogueAdminOverview,
   getEligibleBestsellerCandidates,
   listAdminPerfumes,
-} from "./admin-catalogue";
+} from "./services/admin-catalogue.service";
 export {
   getFeaturedPerfumes,
   getPerfumeBySlug,
-  getPublishedVariantsByIds,
   getRelatedPerfumes,
+  listPerfumes,
+  recommendPerfumes,
+} from "./services/public-catalogue.service";
+export { parsePreferences, parseScent } from "./parsers/public-preferences-query.parser";
+export {
+  getPublishedVariantsByIds,
   hasAvailablePerfumes,
   hasPublishedPerfumes,
-  listPerfumes,
   listPublishedPerfumeSitemapEntries,
-  recommendPerfumes,
-} from "./public-catalogue";
-export {
-  parsePreferences,
-  parseScent,
-  publicScentCharacters,
-} from "./parsers/public-preferences-query.parser";
+} from "./repositories/perfume.repository";

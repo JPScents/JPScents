@@ -4,19 +4,22 @@ import { useState } from "react";
 
 import { commerceConfig } from "@/config/commerce";
 import { useCart } from "@/features/cart";
-import type { PublicPerfumeDetail } from "@/features/catalogue/shared";
+import type { PublicPerfumeDetail } from "@/features/catalogue";
 
 export function useVariantPurchaseControls(variants: PublicPerfumeDetail["variants"]) {
   const [selectedId, setSelectedId] = useState<string | undefined>(() => {
     const available = variants.filter((variant) => variant.isAvailable);
     return available.length === 1 ? available[0]?.id : undefined;
   });
-  const [quantity, setQuantity] = useState(1);
-  const selectedVariant = variants.find((variant) => variant.id === selectedId);
+  const [requestedQuantity, setQuantity] = useState(1);
+  const selectedVariant = variants.find(
+    (variant) => variant.id === selectedId && variant.isAvailable,
+  );
   const maximumQuantity = Math.min(
     selectedVariant?.quantity ?? 0,
     commerceConfig.maximumVariantQuantity,
   );
+  const quantity = Math.max(1, Math.min(requestedQuantity, maximumQuantity));
   const { addItem } = useCart();
 
   function selectVariant(id: string) {
@@ -31,11 +34,13 @@ export function useVariantPurchaseControls(variants: PublicPerfumeDetail["varian
   }
 
   function decreaseQuantity() {
-    setQuantity((value) => Math.max(1, value - 1));
+    setQuantity((value) => Math.max(1, Math.min(value, maximumQuantity) - 1));
   }
 
   function addSelectedVariant() {
-    if (selectedVariant) addItem(selectedVariant.id, quantity, selectedVariant.quantity);
+    if (selectedVariant) {
+      addItem(selectedVariant.id, quantity, selectedVariant.quantity);
+    }
   }
 
   return {

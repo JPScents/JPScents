@@ -9,7 +9,7 @@ import { ProductBottlePlaceholder } from "@/components/shared/public/ProductBott
 import { commerceConfig } from "@/config/commerce";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 
-import { useCart } from "../CartProvider";
+import { useCart } from "../providers/CartProvider";
 import type { ResolvedCartLine } from "../types";
 
 function issueText(issue: ResolvedCartLine["issue"], stock?: number) {

@@ -19,7 +19,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const perfume = await getPerfumeBySlug(slug);
-  if (!perfume) notFound();
+  if (!perfume) {
+    notFound();
+  }
 
   const url = absoluteUrl(siteConfig.routes.perfume(perfume.slug));
   const description = perfume.description || perfume.scentCue;
@@ -43,7 +45,9 @@ export async function generateMetadata({
 export default async function PerfumeDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const perfume = await getPerfumeBySlug(slug);
-  if (!perfume) notFound();
+  if (!perfume) {
+    notFound();
+  }
 
   const related = await getRelatedPerfumes(perfume, 3);
 

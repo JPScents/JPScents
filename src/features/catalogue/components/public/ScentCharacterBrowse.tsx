@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import type { ScentCharacter } from "@/db/generated/client";
 import { siteConfig } from "@/config/site";
-import { scentCharacterContent } from "../../constants";
+import { scentCharacterContent } from "../../constants/catalogue";
 
 /* eslint-disable @next/next/no-img-element -- local controlled scent assets are decorative. */
 export function ScentCharacterBrowse({ values }: { values: readonly ScentCharacter[] }) {

@@ -10,7 +10,7 @@ import {
   parseCartStorage,
   readCartStorage,
   writeCartStorage,
-} from "../cart-storage";
+} from "../storage/cart-storage";
 import type { CartRequestLine, ResolvedCartLine } from "../types";
 
 type Resolution = {
@@ -40,14 +40,18 @@ export function useCartState() {
   useEffect(() => {
     let mounted = true;
     queueMicrotask(() => {
-      if (!mounted || currentItems.current !== null) return;
+      if (!mounted || currentItems.current !== null) {
+        return;
+      }
       const restored = readCartStorage().items;
       currentItems.current = restored;
       setItems(restored);
     });
 
     const sync = (event: StorageEvent) => {
-      if (event.key !== CART_STORAGE_KEY && event.key !== null) return;
+      if (event.key !== CART_STORAGE_KEY && event.key !== null) {
+        return;
+      }
       const next = parseCartStorage(event.newValue).items;
       currentItems.current = next;
       setItems(next);
@@ -60,7 +64,9 @@ export function useCartState() {
   }, []);
 
   useEffect(() => {
-    if (!items?.length) return;
+    if (!items?.length) {
+      return;
+    }
     let current = true;
     resolveCart(items)
       .then((lines) => {
@@ -87,14 +93,18 @@ export function useCartState() {
   const setOpen = useCallback(
     (open: boolean) => {
       setIsOpen(open);
-      if (open) refreshCart();
+      if (open) {
+        refreshCart();
+      }
     },
     [refreshCart],
   );
 
   const addItem = useCallback(
     (perfumeVariantId: string, quantity: number, maximumQuantity?: number) => {
-      if (!perfumeVariantId || !Number.isSafeInteger(quantity) || quantity < 1) return;
+      if (!perfumeVariantId || !Number.isSafeInteger(quantity) || quantity < 1) {
+        return;
+      }
       if (
         maximumQuantity !== undefined &&
         (!Number.isSafeInteger(maximumQuantity) || maximumQuantity < 1)
@@ -123,7 +133,9 @@ export function useCartState() {
 
   const changeQuantity = useCallback(
     (perfumeVariantId: string, quantity: number) => {
-      if (!Number.isSafeInteger(quantity) || quantity < 1) return;
+      if (!Number.isSafeInteger(quantity) || quantity < 1) {
+        return;
+      }
       updateItems((previous) =>
         previous.map((item) =>
           item.perfumeVariantId === perfumeVariantId
@@ -152,14 +164,19 @@ export function useCartState() {
   if (!isHydrated) {
     resolutionState = "loading";
   } else if (requestedItems.length) {
-    if (!isCurrent) resolutionState = "resolving";
-    else if (resolution?.failed) resolutionState = "error";
+    if (!isCurrent) {
+      resolutionState = "resolving";
+    } else if (resolution?.failed) {
+      resolutionState = "error";
+    }
   }
   const byId = new Map(resolution?.lines.map((line) => [line.perfumeVariantId, line]));
   // Keep known product details while checking, but display current requested quantities.
   const lines = requestedItems.flatMap((item) => {
     const line = byId.get(item.perfumeVariantId);
-    if (!line) return [];
+    if (!line) {
+      return [];
+    }
     return [
       {
         ...line,

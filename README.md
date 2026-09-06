@@ -51,6 +51,8 @@ The application supports an empty production database. Public and Admin pages sh
 
 Cart page composition lives in `src/app/(public)/cart/_components`; the checkout route owns its cart-to-orders integration in `_components`. Feature layers follow actual responsibilities: frontend features do not need services or repositories just for symmetry.
 
+Orders exposes interactive components through `client.ts`, protected Admin reads and confirmation access through `server.ts`, and shared row types through `index.ts`. Its checkout hook owns form updates and submission retries; the order repository owns atomic order/stock/customer operations, while the service resolves image URLs outside transactions and maps responses. Database operations live in the order repository, public/Admin transformations stay in pure mappers, and shared confirmation-cookie access stays server-only.
+
 ## Local setup
 
 Requirements: Node.js 24, npm, Docker and the Supabase CLI.
@@ -154,34 +156,17 @@ npm run build
 npm run release:check
 ```
 
-`npm run fix` applies ESLint's available fixes, then Prettier. `format` writes formatting; `format:check` and `lint` only report problems. `lint:fix` applies lint fixes without formatting. `npm run check` runs formatting, lint, type, and test checks; `release:check` additionally validates the database schema and builds the application.
+`npm run fix` formats first, applies ESLint fixes, then formats the result. `format` writes formatting; `format:check` and `lint` only report problems. `lint:fix` applies lint fixes without formatting. `npm run check` runs architecture, formatting, lint, type, and test checks; `release:check` additionally validates the database schema and builds the application.
 
-Prettier covers supported files across the repository, including source, tests, scripts, configuration, styles, and Markdown guidance. Generated files, dependencies, lockfiles, and secret environment files are excluded. Prisma schema formatting remains `npm run db:format`; SQL migrations and Supabase TOML are not formatted by Prettier. EditorConfig aligns indentation and line endings in supporting editors; editor formatting should use this repository's Prettier configuration.
+Prettier covers supported files across the repository, including source, tests, scripts, configuration, styles, and Markdown guidance. Generated files, dependencies, lockfiles, and secret environment files are excluded. Prisma schema formatting remains `npm run db:format`; SQL migrations and Supabase TOML are not formatted by Prettier. ESLint requires braces around control-flow bodies and spacing after imports. This avoids formatter-induced lint failures and makes branching readable. EditorConfig aligns indentation and line endings in supporting editors; editor formatting should use this repository's Prettier configuration.
 
 Keep tests for business rules, state transitions, integrations, failure recovery, and meaningful accessibility interactions. Avoid static-copy, styling, element-count, and trivial rendering tests. Repository changes should follow `AGENTS.md`: preserve unrelated work, verify the result, and commit completed work locally. Pushing remains an explicit user action.
 
 ### Agent verification without secret-file access
 
-The normal commands above are developer commands. Vitest currently inherits Vite's environment-file loading, and Prisma configuration loads an environment file even for validation, formatting, or generation. Next.js builds also load environment configuration. Agents must not run those commands unchanged under the no-secret-file rule.
+`npm run check` is safe under the no-secret-file rule: Vitest explicitly disables Vite environment-file loading with `envDir: false`, and the architecture, formatting, lint and type checks exclude secret files. Tests use explicit fixtures/mocks, never live project credentials. For targeted tests, use `npm test -- <test-path>`.
 
-For code changes, use the following equivalent formatting, lint, type, and test checks without environment-file loading. Use test paths in the second argument to `startVitest` for targeted checks; an empty list runs the full suite. Tests should use explicit fixtures/mocks, never live project credentials.
-
-```bash
-npm run format:check
-npm run lint
-./node_modules/.bin/tsc --noEmit --incremental false
-node --input-type=module <<'JS'
-import { startVitest } from "vitest/node";
-
-const context = await startVitest(
-  "test",
-  [],
-  { run: true, watch: false },
-  { envDir: false },
-);
-await context.close();
-JS
-```
+Prisma configuration still loads an environment file even for validation, formatting, or generation. Next.js builds also load environment files. Do not run those commands in the configured checkout under the no-secret-file rule. Build in an isolated copy containing source, public assets, required configuration, generated client and dependencies, excluding every secret file. Supply only synthetic configuration. Use a newly created disposable database for transaction verification; never reset or reseed the project's configured database.
 
 For documentation-only changes, format/check the changed Markdown and inspect links and stale references. For skill changes, run the available skill validator and review behavior against a realistic request. The Codex skill-creator validator requires Python with PyYAML; use an existing compatible interpreter instead of adding Python dependencies to this Node project. If none is available, report that validator limitation and validate YAML metadata, required fields, references, and scenarios with an existing repository YAML parser; do not claim the Python validator passed.
 
@@ -195,4 +180,6 @@ Build or database verification requires an environment that complies with the ta
 
 The feature skill defines this repository's required folder semantics, filename conventions, and root-file allowlist. All Prisma database operations, including transactions and raw SQL, belong in repositories; services/actions must not import the client, receive transaction clients, or control transactions indirectly. Atomic database checks stay with their writes in meaningful repository operations. Client initialization remains in database infrastructure. Create only the responsibility folders a feature needs; do not preserve a root query/mutation/projection module or introduce pass-through layers for symmetry. Customers is the structural reference, with its existing abstractions still subject to review. These current rules supersede historical structural choices, not established product behavior.
 
-Before completing a full feature refactor, run `node .agents/skills/feature-structure/scripts/check-structure.mjs src/features/<feature>` and resolve its findings. This scoped check enforces file/folder names, export-only root entry points, and recognizable Prisma imports/API access outside repositories. It does not prove semantic responsibility or whole-program data flow, and does not run automatically in `npm run check`; content/readability review, tracing affected consumers, and behavioral checks remain required. Existing features are assessed against the rule when refactored, without forcing an unrelated repository-wide migration during focused work.
+`npm run architecture:check` discovers every feature and enforces file/folder names, export-only root entry points, and recognizable Prisma imports/API access outside repositories. It also checks application, script, and seed boundaries, private cross-feature imports, feature-to-route dependencies, and feature-dependent generic shared code. It runs automatically as the first step of `npm run check`. The scoped command `node .agents/skills/feature-structure/scripts/check-structure.mjs src/features/<feature>` is useful during implementation; the full check is required before completion.
+
+These checks cannot establish semantic responsibility or trace arbitrary indirect client access. Review contents, unnecessary abstractions, runtime projections, readability and behavior as well. A file named `*.schema.ts` still needs a real declarative contract; naming alone cannot prove that. Do not add exceptions or change rules to preserve an unjustified abstraction.

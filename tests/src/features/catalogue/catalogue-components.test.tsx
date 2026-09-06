@@ -91,7 +91,7 @@ describe("catalogue editor interactions", () => {
       <VariantManager
         perfumeId="perfume-1"
         variants={[
-          { id: "variant-1", sizeValue: { toString: () => "50" }, priceMinor: 125000, quantity: 3 },
+          { id: "variant-1", sizeValue: "50", sizeUnit: "ML", priceMinor: 125000, quantity: 3 },
         ]}
       />,
     );

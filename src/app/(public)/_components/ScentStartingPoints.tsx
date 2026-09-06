@@ -1,6 +1,6 @@
 import { MotionReveal } from "@/components/shared/MotionReveal";
 import { ScentCharacterBrowse } from "@/features/catalogue/server";
-import { publicScentCharacters } from "@/features/catalogue/shared";
+import { scentCharacters } from "@/features/catalogue";
 
 export function ScentStartingPoints() {
   return (
@@ -14,7 +14,7 @@ export function ScentStartingPoints() {
             Browse by scent character.
           </h2>
           <div className="mt-6 lg:mt-12">
-            <ScentCharacterBrowse values={publicScentCharacters} />
+            <ScentCharacterBrowse values={scentCharacters} />
           </div>
         </div>
       </section>

@@ -1,18 +1,14 @@
 "use client";
+import type { VariantActionState, AdminPerfume } from "../../types";
 
 import { useActionState, useState } from "react";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
-import { deleteVariant, type DeleteVariantState } from "../../actions/delete-variant.admin.action";
-import { saveVariant, type SaveVariantState } from "../../actions/save-variant.admin.action";
+import { deleteVariant } from "../../actions/delete-variant.admin.action";
+import { saveVariant } from "../../actions/save-variant.admin.action";
 
-type Variant = {
-  id: string;
-  sizeValue: { toString(): string };
-  priceMinor: number;
-  quantity: number;
-};
-const initial: SaveVariantState & DeleteVariantState = {};
+type Variant = AdminPerfume["variants"][number];
+const initial: VariantActionState = {};
 
 function VariantField({
   label,
@@ -47,17 +43,21 @@ export function VariantManager({
   const [editing, setEditing] = useState<Variant | null>(null);
   const [variantToDelete, setVariantToDelete] = useState<Variant | null>(null);
   const [state, action, pending] = useActionState(
-    async (previous: SaveVariantState, formData: FormData) => {
+    async (previous: VariantActionState, formData: FormData) => {
       const result = await saveVariant(previous, formData);
-      if (result.ok) setOpen(false);
+      if (result.ok) {
+        setOpen(false);
+      }
       return result;
     },
     initial,
   );
   const [deleted, deleteAction, deleting] = useActionState(
-    async (previous: DeleteVariantState, formData: FormData) => {
+    async (previous: VariantActionState, formData: FormData) => {
       const result = await deleteVariant(previous, formData);
-      if (result.ok) setVariantToDelete(null);
+      if (result.ok) {
+        setVariantToDelete(null);
+      }
       return result;
     },
     initial,
@@ -167,7 +167,9 @@ export function VariantManager({
       <ModalShell
         open={Boolean(variantToDelete)}
         onOpenChange={(nextOpen) => {
-          if (!nextOpen && !deleting) setVariantToDelete(null);
+          if (!nextOpen && !deleting) {
+            setVariantToDelete(null);
+          }
         }}
         title="Delete variant?"
         description={

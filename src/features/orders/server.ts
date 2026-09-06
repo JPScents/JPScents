@@ -1,10 +1,10 @@
 import "server-only";
 
-export { readConfirmationCookie } from "./actions/read-confirmation-cookie.action";
-export { cancelOrder, createOrder, parseCheckoutInput, updateOrderStatus } from "./orders.mutation";
+export { AdminOrders } from "./components/AdminOrders";
+export { readConfirmationCookie } from "./server/confirmation-cookie";
 export {
   getOrderByReference,
   getOrderConfirmation,
   getOrdersAdminOverview,
   listOrders,
-} from "./orders.query";
+} from "./services/order.service";

@@ -21,7 +21,9 @@ function Dialog({
   const open = controlledOpen ?? uncontrolledOpen;
 
   function handleOpenChange(nextOpen: boolean) {
-    if (controlledOpen === undefined) setUncontrolledOpen(nextOpen);
+    if (controlledOpen === undefined) {
+      setUncontrolledOpen(nextOpen);
+    }
     onOpenChange?.(nextOpen);
   }
 

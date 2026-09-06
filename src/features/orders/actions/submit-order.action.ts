@@ -1,22 +1,15 @@
 "use server";
 
-import { cookies } from "next/headers";
-
-import { createOrder } from "../orders.mutation";
-
-const confirmationCookie = "jpscents.order-confirmation";
+import { createOrder } from "../services/order.service";
+import { writeConfirmationCookie } from "../server/confirmation-cookie";
 
 export async function submitOrder(lines: unknown, checkout: unknown, submissionKey: string) {
   const result = await createOrder(lines, checkout, submissionKey);
   if ("confirmationToken" in result && result.confirmationToken) {
-    (await cookies()).set(confirmationCookie, result.confirmationToken, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24,
-      path: "/checkout/confirm",
-    });
+    await writeConfirmationCookie(result.confirmationToken);
   }
-  if ("order" in result) return { order: result.order, duplicate: result.duplicate };
+  if ("order" in result) {
+    return { order: result.order, duplicate: result.duplicate };
+  }
   return result;
 }

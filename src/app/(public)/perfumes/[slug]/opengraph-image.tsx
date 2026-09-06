@@ -14,14 +14,18 @@ export const contentType = "image/png";
 export default async function OpenGraphImage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const perfume = await getPerfumeBySlug(slug);
-  if (!perfume) notFound();
+  if (!perfume) {
+    notFound();
+  }
 
   const [logo, productImage] = await Promise.all([
     getBrandLogoDataUrl(),
     perfume.primaryImageUrl
       ? fetch(perfume.primaryImageUrl)
           .then(async (response) => {
-            if (!response.ok) return undefined;
+            if (!response.ok) {
+              return undefined;
+            }
             const image = await response.arrayBuffer();
             const contentType = response.headers.get("content-type")?.split(";")[0];
             const imageType = contentType?.startsWith("image/") ? contentType : "image/jpeg";

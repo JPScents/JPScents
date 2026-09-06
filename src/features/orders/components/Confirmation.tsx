@@ -9,7 +9,9 @@ import type { PublicOrder } from "../types";
 import { OrderSummary } from "./OrderSummary";
 
 function whatsappUrl(number: string | undefined, reference: string, items: PublicOrder["items"]) {
-  if (!number || !/^\d{7,15}$/.test(number)) return undefined;
+  if (!number || !/^\d{7,15}$/.test(number)) {
+    return undefined;
+  }
   const context = items
     .map((item) => `${item.name} ${item.sizeLabel} ×${item.quantity}`)
     .join(", ");
