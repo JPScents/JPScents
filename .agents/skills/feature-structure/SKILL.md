@@ -26,8 +26,8 @@ src/features/<feature>/
   components/              # Domain UI; admin/ and public/ only when useful
   hooks/                   # React state and interaction lifecycles
   providers/               # Shared React context boundaries, when needed
-  repositories/            # Database reads/writes and query definitions
-  services/                # Business rules, transactions, application orchestration
+  repositories/            # All Prisma operations, transactions, query definitions
+  services/                # Non-persistence business rules and application orchestration
   mappers/                 # Pure record/input/output transformations
   parsers/                 # Decode and normalize external input
   validators/              # Reusable imperative validation rules
@@ -51,17 +51,21 @@ Do not invent buckets such as `helpers`, `managers`, `data`, `queries`, or `muta
 
 Use `repositories/<entity>.repository.ts`, for example `repositories/order.repository.ts`. Reads and writes are functions in a cohesive repository: `findOrderByReference`, `listOrderRecords`, `createOrderRecord`, `updateOrderStatus`. A query reads persisted data; a mutation writes it. These are operation descriptions, not separate architectural layers or `.query.ts` / `.mutation.ts` file categories.
 
-Repositories own Prisma calls, `where` / `select` / `include` definitions, ordering, limits, and persistence-level conditional writes. Keep query payload types beside those definitions. Return intentional database shapes. Narrow selects are data access; converting those records to application/public/admin contracts is mapping.
+Repositories own every Prisma database operation: model reads/writes, `$transaction` (both forms), raw SQL, `where` / `select` / `include` definitions, ordering, limits, and persistence-level conditional writes. Keep transaction clients and query payload types here. Return intentional database shapes or application outcomes, never a live Prisma client/delegate, deferred Prisma query, or transaction handle. Narrow selects are data access; converting records to public/admin contracts is mapping.
 
-Do not put React, cookies, redirects, route revalidation, image signing, application workflow decisions, or HTTP/FormData parsing here. A repository may enforce database conditions required by its caller; the service decides business policy. Use the supplied transaction client for participating operations.
+Expose meaningful atomic operations such as `createOrderWithStockDeduction` and `cancelOrderAndRestoreStock`. Their repository implementation opens and completes the transaction, including all checks that must remain atomic with the writes: identity conflicts, stock availability, duplicate submissions, and claiming a cancellation before restocking. Do not move those checks into a service that reads first and writes later. Repositories may use pure decision functions with ordinary values; do not call services from inside a transaction.
+
+Do not put React, cookies, redirects, route revalidation, image signing, external communication, or HTTP/FormData parsing here. Translate expected Prisma errors to explicit application outcomes/errors here so callers do not need Prisma error classes. Unexpected failures remain observable; do not swallow them.
+
+Pass an existing transaction client only between participating repository operations. When multiple features must participate atomically, expose the necessary repository-owned operation through the owning feature's intentional server-only public API; another repository may call it with the same transaction. Do not import feature internals or route the client through a service. Keep this dependency one-way. Do not invent a generic unit-of-work, `withTransaction` callback, or proxy that lets service code control Prisma indirectly.
 
 Actual database access justifies a concrete repository module, even for one operation; it does not justify a generic CRUD wrapper, base class, interface for hypothetical replacements, or a forwarding service. Keep reads and writes together unless a substantial independent responsibility warrants another descriptively named repository. Do not create a read/write split by default.
 
 ### Services
 
-Use `services/<entity-or-workflow>.service.ts`, for example `services/order.service.ts`. Services own meaningful business policy or orchestration: customer identity resolution, order creation with stock deduction, cancellation and restocking, or loading records and signed image URLs before mapping an application result.
+Use `services/<entity-or-workflow>.service.ts`, for example `services/order.service.ts`. Services own meaningful non-persistence business policy or orchestration: choosing an application operation, calling an atomic repository operation, or loading records and signed image URLs before mapping an application result.
 
-A business operation owns its transaction here and passes that transaction client into repository functions and participating public feature APIs. Transaction setup may use the application Prisma client; individual model reads/writes belong to repositories. Network calls stay outside database transactions.
+Services never import the application Prisma client, Prisma namespace/client APIs, or transaction-client types; never start, receive, pass, or control a transaction; and never execute model operations or raw SQL. They call repository operations with ordinary inputs and consume completed results. There is no transaction-setup exception. Generated model types and enum values are data contracts, not database access, and may still be used where appropriate. Repository-specific payload types may be exported as types without exposing client handles.
 
 Do not add services for simple forwarding, renaming a repository function, type annotations, or symmetry. Authorization that protects a callable operation is meaningful behavior, not a pass-through; preserve such guards when collapsing layers. Keep framework effects and request-context access in actions or the narrowly defined server helpers. Pure transformations belong in mappers; extracted validation belongs in parsers/validators.
 
@@ -112,7 +116,7 @@ Routes own framework concerns, page composition, and page-only presentation/adap
 
 For example, a perfume-detail purchase control connecting Catalogue variants to Cart is route-owned. Order creation and reusable checkout behavior remain Orders-owned; the checkout page's Cart-to-Orders adapter is route-local. Promote code only when actual independent consumers need the same behavior.
 
-Use `src/features/customers` as the structural reference: its action, parser, repository, service, components, and types occupy named responsibility folders. It is a reference, not a scaffold or exemption from review. Its `listCustomers` / `getCustomerById` forwarding services do not establish a convention worth copying. Its identity-conflict workflow is meaningful business logic. Inspect policy inside its repository just as critically. Fixture/test data, when needed, stays with meaningful tests; do not copy production modules into fixtures or invent a fixture framework.
+Use `src/features/customers` as the structural reference: its action, parser, repository, service, components, and types occupy named responsibility folders. It is a reference, not a scaffold or exemption from review. Its `listCustomers` / `getCustomerById` forwarding services do not establish a convention worth copying. Preserve identity-conflict behavior, but its service accepting a transaction client and classifying Prisma errors is not compliant: transaction-dependent resolution and Prisma error translation belong in repository operations. Fixture/test data stays with meaningful tests; do not copy production modules into fixtures or invent a fixture framework.
 
 Generic shared infrastructure/utilities/UI primitives must not depend on features. Features may depend one-way on another feature's intentional public API, never its repositories or other internals. Application shells and routes may compose features. Database access belongs to its owning domain: published variant lookup is Catalogue-owned even when Cart requests it.
 
@@ -121,14 +125,15 @@ Mark privileged data/infrastructure modules `server-only`. Use explicit server/c
 ## Apply the rules to mixed files
 
 - `orders.query.ts`: database queries/selects move into `repositories/order.repository.ts`; authorization and any loading/signing/mapping orchestration belong at the appropriate authorized action/service boundary. Do not move that orchestration into a repository.
-- `orders.mutation.ts`: order/stock/customer workflow and transaction ownership belong in `services/order.service.ts`; persistence steps belong in repositories, input parsing in parsers, and small reference-generation helpers can stay local to their owner. Preserve atomic behavior while separating responsibilities.
+- `orders.mutation.ts`: the atomic order/stock/customer operation, its checks, and transaction ownership belong in `repositories/order.repository.ts`; parsing belongs in parsers. A service remains only for meaningful non-persistence orchestration. Small reference-generation helpers can stay with their owner. Do not copy the transaction callback into a service or break it into separately committed repository calls.
 - `orders.projection.ts`: pure public/admin transformations belong in `mappers/order.mapper.ts`; Prisma includes remain with repositories, and image signing belongs in the calling orchestration outside transactions. Renaming the entire mixed file to `.mapper.ts` fails this standard.
 - A Catalogue `*.schema.ts` function that decodes input belongs in a parser, or merges into its existing parser. A reusable pure rule may belong in validators. Moving it unchanged into a new folder without evaluating that distinction is incomplete.
 
 ## Database and behavioral safeguards
 
-- Use the existing application Prisma client; never create feature/request clients or pools, disconnect the shared client after requests, or change its documented lazy initialization and pool configuration casually.
-- Pass the transaction client to every participating helper, including cross-feature calls. No global-client queries inside that transaction or nested transactions; a small pool can deadlock waiting for its held connection.
+- Only repository implementations execute Prisma database operations. Actions, services, routes, hooks, mappers, validators, utilities, and request-context helpers must not import or re-export a database client or execute its operations. Client factories/proxies do not create an exception. Review affected consumers outside the feature too.
+- Keep client construction and lazy singleton/pool configuration in the existing database infrastructure module; it contains no application queries or transactions. Never create feature/request clients or pools or disconnect the shared client after requests. Standalone tools may own client lifecycle, but their hand-written queries and transactions also belong in repository modules (local to the tool when strictly operational). Do not rewrite generated Prisma code or migrations to imitate application layers.
+- A repository owns the transaction and supplies its client to every participating repository operation, including cross-feature calls. No global-client queries inside that transaction or nested transactions; a small pool can deadlock waiting for its held connection. Network calls remain outside transactions.
 - Preserve atomic writes, stock checks, identity conflicts, idempotency, and single stock restoration. Use conditional writes and constraints for real concurrent invariants; do not replace them with read-then-write assumptions.
 - Select/filter/limit records for the consumer. Do not compensate for oversized reads with speculative caching.
 - Inspect relevant SQL constraints/triggers and policies before changing persisted behavior. Preserve migration authority/history and product rules.
@@ -142,6 +147,6 @@ From the repository root, run the bundled check for each refactored feature:
 node .agents/skills/feature-structure/scripts/check-structure.mjs src/features/orders
 ```
 
-It checks the root allowlist, folder/file names, empty folders, and export-only entry points. It reads only TypeScript entry-point source, not environment files. It does not prove semantic correctness: review every module's actual contents against the responsibilities above, including mixed files, dead exports, and unnecessary layers. Do not silence violations by renaming a mixed module, moving everything into `utils/`, adding exceptions, or weakening the check.
+It checks the root allowlist, folder/file names, empty folders, export-only entry points, and recognizable Prisma client imports/API access outside repositories. It reads TypeScript source in the target feature, not environment files. It does not perform whole-program data-flow analysis: also review indirect client leaks, transaction callbacks/types passed through other layers, affected consumers outside the feature, mixed responsibilities, dead exports, and unnecessary layers. Do not silence violations by aliases, re-exporting a client through a helper, moving everything into `utils/`, adding exceptions, or weakening the check.
 
 Use the delivery skill's readability and verification requirements. Completion requires a passing structure check for the full target, a resolved responsibility review, meaningful behavioral verification, and a concise report of simplification and any retained justified abstractions. For a focused change rather than a whole-feature refactor, report existing out-of-scope structural violations without expanding the assignment. A standards-only change reports current violations without migrating application code.

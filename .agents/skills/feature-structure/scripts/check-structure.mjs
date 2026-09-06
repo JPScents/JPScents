@@ -24,21 +24,89 @@ const fileRules = {
 };
 const rootFiles = new Set(["index.ts", "server.ts", "client.ts", "README.md", "AGENTS.md"]);
 const vagueNames = new Set(["helpers.ts", "common.ts", "utils.ts"]);
+const prismaSymbols = new Set(["Prisma", "PrismaClient", "TransactionClient"]);
+const prismaOperations = new Set([
+  "$transaction",
+  "$queryRaw",
+  "$queryRawUnsafe",
+  "$queryRawTyped",
+  "$executeRaw",
+  "$executeRawUnsafe",
+  "$connect",
+  "$disconnect",
+  "$extends",
+  "$on",
+]);
+
+function prismaImportIsForbidden(moduleName, bindings) {
+  const name = moduleName.replace(/\\/g, "/").replace(/\.[cm]?[jt]s$/, "");
+  if (/(?:^|\/)db\/prisma$/.test(name) || name.startsWith("@prisma/adapter-")) return true;
+
+  const generatedClient =
+    /^@prisma\/client(?:\/|$)/.test(name) || /(?:^|\/)db\/generated(?:\/|$)/.test(name);
+  if (!generatedClient) return false;
+
+  // Named generated models/enums remain usable as data contracts outside repositories.
+  if (!bindings || (!ts.isNamedImports(bindings) && !ts.isNamedExports(bindings))) return true;
+  return bindings.elements.some((binding) =>
+    prismaSymbols.has((binding.propertyName ?? binding.name).text),
+  );
+}
+
+function prismaBoundaryViolations(file) {
+  const violations = new Set();
+  function inspect(node) {
+    if (
+      (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+      node.moduleSpecifier &&
+      ts.isStringLiteral(node.moduleSpecifier)
+    ) {
+      let bindings;
+      if (ts.isImportDeclaration(node) && !node.importClause?.name) {
+        bindings = node.importClause?.namedBindings;
+      } else if (ts.isExportDeclaration(node)) {
+        bindings = node.exportClause;
+      }
+      if (prismaImportIsForbidden(node.moduleSpecifier.text, bindings)) {
+        violations.add("Prisma client/namespace imports and exports belong only in repositories");
+      }
+    }
+    if (
+      ts.isCallExpression(node) &&
+      (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
+        (ts.isIdentifier(node.expression) && node.expression.text === "require")) &&
+      node.arguments[0] &&
+      ts.isStringLiteral(node.arguments[0]) &&
+      prismaImportIsForbidden(node.arguments[0].text)
+    ) {
+      violations.add("loading a Prisma client belongs only in repositories");
+    }
+    let member;
+    if (ts.isPropertyAccessExpression(node)) {
+      member = node.name.text;
+    } else if (ts.isElementAccessExpression(node) && ts.isStringLiteral(node.argumentExpression)) {
+      member = node.argumentExpression.text;
+    }
+    if (prismaOperations.has(member)) {
+      violations.add(`${member} access belongs only in repositories`);
+    }
+    ts.forEachChild(node, inspect);
+  }
+  inspect(file);
+  return violations;
+}
 
 async function inspectFeature(directory) {
   const errors = [];
   const report = (relative, message) => errors.push(`${relative}: ${message}`);
 
-  async function inspectEntryPoint(relative) {
-    const source = await readFile(path.join(directory, relative), "utf8");
-    const file = ts.createSourceFile(relative, source, ts.ScriptTarget.Latest, true);
+  function inspectEntryPoint(relative, file) {
     const isServerMarker = (statement) =>
       ts.isImportDeclaration(statement) &&
       !statement.importClause &&
       ts.isStringLiteral(statement.moduleSpecifier) &&
       statement.moduleSpecifier.text === "server-only";
 
-    if (file.parseDiagnostics.length) report(relative, "invalid TypeScript entry point");
     for (const statement of file.statements) {
       const reexport =
         ts.isExportDeclaration(statement) &&
@@ -57,6 +125,16 @@ async function inspectFeature(directory) {
     if (relative === "server.ts" && !file.statements.some(isServerMarker)) {
       report(relative, 'server.ts must import "server-only"');
     }
+  }
+
+  async function inspectSource(relative, category) {
+    const source = await readFile(path.join(directory, relative), "utf8");
+    const file = ts.createSourceFile(relative, source, ts.ScriptTarget.Latest, true);
+    if (file.parseDiagnostics.length) report(relative, "invalid TypeScript source");
+    if (category !== "repositories") {
+      for (const violation of prismaBoundaryViolations(file)) report(relative, violation);
+    }
+    if (!category && rootFiles.has(relative)) inspectEntryPoint(relative, file);
   }
 
   async function visit(relative = "", category) {
@@ -81,14 +159,15 @@ async function inspectFeature(directory) {
             child,
             "implementation belongs in its responsibility folder, not the feature root",
           );
-        } else if (entry.name.endsWith(".ts")) {
-          await inspectEntryPoint(child);
         }
       } else if (
         child !== "types/index.ts" &&
         (!fileRules[category].test(entry.name) || vagueNames.has(entry.name))
       ) {
         report(child, `name does not follow the ${category}/ responsibility convention`);
+      }
+      if (entry.isFile() && /\.(?:ts|tsx)$/.test(entry.name) && !entry.name.startsWith(".")) {
+        await inspectSource(child, category);
       }
     }
   }
