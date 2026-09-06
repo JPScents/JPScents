@@ -5,8 +5,6 @@ export { StagedVariantManager } from "./components/admin/StagedVariantManager";
 export { PerfumeList } from "./components/admin/PerfumeList";
 export { HelpMeChoose } from "./components/public/HelpMeChoose";
 export { VariantPurchaseControls } from "./components/public/VariantPurchaseControls";
-export { CatalogueProductCard } from "./components/public/CatalogueProductCard";
-export { GalleryProductCard } from "./components/public/GalleryProductCard";
 export { RecommendationCard } from "./components/public/RecommendationCard";
 export { ScentCharacterBrowse } from "./components/public/ScentCharacterBrowse";
 export { scentCharacterContent } from "./constants";

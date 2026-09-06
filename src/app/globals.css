@@ -154,3 +154,13 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center bg-jp-text-primary px-5 py-3 text-sm font-semibold text-jp-surface transition-colors hover:bg-jp-text-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center border border-jp-text-primary px-5 py-3 text-sm font-semibold transition-colors hover:bg-jp-stone focus-visible:outline-2 focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-50;
+  }
+}

@@ -17,7 +17,7 @@ vi.mock("next/image", () => ({
 import { VariantPurchaseControls } from "@/features/catalogue/components/public/VariantPurchaseControls";
 import { ScentCharacterSelect } from "@/features/catalogue/components/public/ScentCharacterSelect";
 import { HelpMeChoose } from "@/features/catalogue/components/public/HelpMeChoose";
-import { CatalogueProductCard } from "@/features/catalogue/components/public/CatalogueProductCard";
+import { ProductCard } from "@/components/shared/public/ProductCard";
 
 afterEach(cleanup);
 
@@ -109,7 +109,7 @@ describe("public catalogue controls", () => {
 
   it("renders a controlled bottle fallback when a product image is unavailable", () => {
     render(
-      <CatalogueProductCard
+      <ProductCard
         perfume={{
           id: "p",
           slug: "quiet-fig",

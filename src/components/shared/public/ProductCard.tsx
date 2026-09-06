@@ -4,11 +4,24 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 
-import { ProductBottlePlaceholder } from "@/components/shared/public/ProductBottlePlaceholder";
 import { siteConfig } from "@/config/site";
-import type { PublicPerfumeCard } from "../../types";
 
-export function GalleryProductCard({ perfume }: { perfume: PublicPerfumeCard }) {
+import { ProductBottlePlaceholder } from "./ProductBottlePlaceholder";
+
+type ProductCardPerfume = {
+  [key: string]: unknown;
+  id?: string;
+  slug: string;
+  name: string;
+  scentCue: string;
+  primaryImageUrl?: string;
+  primaryImageAlt: string;
+  label?: string;
+  startingPrice: string;
+  isAvailable: boolean;
+};
+
+export function ProductCard({ perfume }: { perfume: ProductCardPerfume }) {
   const reduceMotion = useReducedMotion();
   return (
     <Link
@@ -34,6 +47,11 @@ export function GalleryProductCard({ perfume }: { perfume: PublicPerfumeCard }) 
           ) : (
             <ProductBottlePlaceholder className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.02]" />
           )}
+          {perfume.label ? (
+            <span className="absolute left-2 top-2 bg-jp-surface px-2 py-1 text-[10px] uppercase tracking-[0.14em]">
+              {perfume.label}
+            </span>
+          ) : null}
         </div>
         <div className="flex items-start justify-between gap-4 pt-0.5">
           <div>

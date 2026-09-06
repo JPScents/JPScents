@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 
 import { EmptyState } from "@/components/shared/EmptyState";
 import { MotionReveal } from "@/components/shared/MotionReveal";
+import { ProductCard } from "@/components/shared/public/ProductCard";
 import {
-  CatalogueProductCard,
   hasPublishedPerfumes,
   listPerfumes,
   parseScent,
@@ -76,10 +76,10 @@ export default async function PerfumesPage({
             </p>
           </div>
           {perfumes.length ? (
-            <div className="mt-6 grid gap-x-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {perfumes.map((perfume) => (
                 <MotionReveal key={perfume.id} delay={0.04}>
-                  <CatalogueProductCard perfume={perfume} />
+                  <ProductCard perfume={perfume} />
                 </MotionReveal>
               ))}
             </div>
@@ -97,16 +97,10 @@ export default async function PerfumesPage({
               title="Try one preference at a time."
               description="Clear your current choice to see every available perfume, or let us narrow the options with you."
             >
-              <Link
-                href={siteConfig.routes.perfumes}
-                className="bg-jp-text-primary px-5 py-3 text-sm font-semibold text-jp-surface"
-              >
+              <Link href={siteConfig.routes.perfumes} className="btn-primary">
                 Clear filters
               </Link>
-              <Link
-                href={siteConfig.routes.helpMeChoose}
-                className="border border-jp-text-primary px-5 py-3 text-sm font-semibold"
-              >
+              <Link href={siteConfig.routes.helpMeChoose} className="btn-secondary">
                 Find my scent
               </Link>
             </EmptyState>
