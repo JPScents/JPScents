@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   orderFindUnique: vi.fn(),
   orderFindMany: vi.fn(),
+  orderCount: vi.fn(),
   orderCreate: vi.fn(),
   orderFindUniqueOrThrow: vi.fn(),
   orderUpdate: vi.fn(),
@@ -17,7 +18,11 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/db/prisma", () => ({
   prisma: {
-    order: { findUnique: mocks.orderFindUnique, findMany: mocks.orderFindMany },
+    order: {
+      findUnique: mocks.orderFindUnique,
+      findMany: mocks.orderFindMany,
+      count: mocks.orderCount,
+    },
     customer: {
       findUnique: mocks.customerFindUnique,
       create: mocks.customerCreate,
@@ -53,6 +58,7 @@ vi.mock("@/lib/supabase/storage", () => ({
 import {
   cancelOrder,
   createOrder,
+  getOrdersAdminOverview,
   getOrderConfirmation,
   listOrders,
   parseCheckoutInput,
@@ -85,7 +91,7 @@ const order = {
   submissionKey: "22222222-2222-4222-8222-222222222222",
   orderNote: null,
   subtotalMinor: 120000,
-  status: "NEW",
+  status: "AWAITING_PAYMENT",
   stockRestoredAt: null,
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -101,13 +107,17 @@ const order = {
       },
     },
   ],
-  statusEvents: [{ id: "event", fromStatus: null, toStatus: "NEW", createdAt: new Date() }],
+  statusEvents: [
+    { id: "event", fromStatus: null, toStatus: "AWAITING_PAYMENT", createdAt: new Date() },
+  ],
 };
 
 describe("orders", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.orderFindUnique.mockResolvedValue(null);
+    mocks.orderFindMany.mockResolvedValue([]);
+    mocks.orderCount.mockResolvedValue(0);
     mocks.customerFindUnique.mockResolvedValue(null);
     mocks.customerCreate.mockResolvedValue(customer);
     mocks.variantFindMany.mockResolvedValue([
@@ -171,7 +181,9 @@ describe("orders", () => {
         data: expect.objectContaining({
           customerId: "customer",
           subtotalMinor: 120000,
+          status: "AWAITING_PAYMENT",
           items: { create: [{ perfumeVariantId: id, quantity: 1, unitPriceMinor: 120000 }] },
+          statusEvents: { create: { toStatus: "AWAITING_PAYMENT" } },
         }),
       }),
     );
@@ -222,23 +234,41 @@ describe("orders", () => {
 
   it("filters newest-first order reads and prevents generic status changes from bypassing cancellation", async () => {
     mocks.orderFindMany.mockResolvedValue([{ ...order, _count: { items: 1 } }]);
-    await expect(listOrders({ query: "Ada", status: "NEW" })).resolves.toMatchObject([
+    await expect(listOrders({ query: "Ada", status: "AWAITING_PAYMENT" })).resolves.toMatchObject([
       { reference: "JP-ABC", itemCount: 1 },
     ]);
     await expect(updateOrderStatus("JP-ABC", "CANCELLED")).resolves.toEqual({
       error: "Use the cancellation action to cancel an order.",
     });
     mocks.orderFindUnique.mockResolvedValueOnce({ id: "order", status: "CANCELLED" });
-    await expect(updateOrderStatus("JP-ABC", "NEW")).resolves.toEqual({
+    await expect(updateOrderStatus("JP-ABC", "PAID")).resolves.toEqual({
       error: "Cancelled orders cannot be reopened.",
     });
     expect(mocks.orderUpdate).not.toHaveBeenCalled();
   });
 
+  it("records persisted status changes, including delivered", async () => {
+    mocks.orderFindUnique.mockResolvedValueOnce({ id: "order", status: "PAID" });
+
+    await expect(updateOrderStatus("JP-ABC", "DELIVERED")).resolves.toEqual({ ok: true });
+    expect(mocks.orderUpdate).toHaveBeenCalledWith({
+      where: { id: "order" },
+      data: {
+        status: "DELIVERED",
+        statusEvents: { create: { fromStatus: "PAID", toStatus: "DELIVERED" } },
+      },
+    });
+  });
+
+  it("counts only awaiting-payment orders as awaiting admin action", async () => {
+    await expect(getOrdersAdminOverview()).resolves.toMatchObject({ awaitingAction: 0 });
+    expect(mocks.orderCount).toHaveBeenCalledWith({ where: { status: "AWAITING_PAYMENT" } });
+  });
+
   it("cancels once, restores grouped stock, and records a status event", async () => {
     mocks.orderFindUnique.mockResolvedValueOnce({
       id: "order",
-      status: "NEW",
+      status: "AWAITING_PAYMENT",
       stockRestoredAt: null,
       items: [
         { perfumeVariantId: id, quantity: 1 },
@@ -251,10 +281,12 @@ describe("orders", () => {
       data: { quantity: { increment: 3 } },
     });
     expect(mocks.orderUpdateMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: "order", status: "NEW", stockRestoredAt: null } }),
+      expect.objectContaining({
+        where: { id: "order", status: "AWAITING_PAYMENT", stockRestoredAt: null },
+      }),
     );
     expect(mocks.eventCreate).toHaveBeenCalledWith({
-      data: { orderId: "order", fromStatus: "NEW", toStatus: "CANCELLED" },
+      data: { orderId: "order", fromStatus: "AWAITING_PAYMENT", toStatus: "CANCELLED" },
     });
   });
 

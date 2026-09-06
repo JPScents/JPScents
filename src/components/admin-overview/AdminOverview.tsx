@@ -4,13 +4,8 @@ import type { ReactNode } from "react";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { siteConfig } from "@/config/site";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
+import { formatEnumLabel } from "@/shared/utils/format-enum-label";
 import type { OrderRow } from "@/features/orders";
-
-const statusLabel = (status: string) =>
-  status
-    .replaceAll("_", " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 export function AdminOverview({
   overview,
@@ -86,7 +81,7 @@ export function AdminOverview({
                     {formatNairaFromMinor(order.subtotalMinor)}
                     <br />
                     <span className="text-xs text-jp-text-secondary">
-                      {statusLabel(order.status)}
+                      {formatEnumLabel(order.status)}
                     </span>
                   </span>
                 </Link>

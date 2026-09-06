@@ -5,6 +5,8 @@ import { useActionState, useState, useTransition } from "react";
 
 import { ModalShell } from "@/components/shared/ModalShell";
 import { siteConfig } from "@/config/site";
+import type { OrderStatus } from "@/db/generated/client";
+import { formatEnumLabel } from "@/shared/utils/format-enum-label";
 
 import { deleteCustomerAdmin } from "../../actions/delete-customer.admin.action";
 import {
@@ -22,7 +24,7 @@ type CustomerEditorRecord = {
   deliveryAddress: string;
   orders: Array<{
     reference: string;
-    status: string;
+    status: OrderStatus;
     subtotalMinor: number;
     createdAt: Date;
     _count: { items: number };
@@ -164,7 +166,7 @@ export function CustomerEditor({ customer }: { customer?: CustomerEditorRecord }
                     {order.reference}
                   </a>
                   <span>{order._count.items} items</span>
-                  <span>{order.status}</span>
+                  <span>{formatEnumLabel(order.status)}</span>
                 </li>
               ))}
             </ul>

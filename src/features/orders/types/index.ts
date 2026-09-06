@@ -24,7 +24,7 @@ export type OrderLine = {
 export type PublicOrder = {
   reference: string;
   subtotalMinor: number;
-  status: string;
+  status: OrderStatus;
   createdAt: Date;
   items: OrderLine[];
 };
@@ -34,7 +34,7 @@ export type OrderRow = {
   customerName: string;
   whatsappNumber: string;
   subtotalMinor: number;
-  status: string;
+  status: OrderStatus;
   createdAt: Date;
   itemCount: number;
 };

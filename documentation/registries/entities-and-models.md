@@ -14,7 +14,7 @@
 | `ScentCharacter`   | Enum                          | `FRESH`, `WARM`, `SWEET`, `WOODY`                                                   |
 | `Occasion`         | Enum                          | `EVERYDAY`, `WORK`, `DATE_NIGHT`, `SPECIAL_OCCASION`                                |
 | `TimeOfDay`        | Enum                          | `DAY`, `NIGHT`                                                                      |
-| `OrderStatus`      | Enum                          | `NEW`, `CONFIRMED`, `AWAITING_PAYMENT`, `CANCELLED`                                 |
+| `OrderStatus`      | Enum                          | `AWAITING_PAYMENT`, `PAID`, `DELIVERED`, `CANCELLED`                                |
 
 Recommendation attributes are enum arrays on Perfume; multiple selections are allowed. `Either` is a public no-filter choice, not persisted data.
 

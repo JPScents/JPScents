@@ -16,7 +16,7 @@
 | Featured               | Admin-maintained multiple selection                                                  | Confirmed                                 |
 | Public routes          | registry in `routes-and-pages.md`                                                    | Confirmed                                 |
 | Recommendation enums   | registry in `entities-and-models.md`                                                 | Mostly confirmed; wording issue open      |
-| Order statuses         | `NEW`, `CONFIRMED`, `AWAITING_PAYMENT`, `CANCELLED`                                  | Confirmed from Admin design               |
+| Order statuses         | `AWAITING_PAYMENT`, `PAID`, `DELIVERED`, `CANCELLED`                                 | Approved operational lifecycle            |
 | Delivery locations     | All 36 Nigerian states plus FCT, each with mapped major cities and an `Other` choice | Confirmed implementation                  |
 | Custom delivery city   | Required for `Other`; maximum 80 characters                                          | Confirmed implementation                  |
 | Trusted Admin identity | exact JPScents Tally-submitted email plus trusted Supabase `app_metadata.role=admin` | Confirmed from client record              |

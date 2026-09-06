@@ -156,6 +156,7 @@ export async function createOrder(linesRaw: unknown, checkoutRaw: unknown, submi
             submissionKey,
             orderNote: input.orderNote,
             subtotalMinor,
+            status: "AWAITING_PAYMENT",
             items: {
               create: lines.map((line) => ({
                 perfumeVariantId: line.perfumeVariantId,
@@ -163,7 +164,7 @@ export async function createOrder(linesRaw: unknown, checkoutRaw: unknown, submi
                 unitPriceMinor: byId.get(line.perfumeVariantId)!.priceMinor,
               })),
             },
-            statusEvents: { create: { toStatus: "NEW" } },
+            statusEvents: { create: { toStatus: "AWAITING_PAYMENT" } },
           },
         });
         const complete = await tx.order.findUniqueOrThrow({
@@ -341,7 +342,7 @@ export async function getOrdersAdminOverview() {
   start.setHours(0, 0, 0, 0);
   start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
   const [awaitingAction, ordersThisWeek, recentOrders] = await Promise.all([
-    prisma.order.count({ where: { status: { in: ["NEW", "AWAITING_PAYMENT"] } } }),
+    prisma.order.count({ where: { status: "AWAITING_PAYMENT" } }),
     prisma.order.count({ where: { createdAt: { gte: start } } }),
     listOrders(),
   ]);

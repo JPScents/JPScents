@@ -3,15 +3,17 @@ import Link from "next/link";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { siteConfig } from "@/config/site";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
+import { formatEnumLabel } from "@/shared/utils/format-enum-label";
+import type { OrderStatus } from "@/db/generated/client";
 
 import type { OrderRow } from "../types";
 
-const orderStatuses = ["NEW", "CONFIRMED", "AWAITING_PAYMENT", "CANCELLED"];
-const statusLabel = (status: string) =>
-  status
-    .replaceAll("_", " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+const orderStatuses = [
+  "AWAITING_PAYMENT",
+  "PAID",
+  "DELIVERED",
+  "CANCELLED",
+] as const satisfies readonly OrderStatus[];
 
 export function AdminOrders({
   orders,
@@ -20,7 +22,7 @@ export function AdminOrders({
 }: {
   orders: OrderRow[];
   query?: string;
-  status?: string;
+  status?: OrderStatus;
 }) {
   const filtered = Boolean(query || status);
   return (
@@ -46,7 +48,7 @@ export function AdminOrders({
           <option value="">All statuses</option>
           {orderStatuses.map((value) => (
             <option key={value} value={value}>
-              {statusLabel(value)}
+              {formatEnumLabel(value)}
             </option>
           ))}
         </select>
@@ -87,7 +89,9 @@ export function AdminOrders({
                     <td>{order.itemCount}</td>
                     <td>{formatNairaFromMinor(order.subtotalMinor)}</td>
                     <td>
-                      <span className="border px-2 py-1 text-xs">{statusLabel(order.status)}</span>
+                      <span className="border px-2 py-1 text-xs">
+                        {formatEnumLabel(order.status)}
+                      </span>
                     </td>
                   </tr>
                 ))}
@@ -103,7 +107,7 @@ export function AdminOrders({
               >
                 <div className="flex justify-between">
                   <strong>{order.reference}</strong>
-                  <span className="text-xs">{statusLabel(order.status)}</span>
+                  <span className="text-xs">{formatEnumLabel(order.status)}</span>
                 </div>
                 <p className="mt-3">{order.customerName}</p>
                 <p className="text-sm text-jp-text-secondary">{order.whatsappNumber}</p>

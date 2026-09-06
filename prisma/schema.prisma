@@ -32,9 +32,9 @@ enum TimeOfDay {
 }
 
 enum OrderStatus {
-  NEW
-  CONFIRMED
   AWAITING_PAYMENT
+  PAID
+  DELIVERED
   CANCELLED
 }
 
@@ -110,7 +110,7 @@ model Order {
   submissionKey     String             @unique
   orderNote         String?
   subtotalMinor     Int
-  status            OrderStatus        @default(NEW)
+  status            OrderStatus        @default(AWAITING_PAYMENT)
   stockRestoredAt   DateTime?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt

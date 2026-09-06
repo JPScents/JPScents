@@ -7,7 +7,7 @@ PerfumeStatus: DRAFT | PUBLISHED
 ScentCharacter: FRESH | WARM | SWEET | WOODY
 Occasion: EVERYDAY | WORK | DATE_NIGHT | SPECIAL_OCCASION
 TimeOfDay: DAY | NIGHT
-OrderStatus: NEW | CONFIRMED | AWAITING_PAYMENT | CANCELLED
+OrderStatus: AWAITING_PAYMENT | PAID | DELIVERED | CANCELLED
 ```
 
 `scentCharacters`, `occasions`, and `timesOfDay` are arrays of enum values. Multiple selections are allowed. Public `Either` means no TimeOfDay filter; it is not stored as an enum value.
@@ -83,6 +83,7 @@ updatedAt
 ```
 
 The WhatsApp URL/message is derived from the Customer, Order, and configuration; it is not persisted.
+New Orders default to `AWAITING_PAYMENT`. `PAID` records confirmed payment, `DELIVERED` records completed delivery, and `CANCELLED` preserves the cancelled Order history while restoring stock exactly once.
 
 ### OrderItem
 

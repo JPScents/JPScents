@@ -6,18 +6,20 @@ import { useState, useTransition } from "react";
 
 import { ModalShell } from "@/components/shared/ModalShell";
 import { siteConfig } from "@/config/site";
+import type { OrderStatus } from "@/db/generated/client";
+import { formatEnumLabel } from "@/shared/utils/format-enum-label";
 
 import { changeOrderStatus } from "../actions/change-order-status.admin.action";
 import { cancelOrderAdmin } from "../actions/cancel-order.admin.action";
 import type { PublicOrder } from "../types";
 import { OrderSummary } from "./OrderSummary";
 
-const orderStatuses = ["NEW", "CONFIRMED", "AWAITING_PAYMENT"];
-const statusLabel = (status: string) =>
-  status
-    .replaceAll("_", " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+const orderStatuses = [
+  "AWAITING_PAYMENT",
+  "PAID",
+  "DELIVERED",
+  "CANCELLED",
+] as const satisfies readonly OrderStatus[];
 function whatsappUrl(
   number: string | undefined,
   customerName: string | undefined,
@@ -39,7 +41,12 @@ type AdminOrder = PublicOrder & {
   deliveryCity?: string;
   deliveryAddress?: string;
   orderNote?: string | null;
-  events?: { id: string; fromStatus: string | null; toStatus: string; createdAt: Date }[];
+  events?: {
+    id: string;
+    fromStatus: OrderStatus | null;
+    toStatus: OrderStatus;
+    createdAt: Date;
+  }[];
 };
 
 export function AdminOrderDetail({ order }: { order: AdminOrder | null }) {
@@ -48,7 +55,7 @@ export function AdminOrderDetail({ order }: { order: AdminOrder | null }) {
   const [cancellationMessage, setCancellationMessage] = useState("");
   const [cancellationDialogOpen, setCancellationDialogOpen] = useState(false);
   const [pending, start] = useTransition();
-  const [status, setStatus] = useState(order?.status ?? "NEW");
+  const [status, setStatus] = useState<OrderStatus>(order?.status ?? "AWAITING_PAYMENT");
   if (!order)
     return (
       <section>
@@ -75,7 +82,7 @@ export function AdminOrderDetail({ order }: { order: AdminOrder | null }) {
           <p className="text-xs font-semibold uppercase tracking-[.14em] text-jp-olive">Order</p>
           <h1 className="mt-2 font-display text-5xl">{order.reference}</h1>
         </div>
-        <span className="border px-3 py-2 text-sm">{statusLabel(order.status)}</span>
+        <span className="border px-3 py-2 text-sm">{formatEnumLabel(order.status)}</span>
       </div>
       <div className="mt-8 grid gap-7 lg:grid-cols-[1fr_22rem]">
         <div className="space-y-7">
@@ -85,14 +92,14 @@ export function AdminOrderDetail({ order }: { order: AdminOrder | null }) {
             <ol className="mt-5 space-y-4">
               {(order.events ?? []).map((event) => (
                 <li key={event.id} className="border-l pl-4 text-sm">
-                  <strong>{statusLabel(event.toStatus)}</strong>
+                  <strong>{formatEnumLabel(event.toStatus)}</strong>
                   <p className="mt-1 text-jp-text-secondary">
                     {new Intl.DateTimeFormat("en-NG", {
                       dateStyle: "medium",
                       timeStyle: "short",
                     }).format(event.createdAt)}
                     {event.fromStatus
-                      ? ` · changed from ${statusLabel(event.fromStatus)}`
+                      ? ` · changed from ${formatEnumLabel(event.fromStatus)}`
                       : " · order placed"}
                   </p>
                 </li>
@@ -147,12 +154,17 @@ export function AdminOrderDetail({ order }: { order: AdminOrder | null }) {
             <h2 className="font-display text-3xl">Update status</h2>
             <select
               value={status}
-              onChange={(event) => setStatus(event.target.value)}
+              onChange={(event) => setStatus(event.target.value as OrderStatus)}
+              disabled={pending || order.status === "CANCELLED"}
               className="mt-4 h-11 w-full border bg-white px-3 text-sm"
             >
               {orderStatuses.map((value) => (
-                <option key={value} value={value}>
-                  {statusLabel(value)}
+                <option
+                  key={value}
+                  value={value}
+                  disabled={value === "CANCELLED" && order.status !== "CANCELLED"}
+                >
+                  {formatEnumLabel(value)}
                 </option>
               ))}
             </select>

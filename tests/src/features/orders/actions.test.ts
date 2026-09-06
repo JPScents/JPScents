@@ -24,7 +24,7 @@ describe("order server actions", () => {
   beforeEach(() => vi.clearAllMocks());
   it("rejects unauthorised status writes", async () => {
     mocks.getCurrentAdmin.mockResolvedValue(null);
-    await expect(changeOrderStatus("JP-1", "CONFIRMED")).resolves.toEqual({
+    await expect(changeOrderStatus("JP-1", "PAID")).resolves.toEqual({
       error: "You are not authorized.",
     });
     expect(mocks.updateOrderStatus).not.toHaveBeenCalled();

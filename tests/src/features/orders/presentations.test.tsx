@@ -53,7 +53,7 @@ import { AdminOrderDetail, AdminOrders, Checkout, Confirmation } from "@/feature
 const placedOrder = {
   reference: "JP-ABCDEFG",
   subtotalMinor: 125000,
-  status: "NEW",
+  status: "AWAITING_PAYMENT" as const,
   createdAt: new Date("2026-08-28T12:00:00Z"),
   items: [
     {
@@ -113,6 +113,11 @@ describe("order presentations", () => {
 
   it("distinguishes an empty Order store from a filtered no-result", () => {
     const { rerender } = render(<AdminOrders orders={[]} />);
+    expect(screen.getByRole("combobox")).toHaveTextContent(
+      "Awaiting PaymentPaidDeliveredCancelled",
+    );
+    expect(screen.queryByRole("option", { name: "New" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Confirmed" })).not.toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "No orders have been placed yet." }),
     ).toBeInTheDocument();
@@ -144,6 +149,12 @@ describe("order presentations", () => {
     );
 
     const messageCustomer = screen.getByRole("link", { name: "Message customer on WhatsApp" });
+    expect(screen.getByRole("combobox")).toHaveTextContent(
+      "Awaiting PaymentPaidDeliveredCancelled",
+    );
+    expect(screen.getByRole("option", { name: "Cancelled" })).toBeDisabled();
+    expect(screen.queryByRole("option", { name: "New" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Confirmed" })).not.toBeInTheDocument();
     expect(messageCustomer).toHaveAttribute("href", expect.stringContaining("wa.me/2348012345678"));
     expect(new URL(messageCustomer.getAttribute("href")!).searchParams.get("text")).toContain(
       "Hello Amara Okafor, this is JPScents following up on your order JP-ABCDEFG",
