@@ -10,11 +10,13 @@ export function validateVariantInput(raw: Record<string, unknown>): {
   const quantityText = typeof raw.quantity === "string" ? raw.quantity.trim() : "";
   const quantity = Number(quantityText);
   const errors: Record<string, string> = {};
-  if (!/^\d+(?:\.\d{1,2})?$/.test(sizeValue) || Number(sizeValue) <= 0)
+  if (!/^\d+(?:\.\d{1,2})?$/.test(sizeValue) || Number(sizeValue) <= 0) {
     errors.sizeValue = "Size must be positive.";
+  }
   if (priceMinor === null) errors.price = "Enter a Naira amount with up to two decimals.";
-  if (!/^\d+$/.test(quantityText) || !Number.isSafeInteger(quantity) || quantity < 0)
+  if (!/^\d+$/.test(quantityText) || !Number.isSafeInteger(quantity) || quantity < 0) {
     errors.quantity = "Quantity must be a non-negative whole number.";
+  }
   return {
     input: Object.keys(errors).length
       ? undefined

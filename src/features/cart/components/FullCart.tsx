@@ -14,7 +14,7 @@ export function FullCart() {
   const reduceMotion = useReducedMotion();
   const cartIsEmpty = count === 0 && lines.length === 0;
 
-  if (count && !lines.length && resolutionState === "resolving")
+  if (count && !lines.length && resolutionState === "resolving") {
     return (
       <section className="mx-auto max-w-public-container px-public-gutter-mobile py-16 lg:px-public-gutter-desktop">
         <h1 className="font-display text-6xl">Your cart</h1>
@@ -23,7 +23,8 @@ export function FullCart() {
         </p>
       </section>
     );
-  if (count && !lines.length && resolutionState === "error")
+  }
+  if (count && !lines.length && resolutionState === "error") {
     return (
       <section className="mx-auto max-w-public-container px-public-gutter-mobile py-16 lg:px-public-gutter-desktop">
         <h1 className="font-display text-6xl">Your cart</h1>
@@ -33,6 +34,7 @@ export function FullCart() {
         <CartSummary />
       </section>
     );
+  }
   const emptyCart = (
     <motion.section
       key="empty"

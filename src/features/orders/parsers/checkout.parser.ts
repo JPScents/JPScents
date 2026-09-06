@@ -24,13 +24,18 @@ export function parseCheckoutInput(value: unknown): {
   const errors: Record<string, string> = {};
   if (!input.customerName) errors.customerName = "Enter your full name.";
   if (!input.whatsappNumber) errors.whatsappNumber = "Enter a valid WhatsApp number.";
-  if (input.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email))
+  if (input.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)) {
     errors.email = "Enter a valid email address.";
+  }
   if (!isNigerianState(input.deliveryState)) errors.deliveryState = "Choose your delivery state.";
   if (input.deliveryCity === OTHER_CITY_VALUE) {
     if (!input.customCity) errors.customCity = "Enter your city.";
-    if (typeof raw.customCity === "string" && raw.customCity.trim().length > CUSTOM_CITY_MAX_LENGTH)
+    if (
+      typeof raw.customCity === "string" &&
+      raw.customCity.trim().length > CUSTOM_CITY_MAX_LENGTH
+    ) {
       errors.customCity = `Use ${CUSTOM_CITY_MAX_LENGTH} characters or fewer.`;
+    }
   } else if (
     isNigerianState(input.deliveryState) &&
     !isKnownCity(input.deliveryState, input.deliveryCity)

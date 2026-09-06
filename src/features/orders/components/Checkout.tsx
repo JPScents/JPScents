@@ -115,7 +115,7 @@ export function Checkout({ cart }: { cart: CheckoutCart }) {
     deliveryAddress: "",
     orderNote: "",
   });
-  if (!cart.items.length || cart.hasInvalidLines)
+  if (!cart.items.length || cart.hasInvalidLines) {
     return (
       <section className="mx-auto max-w-public-container px-public-gutter-mobile py-16 lg:px-public-gutter-desktop">
         <h1 className="font-display text-5xl">Your cart needs attention.</h1>
@@ -130,6 +130,7 @@ export function Checkout({ cart }: { cart: CheckoutCart }) {
         </Link>
       </section>
     );
+  }
   const resolved = {
     items: cart.lines
       .filter((line) => line.isValid)

@@ -21,8 +21,9 @@ export async function removePrimaryImage(
   });
   if (!image) return { ok: true };
   const perfume = await prisma.perfume.findUnique({ where: { id: perfumeId } });
-  if (perfume?.status === "PUBLISHED")
+  if (perfume?.status === "PUBLISHED") {
     return { error: "Unpublish this perfume before removing its required primary image." };
+  }
   await prisma.perfumeImage.delete({ where: { id: image.id } });
   const supabase = await createSupabaseServerClient();
   await supabase.storage.from("perfume-images").remove([image.path]);

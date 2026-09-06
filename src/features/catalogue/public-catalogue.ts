@@ -13,6 +13,7 @@ import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 import { preferenceLabel } from "./public-preferences";
 import type { HelpPreferences, PublicPerfumeDetail, Recommendation } from "./types";
 import { mapPublicPerfumeCard } from "./mappers/public-perfume.mapper";
+
 export { preferenceLabel, preferenceSummary } from "./public-preferences";
 
 const detailInclude = {

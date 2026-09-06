@@ -8,8 +8,9 @@ import { cancelOrder } from "../orders";
 
 export async function cancelOrderAdmin(reference: unknown) {
   if (!(await getCurrentAdmin())) return { error: "You are not authorized." } as const;
-  if (typeof reference !== "string" || !reference.trim())
+  if (typeof reference !== "string" || !reference.trim()) {
     return { error: "Order not found." } as const;
+  }
   const orderReference = reference.trim();
   const result = await cancelOrder(orderReference);
   if ("ok" in result || "unchanged" in result) {

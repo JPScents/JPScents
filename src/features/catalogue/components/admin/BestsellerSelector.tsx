@@ -41,12 +41,13 @@ export function BestsellerSelector({
       setMessage("Bestseller updated.");
       setOpen(false);
     });
-  if (!candidates.length)
+  if (!candidates.length) {
     return (
       <p className="text-sm leading-6 text-jp-text-secondary">
         Add and publish an in-stock perfume before choosing a Bestseller.
       </p>
     );
+  }
   return (
     <ModalShell
       open={open}

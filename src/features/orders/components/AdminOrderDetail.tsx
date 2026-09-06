@@ -56,7 +56,7 @@ export function AdminOrderDetail({ order }: { order: AdminOrder | null }) {
   const [cancellationDialogOpen, setCancellationDialogOpen] = useState(false);
   const [pending, start] = useTransition();
   const [status, setStatus] = useState<OrderStatus>(order?.status ?? "AWAITING_PAYMENT");
-  if (!order)
+  if (!order) {
     return (
       <section>
         <h1 className="font-display text-5xl">Order not found</h1>
@@ -71,6 +71,7 @@ export function AdminOrderDetail({ order }: { order: AdminOrder | null }) {
         </Link>
       </section>
     );
+  }
   const url = whatsappUrl(order.whatsappNumber, order.customerName, order.reference, order.items);
   return (
     <section>

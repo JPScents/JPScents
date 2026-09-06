@@ -5,6 +5,18 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  {
+    files: ["**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
+    rules: {
+      curly: ["error", "multi-line", "consistent"],
+    },
+  },
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    rules: {
+      "import/newline-after-import": "error",
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
@@ -17,6 +29,8 @@ const eslintConfig = defineConfig([
     ".playwright-cli/**",
     "src/db/generated/**",
     "supabase/.temp/**",
+    ".vercel/**",
+    "**/.env*",
   ]),
 ]);
 

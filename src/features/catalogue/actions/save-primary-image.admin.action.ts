@@ -38,8 +38,9 @@ export async function savePrimaryImage(
         .from("perfume-images")
         .upload(path, image, { contentType: image.type, upsert: false })
     ).error
-  )
+  ) {
     return { error: "Image upload failed. Please try again." };
+  }
   try {
     await prisma.$transaction(async (tx) => {
       await tx.perfumeImage.deleteMany({ where: { perfumeId } });

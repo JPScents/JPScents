@@ -139,14 +139,21 @@ Do not configure `DIRECT_URL` or `SUPABASE_SECRET_KEY` in Vercel. Preview deploy
 ## Quality commands
 
 ```bash
+npm run fix
 npm run format
 npm run format:check
 npm run lint
+npm run lint:fix
 npm run typecheck
 npm test
+npm run check
 npm run db:validate
 npm run build
 npm run release:check
 ```
 
-`npm run release:check` is the complete local release gate. Repository changes should follow `AGENTS.md`: inspect existing patterns, keep feature ownership explicit, avoid premature abstractions, preserve unrelated work and verify before committing.
+`npm run fix` applies ESLint's available fixes, then Prettier. `format` writes formatting; `format:check` and `lint` only report problems. `lint:fix` applies lint fixes without formatting. `npm run check` runs formatting, lint, type, and test checks; `release:check` additionally validates the database schema and builds the application.
+
+Prettier covers supported files across the repository, including source, tests, scripts, configuration, styles, and Markdown guidance. Generated files, dependencies, lockfiles, and secret environment files are excluded. Prisma schema formatting remains `npm run db:format`; SQL migrations and Supabase TOML are not formatted by Prettier. EditorConfig aligns indentation and line endings in supporting editors; editor formatting should use this repository's Prettier configuration.
+
+Keep tests for business rules, state transitions, integrations, failure recovery, and meaningful accessibility interactions. Avoid static-copy, styling, element-count, and trivial rendering tests. Repository changes should follow `AGENTS.md`: preserve unrelated work, verify the result, and commit completed work locally. Pushing remains an explicit user action.

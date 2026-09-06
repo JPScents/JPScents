@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MotionReveal } from "@/components/shared/MotionReveal";
 import { siteConfig } from "@/config/site";
+
 const steps = [
   "Choose your perfume and size",
   "Add one or more perfumes to Cart",

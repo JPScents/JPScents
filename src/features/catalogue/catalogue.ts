@@ -6,6 +6,7 @@ import { getPerfumeImageUrl } from "@/lib/supabase/storage";
 import { scentCharacters } from "./constants";
 
 import type { CatalogueFilters } from "./types";
+
 export type { CatalogueFilters } from "./types";
 
 const details = {

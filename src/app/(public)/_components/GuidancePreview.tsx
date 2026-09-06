@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CircleHelp } from "lucide-react";
 import { MotionReveal } from "@/components/shared/MotionReveal";
 import { siteConfig } from "@/config/site";
+
 export function GuidancePreview() {
   return (
     <MotionReveal>

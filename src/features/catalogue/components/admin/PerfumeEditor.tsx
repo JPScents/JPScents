@@ -179,8 +179,9 @@ export function PerfumeEditor({ perfume }: { perfume?: Perfume }) {
     [imagePreview],
   );
   useEffect(() => {
-    if (state.errors || state.message)
+    if (state.errors || state.message) {
       queueMicrotask(() => setRestoreVersion((version) => version + 1));
+    }
   }, [state.errors, state.message]);
   const toggle = <T extends string>(values: T[], value: T) =>
     values.includes(value) ? values.filter((item) => item !== value) : [...values, value];

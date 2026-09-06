@@ -17,7 +17,7 @@ export function CartSummary({ preview = false }: { preview?: boolean }) {
         : hasInvalidLines
           ? "Resolve unavailable items before Checkout."
           : undefined;
-  if (preview)
+  if (preview) {
     return (
       <section className="border-t pt-4" aria-label="Cart subtotal">
         <div className="flex items-baseline justify-between">
@@ -45,6 +45,7 @@ export function CartSummary({ preview = false }: { preview?: boolean }) {
         </Link>
       </section>
     );
+  }
   return (
     <section className="border bg-jp-surface p-6 lg:sticky lg:top-6" aria-label="Order summary">
       <p className="text-xs font-semibold uppercase tracking-[.15em] text-jp-olive">

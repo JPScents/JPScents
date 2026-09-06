@@ -38,9 +38,10 @@ export function CartPreview() {
   const wasOpen = useRef(false);
   const reduceMotion = useReducedMotion();
   useEffect(() => {
-    if (isOpen)
+    if (isOpen) {
       focusBeforeOpen.current =
         document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    }
     if (wasOpen.current && !isOpen) focusBeforeOpen.current?.focus();
     wasOpen.current = isOpen;
   }, [isOpen]);

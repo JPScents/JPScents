@@ -10,6 +10,7 @@ import { CustomerIdentityConflict, resolveCustomerForOrder } from "@/features/cu
 
 import { parseCheckoutInput } from "./parsers/checkout.parser";
 import type { OrderCartLine, OrderFilters } from "./types";
+
 export { parseCheckoutInput } from "./parsers/checkout.parser";
 export const orderStatuses = Object.values(OrderStatus);
 
@@ -30,8 +31,9 @@ function parseLines(lines: unknown): OrderCartLine[] | null {
       quantity === undefined ||
       quantity < 1 ||
       quantity > 99
-    )
+    ) {
       return null;
+    }
     merged.set(perfumeVariantId, (merged.get(perfumeVariantId) ?? 0) + quantity);
   }
   if ([...merged.values()].some((quantity) => quantity > 99)) return null;
@@ -99,12 +101,14 @@ async function projectOrder(
 export async function createOrder(linesRaw: unknown, checkoutRaw: unknown, submissionKey: unknown) {
   const lines = parseLines(linesRaw);
   const parsed = parseCheckoutInput(checkoutRaw);
-  if (!lines)
+  if (!lines) {
     return { error: "Your cart is empty or invalid. Return to Cart and try again." } as const;
+  }
   if (!parsed.input) return { errors: parsed.errors } as const;
   const input = parsed.input;
-  if (typeof submissionKey !== "string" || !UUID.test(submissionKey))
+  if (typeof submissionKey !== "string" || !UUID.test(submissionKey)) {
     return { error: "Unable to safely place this order. Please refresh and try again." } as const;
+  }
   try {
     const result = await prisma.$transaction(
       async (tx) => {
@@ -119,8 +123,9 @@ export async function createOrder(linesRaw: unknown, checkoutRaw: unknown, submi
             perfume: { status: "PUBLISHED" },
           },
         });
-        if (variants.length !== lines.length)
+        if (variants.length !== lines.length) {
           throw new OrderConflict("One or more perfumes are no longer available.");
+        }
         const byId = new Map(variants.map((variant) => [variant.id, variant]));
         for (const line of lines) {
           const updated = await tx.perfumeVariant.updateMany({
@@ -131,10 +136,11 @@ export async function createOrder(linesRaw: unknown, checkoutRaw: unknown, submi
             },
             data: { quantity: { decrement: line.quantity } },
           });
-          if (updated.count !== 1)
+          if (updated.count !== 1) {
             throw new OrderConflict(
               "One or more perfumes are no longer available in the requested quantity.",
             );
+          }
         }
         const subtotalMinor = lines.reduce(
           (total, line) => total + byId.get(line.perfumeVariantId)!.priceMinor * line.quantity,
@@ -254,16 +260,19 @@ export async function getOrderByReference(referenceValue: string) {
 }
 
 export async function updateOrderStatus(referenceValue: string, nextStatus: unknown) {
-  if (typeof nextStatus !== "string" || !orderStatuses.includes(nextStatus as OrderStatus))
+  if (typeof nextStatus !== "string" || !orderStatuses.includes(nextStatus as OrderStatus)) {
     return { error: "Choose a valid order status." } as const;
-  if (nextStatus === "CANCELLED")
+  }
+  if (nextStatus === "CANCELLED") {
     return { error: "Use the cancellation action to cancel an order." } as const;
+  }
   try {
     return await prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({ where: { reference: referenceValue } });
       if (!order) return { error: "Order not found." } as const;
-      if (order.status === "CANCELLED")
+      if (order.status === "CANCELLED") {
         return { error: "Cancelled orders cannot be reopened." } as const;
+      }
       if (order.status === nextStatus) return { unchanged: true } as const;
       await tx.order.update({
         where: { id: order.id },
@@ -291,19 +300,22 @@ export async function cancelOrder(referenceValue: string) {
           include: { items: true },
         });
         if (!order) return { error: "Order not found." } as const;
-        if (order.status === "CANCELLED" && order.stockRestoredAt)
+        if (order.status === "CANCELLED" && order.stockRestoredAt) {
           return { unchanged: true } as const;
-        if (order.status === "CANCELLED")
+        }
+        if (order.status === "CANCELLED") {
           return {
             error: "This cancelled order cannot be safely restored automatically.",
           } as const;
+        }
 
         const claimed = await tx.order.updateMany({
           where: { id: order.id, status: order.status, stockRestoredAt: null },
           data: { status: "CANCELLED", stockRestoredAt: new Date() },
         });
-        if (claimed.count !== 1)
+        if (claimed.count !== 1) {
           return { error: "This order was updated elsewhere. Refresh and try again." } as const;
+        }
 
         const quantitiesByVariant = new Map<string, number>();
         for (const item of order.items) {

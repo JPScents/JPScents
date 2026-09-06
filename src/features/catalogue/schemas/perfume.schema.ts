@@ -30,13 +30,15 @@ export function validatePerfumeInput(raw: Record<string, unknown>): {
   };
   const errors: Record<string, string> = {};
   if (!input.name) errors.name = "Name is required.";
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(input.slug))
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(input.slug)) {
     errors.slug = "Use lower-case letters, numbers, and hyphens.";
+  }
   if (input.status === "PUBLISHED") {
     if (!input.scentCue) errors.scentCue = "Scent cue is required to publish.";
     if (!input.description) errors.description = "Description is required to publish.";
-    if (!input.scentCharacters.length)
+    if (!input.scentCharacters.length) {
       errors.scentCharacters = "Choose a scent character to publish.";
+    }
     if (!input.occasions.length) errors.occasions = "Choose an occasion to publish.";
     if (!input.timesOfDay.length) errors.timesOfDay = "Choose a time of day to publish.";
   }

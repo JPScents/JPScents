@@ -29,11 +29,12 @@ export async function saveVariant(
         ...(typeof id === "string" && id ? { id: { not: id } } : {}),
       },
     });
-    if (!otherStock)
+    if (!otherStock) {
       return {
         message:
           "Replace or clear the active Bestseller before removing its final positive-stock variant.",
       };
+    }
   }
   if (typeof id === "string" && id) {
     const existing = await prisma.perfumeVariant.findUnique({
@@ -43,9 +44,11 @@ export async function saveVariant(
     if (!existing || existing.perfumeId !== perfumeId) return { message: "Variant not found." };
   }
   try {
-    if (typeof id === "string" && id)
+    if (typeof id === "string" && id) {
       await prisma.perfumeVariant.update({ where: { id }, data: { ...input, sizeUnit: "ML" } });
-    else await prisma.perfumeVariant.create({ data: { perfumeId, ...input, sizeUnit: "ML" } });
+    } else {
+      await prisma.perfumeVariant.create({ data: { perfumeId, ...input, sizeUnit: "ML" } });
+    }
   } catch (error) {
     const code =
       typeof error === "object" && error && "code" in error

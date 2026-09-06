@@ -1,5 +1,6 @@
 import { ProductCard } from "@/components/shared/public/ProductCard";
 import type { PublicPerfumeCard } from "@/features/catalogue";
+
 export function MobileFeaturedPerfumes({ products }: { products: PublicPerfumeCard[] }) {
   return (
     <div className="lg:hidden grid gap-5">

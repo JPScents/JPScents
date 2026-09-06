@@ -4,6 +4,7 @@ import { ProductCard } from "@/components/shared/public/ProductCard";
 import { siteConfig } from "@/config/site";
 import type { PublicPerfumeCard } from "@/features/catalogue";
 import { MobileFeaturedPerfumes } from "./MobileFeaturedPerfumes";
+
 export function FeaturedPerfumes({ products }: { products: PublicPerfumeCard[] }) {
   if (!products.length) return null;
   return (

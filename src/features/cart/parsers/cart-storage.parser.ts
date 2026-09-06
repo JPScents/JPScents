@@ -13,8 +13,9 @@ export function parseCartStorage(value: string | null): CartPayload {
       typeof parsed !== "object" ||
       (parsed as { version?: unknown }).version !== CART_VERSION ||
       !Array.isArray((parsed as { items?: unknown }).items)
-    )
+    ) {
       return { version: CART_VERSION, items: [] };
+    }
 
     const seen = new Set<string>();
     const items = (parsed as { items: unknown[] }).items.flatMap((item) => {
@@ -27,8 +28,9 @@ export function parseCartStorage(value: string | null): CartPayload {
         !quantity ||
         quantity < 0 ||
         seen.has(perfumeVariantId)
-      )
+      ) {
         return [];
+      }
       seen.add(perfumeVariantId);
       return [{ perfumeVariantId, quantity }];
     });

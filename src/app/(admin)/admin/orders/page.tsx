@@ -1,5 +1,6 @@
 import { AdminOrders, listOrders } from "@/features/orders";
 import { OrderStatus } from "@/db/generated/client";
+
 export default async function AdminOrdersPage({
   searchParams,
 }: {

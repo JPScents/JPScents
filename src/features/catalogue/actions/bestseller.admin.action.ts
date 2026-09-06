@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentAdmin } from "@/lib/auth/admin";
 import { prisma } from "@/db/prisma";
+
 export async function setBestseller(perfumeId: string | null) {
   if (!(await getCurrentAdmin())) return { error: "You are not authorized." };
   try {
@@ -17,8 +18,9 @@ export async function setBestseller(perfumeId: string | null) {
         if (!eligible) throw new Error("Choose a published perfume with stock.");
       }
       await tx.perfume.updateMany({ where: { isBestseller: true }, data: { isBestseller: false } });
-      if (perfumeId)
+      if (perfumeId) {
         await tx.perfume.update({ where: { id: perfumeId }, data: { isBestseller: true } });
+      }
     });
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Unable to update Bestseller." };

@@ -24,7 +24,7 @@ export function Confirmation({
   businessNumber?: string;
 }) {
   const [copied, setCopied] = useState(false);
-  if (!order)
+  if (!order) {
     return (
       <section className="mx-auto max-w-public-container px-public-gutter-mobile py-20 text-center lg:px-public-gutter-desktop">
         <h1 className="font-display text-5xl">We can’t find that order confirmation.</h1>
@@ -45,6 +45,7 @@ export function Confirmation({
         </div>
       </section>
     );
+  }
   const url = whatsappUrl(businessNumber, order.reference, order.items);
   return (
     <section className="mx-auto max-w-public-container px-public-gutter-mobile py-12 lg:px-public-gutter-desktop lg:py-16">

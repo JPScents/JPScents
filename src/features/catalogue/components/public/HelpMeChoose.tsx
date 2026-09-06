@@ -10,6 +10,7 @@ import { RecommendationCard } from "./RecommendationCard";
 import { ScentCharacterSelect } from "./ScentCharacterSelect";
 import type { PublicPerfumeCard } from "../../types";
 import { preferenceSummary } from "../../public-preferences";
+
 type Props = {
   initial: { scentCharacters: ScentCharacter[]; occasions: Occasion[]; timeOfDay?: TimeOfDay };
   results?: Array<PublicPerfumeCard & { matchReason: string; score: number }>;
@@ -56,7 +57,7 @@ export function HelpMeChoose({ initial, results, submitted, catalogueAvailable =
     params.set("results", "1");
     router.push(`${siteConfig.routes.helpMeChoose}?${params.toString()}`);
   }
-  if (!catalogueAvailable)
+  if (!catalogueAvailable) {
     return (
       <section className="mx-auto max-w-public-container px-public-gutter-mobile py-12 lg:px-public-gutter-desktop lg:py-20">
         <h1 className="sr-only">Help me choose</h1>
@@ -74,7 +75,8 @@ export function HelpMeChoose({ initial, results, submitted, catalogueAvailable =
         </EmptyState>
       </section>
     );
-  if (submitted)
+  }
+  if (submitted) {
     return (
       <section
         className="mx-auto max-w-public-container px-public-gutter-mobile py-12 lg:px-public-gutter-desktop lg:py-20"
@@ -154,6 +156,7 @@ export function HelpMeChoose({ initial, results, submitted, catalogueAvailable =
         </p>
       </section>
     );
+  }
   return (
     <section className="mx-auto max-w-public-container px-public-gutter-mobile py-12 lg:px-public-gutter-desktop lg:py-20">
       <p className="text-sm uppercase tracking-[0.18em] text-jp-text-secondary">Help me choose</p>

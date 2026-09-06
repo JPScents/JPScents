@@ -22,7 +22,7 @@ export async function resolveCartItems(lines: CartRequestLine[]): Promise<Resolv
   return Promise.all(
     validLines.map(async (line) => {
       const variant = byId.get(line.perfumeVariantId);
-      if (!variant)
+      if (!variant) {
         return {
           perfumeVariantId: line.perfumeVariantId,
           requestedQuantity: line.quantity,
@@ -30,6 +30,7 @@ export async function resolveCartItems(lines: CartRequestLine[]): Promise<Resolv
           isValid: false,
           issue: "missing" as const,
         };
+      }
       return mapResolvedCartLine(variant, line.quantity);
     }),
   );
