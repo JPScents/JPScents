@@ -18,7 +18,7 @@ Status: complete as one consolidated extraction pass; awaiting Freeman's archite
 - [x] Replace catalogue-destination “Shop” with “Perfumes”.
 - [x] Update public navigation, footers, CTAs, breadcrumbs, and related states.
 - [x] Catalogue route: `/perfumes`
-- [x] Product route: `/perfume/{slug}`
+- [x] Product route: `/perfumes/{slug}`
 - [x] Order confirmation route: `/checkout/confirm`
 - [x] Design Agent completed and visually checked the Paper updates.
 - [x] Extract and confirm all remaining routes during their page passes.
@@ -197,7 +197,7 @@ Includes desktop, mobile, filters, and no-results state.
 
 Includes desktop, mobile, recommendations, cart drawer, and bottom sheet.
 
-- [x] `/perfume/{slug}`
+- [x] `/perfumes/{slug}`
 - [x] Perfume and variant data
 - [x] Required size selection
 - [x] Quantity and Add to Cart

@@ -6,7 +6,7 @@
 | ------------ | ------------------------------------------------------------------------------------------- |
 | Type         | Public Catalogue page with Cart UI state                                                    |
 | Sources      | Final Site Product Detail desktop/mobile and Cart drawer/bottom-sheet variants              |
-| Route/access | `/perfume/{slug}` · public; cart preview is UI-only                                         |
+| Route/access | `/perfumes/{slug}` · public; cart preview is UI-only                                        |
 | Purpose      | Explain one Perfume, select an exact variant/quantity, and add it without leaving the page. |
 
 ## Data and domain

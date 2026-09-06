@@ -119,10 +119,10 @@ function ProfileRows({ perfume }: { perfume: PublicPerfumeDetail }) {
       {rows.map((row, index) => (
         <div
           key={row.label}
-          className={`grid min-h-[52px] grid-cols-[210px_1fr] items-center border-t ${index === rows.length - 1 ? "border-b" : ""}`}
+          className={`grid min-h-[52px] grid-cols-[minmax(100px,0.65fr)_minmax(0,1fr)] items-center gap-4 border-t xl:grid-cols-[210px_minmax(0,1fr)] ${index === rows.length - 1 ? "border-b" : ""}`}
         >
           <dt className="text-[13px] leading-4 text-jp-text-secondary">{row.label}</dt>
-          <dd className="text-[15px] leading-[18px]">{row.value || "—"}</dd>
+          <dd className="min-w-0 break-words text-[15px] leading-[18px]">{row.value || "—"}</dd>
         </div>
       ))}
     </dl>
@@ -136,9 +136,9 @@ function DesktopProfile({ perfume }: { perfume: PublicPerfumeDetail }) {
     : "A considered scent profile.";
 
   return (
-    <section className="hidden bg-jp-surface px-[72px] pt-12 lg:block">
-      <div className="mx-auto grid max-w-[1296px] grid-cols-[560px_620px] gap-[90px] border-t pt-[38px]">
-        <div>
+    <section className="hidden bg-jp-surface pt-12 lg:block lg:px-8 xl:px-[72px]">
+      <div className="mx-auto grid max-w-[1296px] grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] gap-12 border-t pt-[38px] xl:grid-cols-[560px_620px] xl:gap-[90px]">
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase leading-4 tracking-[.16em] text-jp-olive">
             Perfume character
           </p>
@@ -147,7 +147,7 @@ function DesktopProfile({ perfume }: { perfume: PublicPerfumeDetail }) {
             {perfume.scentCue}
           </p>
         </div>
-        <div>
+        <div className="min-w-0">
           <p className="pb-4 text-xs font-semibold uppercase leading-4 tracking-[.16em] text-jp-olive">
             Scent profile
           </p>

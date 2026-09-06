@@ -46,19 +46,26 @@ export function PublicShell({ children }: { children: ReactNode }) {
                 className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-12 lg:flex"
                 aria-label="Primary navigation"
               >
-                {navigation.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      "text-[13px] font-medium",
-                      pathname === item.href && "text-jp-olive",
-                    )}
-                    aria-current={pathname === item.href ? "page" : undefined}
-                  >
-                    {item.label === "Help me choose" ? "Help Me Choose" : item.label}
-                  </Link>
-                ))}
+                {navigation.map((item) => {
+                  const active =
+                    pathname === item.href ||
+                    (item.href === siteConfig.routes.perfumes &&
+                      pathname.startsWith(`${item.href}/`));
+
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        "text-[13px] font-medium transition-colors hover:text-jp-text-primary",
+                        active ? "text-jp-text-primary" : "text-jp-text-secondary",
+                      )}
+                      aria-current={active ? "page" : undefined}
+                    >
+                      {item.label === "Help me choose" ? "Help Me Choose" : item.label}
+                    </Link>
+                  );
+                })}
               </nav>
               <div className="flex items-center gap-[18px]">
                 <DialogTrigger asChild>
@@ -85,11 +92,24 @@ export function PublicShell({ children }: { children: ReactNode }) {
             <DialogDescription className="sr-only">Browse JPScents pages.</DialogDescription>
             <DialogCloseButton />
             <nav className="mt-10 grid gap-6 text-2xl" aria-label="Mobile primary navigation">
-              {navigation.map((item) => (
-                <DialogClose key={item.href} asChild>
-                  <Link href={item.href}>{item.label}</Link>
-                </DialogClose>
-              ))}
+              {navigation.map((item) => {
+                const active =
+                  pathname === item.href ||
+                  (item.href === siteConfig.routes.perfumes &&
+                    pathname.startsWith(`${item.href}/`));
+
+                return (
+                  <DialogClose key={item.href} asChild>
+                    <Link
+                      href={item.href}
+                      className={active ? "text-jp-text-primary" : "text-jp-text-secondary"}
+                      aria-current={active ? "page" : undefined}
+                    >
+                      {item.label}
+                    </Link>
+                  </DialogClose>
+                );
+              })}
             </nav>
           </DialogContent>
           <MotionPage routeKey={pathname}>{children}</MotionPage>

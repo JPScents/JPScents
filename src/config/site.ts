@@ -18,7 +18,7 @@ export const siteConfig = {
   routes: {
     home: "/",
     perfumes: "/perfumes",
-    perfume: (slug: string) => `/perfume/${slug}` as const,
+    perfume: (slug: string) => `/perfumes/${slug}` as const,
     cart: "/cart",
     checkout: "/checkout",
     checkoutConfirmation: "/checkout/confirm",

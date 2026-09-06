@@ -125,7 +125,7 @@ describe("public catalogue controls", () => {
     expect(screen.getByLabelText("Perfume bottle placeholder")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Quiet Fig/ })).toHaveAttribute(
       "href",
-      "/perfume/quiet-fig",
+      "/perfumes/quiet-fig",
     );
   });
 });

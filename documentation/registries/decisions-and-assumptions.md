@@ -2,7 +2,7 @@
 
 ## Approved/confirmed
 
-- Customer terminology is Perfumes, with `/perfumes` and `/perfume/{slug}`.
+- Customer terminology is Perfumes, with `/perfumes` and `/perfumes/{slug}`.
 - Confirmation is `/checkout/confirm`; Help Me Choose uses one route.
 - Current conversion is a saved Order with a reference; no online payment.
 - Checkout belongs to Orders; Cart remains a client-side feature.

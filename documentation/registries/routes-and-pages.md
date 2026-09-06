@@ -6,7 +6,7 @@
 | ------------------- | ----------------------- | ---------------------------- | -------------------- |
 | `/`                 | Homepage                | route composition            | Confirmed            |
 | `/perfumes`         | Perfumes catalogue      | catalogue                    | Confirmed            |
-| `/perfume/{slug}`   | Perfume detail          | catalogue + cart interaction | Confirmed            |
+| `/perfumes/{slug}`  | Perfume detail          | catalogue + cart interaction | Confirmed            |
 | `/cart`             | Full Cart               | cart                         | Confirmed            |
 | `/checkout`         | Checkout                | orders                       | Confirmed            |
 | `/checkout/confirm` | Order Confirmation      | orders                       | Confirmed            |

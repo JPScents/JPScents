@@ -55,7 +55,7 @@ Amber is decorative/accent use only at its current value; it does not have suffi
 | Order reference        | `JP-` plus at least four digits                                  | Assumed                         |
 | Home path              | `/`                                                              | Confirmed                       |
 | Catalogue path         | `/perfumes`                                                      | Confirmed                       |
-| Product path           | `/perfume/{slug}`                                                | Confirmed                       |
+| Product path           | `/perfumes/{slug}`                                               | Confirmed                       |
 | Cart path              | `/cart`                                                          | Confirmed                       |
 | Checkout path          | `/checkout`                                                      | Confirmed                       |
 | Confirmation path      | `/checkout/confirm`                                              | Confirmed                       |
