@@ -159,3 +159,38 @@ npm run release:check
 Prettier covers supported files across the repository, including source, tests, scripts, configuration, styles, and Markdown guidance. Generated files, dependencies, lockfiles, and secret environment files are excluded. Prisma schema formatting remains `npm run db:format`; SQL migrations and Supabase TOML are not formatted by Prettier. EditorConfig aligns indentation and line endings in supporting editors; editor formatting should use this repository's Prettier configuration.
 
 Keep tests for business rules, state transitions, integrations, failure recovery, and meaningful accessibility interactions. Avoid static-copy, styling, element-count, and trivial rendering tests. Repository changes should follow `AGENTS.md`: preserve unrelated work, verify the result, and commit completed work locally. Pushing remains an explicit user action.
+
+### Agent verification without secret-file access
+
+The normal commands above are developer commands. Vitest currently inherits Vite's environment-file loading, and Prisma configuration loads an environment file even for validation, formatting, or generation. Next.js builds also load environment configuration. Agents must not run those commands unchanged under the no-secret-file rule.
+
+For code changes, use the following equivalent formatting, lint, type, and test checks without environment-file loading. Use test paths in the second argument to `startVitest` for targeted checks; an empty list runs the full suite. Tests should use explicit fixtures/mocks, never live project credentials.
+
+```bash
+npm run format:check
+npm run lint
+./node_modules/.bin/tsc --noEmit --incremental false
+node --input-type=module <<'JS'
+import { startVitest } from "vitest/node";
+
+const context = await startVitest(
+  "test",
+  [],
+  { run: true, watch: false },
+  { envDir: false },
+);
+await context.close();
+JS
+```
+
+For documentation-only changes, format/check the changed Markdown and inspect links and stale references. For skill changes, run the available skill validator and review behavior against a realistic request. The Codex skill-creator validator requires Python with PyYAML; use an existing compatible interpreter instead of adding Python dependencies to this Node project.
+
+Build or database verification requires an environment that complies with the task's permissions. Never copy or inspect secret files to set it up. If unavailable, complete independent checks and state exactly what remains unverified; unit tests do not replace a Next.js build or actual database checks.
+
+## Agent standards
+
+[AGENTS.md](AGENTS.md) routes ordinary implementation/refactor requests to two core skills: [feature-structure](.agents/skills/feature-structure/SKILL.md) for architectural decisions and [delivery-workflow](.agents/skills/delivery-workflow/SKILL.md) for inspection, verification, diff review, and local commits. [Design-to-development](.agents/skills/design-to-development/SKILL.md) applies only to visual implementation/design work.
+
+“Refactor the catalog feature” targets the existing catalogue domain and its affected consumers. The agent should inspect actual responsibilities, apply the standards, preserve behavior, remove unjustified structure, verify, and commit; it should not create a predetermined set of layers or reopen the approved architecture.
+
+The skills are portable decision rules. Keep project-specific aliases, commands, import paths, pool settings, product constraints, and design references in the receiving project's instructions/README rather than adding them to the reusable skills. They do not install CI or lint enforcement; current checks and their limits are documented above.

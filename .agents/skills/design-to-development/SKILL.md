@@ -1,32 +1,16 @@
 ---
 name: design-to-development
-description: Translate approved product and visual sources into maintainable UI while preserving source precedence, accessibility, responsive behaviour, and established foundations.
+description: Implement approved visual or product references using existing UI foundations, with focused responsive and accessibility verification.
 ---
 
 # Design to Development
 
-Read `docs/design-foundations.md`, the relevant product source, and the final visual reference before implementing UI.
+Use for implementing visual references or changing UI design. An ordinary structural refactor preserves the current UI and does not require finding new design sources.
 
-## Source handling
-
-- Follow the precedence recorded in `docs/project-workflow.md`.
-- Latest approved client corrections win over older material.
-- Product sources govern behaviour; final visual references govern presentation.
-- Final implementation references win over exploratory designs. Exploratory material may clarify tokens, states, and notes only.
-- Do not silently invent material content, behaviour, or visual decisions. Resolve or report genuine ambiguity.
-
-## Implementation
-
-- Inspect existing tokens, primitives, shared components, and nearby screens before adding anything.
-- Implement incrementally by coherent page/feature section; preserve domain ownership.
-- Reuse shared foundations where they match. Keep one-off or domain-specific UI local until reuse is proven.
-- Treat desktop and mobile as intentional compositions, not automatic scaling of one frame.
-- Keep motion purposeful, restrained, performant, responsive, and respectful of reduced-motion preferences.
-- Do not add dependencies, generic design systems, or animation frameworks without a current need.
-
-## Verification
-
-- Compare representative desktop and mobile widths with the approved reference.
-- Exercise realistic content and relevant loading, empty, error, disabled, hover, focus, pressed, and destructive states.
-- Check semantic structure, keyboard operation, focus visibility, accessible names, touch targets, contrast, reduced motion, overflow, and layout stability.
-- Update `docs/design-foundations.md` only when a reusable foundation changed; screen-specific implementation does not require a new global rule.
+- Find the actual product requirements and approved visual references from the request or project documentation. Do not assume particular design files exist.
+- Latest approved corrections take precedence. Product requirements govern behavior; final visual references govern presentation; exploratory designs supply context only.
+- Inspect existing tokens, primitives, components, and nearby screens before adding anything. Keep one-off UI local and domain UI feature-owned.
+- Resolve routine presentation choices using existing patterns. Ask only for material missing behavior or visual decisions that the evidence cannot settle; continue independent work.
+- Treat desktop and mobile as intentional layouts. Preserve semantic structure, keyboard access, visible focus, accessible names, touch targets, contrast, reduced motion, and realistic content handling.
+- Compare affected screens with the supplied reference at representative widths. Exercise relevant empty, pending, error, disabled, and interaction states; report any verification that could not be performed.
+- Update existing design-foundation documentation only when a reusable foundation actually changes. Do not create a design system, dependency, animation framework, or global rule for a one-off screen.
