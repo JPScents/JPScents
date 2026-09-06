@@ -10,7 +10,7 @@ Apply only the rules defined here. Already compliant means leave it unchanged; p
 ## Ownership
 
 - Keep domain code inside `features/<domain>/` until real reuse proves otherwise.
-- A route/page that composes existing domains is not automatically a feature. Keep page-only presentation in `components/<page>/`.
+- A route/page that composes existing domains is not automatically a feature. Keep route-only presentation and interactions beside the owning route in `_components/` and `_hooks/`; use `_types/` only when separate route-local contracts improve clarity. Keep domain-owned equivalents in the feature's `components/`, `hooks/`, and `types/`.
 - Organise public and Admin behaviour by domain. Admin-only UI may live in `components/admin/`; do not create a mixed feature-root `admin/` bucket.
 - Do not create empty layers or duplicate files for structural symmetry.
 
@@ -48,6 +48,9 @@ Apply only the rules defined here. Already compliant means leave it unchanged; p
 ## Components, constants, and utilities
 
 - Give each meaningful React component a PascalCase file and name.
+- Components own rendering, accessibility, styling, and presentation-specific behaviour such as motion preferences. Extract cohesive stateful interactions into named `use*.ts` hooks when this clarifies ownership; a single consumer is sufficient, but not every component needs a hook.
+- Hooks own interaction state, derived behaviour, and handlers. Expose intent-based actions instead of raw setters when the actions enforce interaction rules. Keep pure transformations in ordinary functions or existing mappers rather than turning them into hooks.
+- Reuse existing application types with type-only imports and indexed access where appropriate (for example, `PublicPerfumeDetail["variants"]`). Keep small props types beside their component and infer hook return types; separate types only for substantial or shared contracts, without duplicating the source model or adding empty folders.
 - Keep one-component utilities in `utils/<component-name>.utils.ts` using the lowercase kebab-case component filename.
 - Keep single-consumer page copy/constants local to the owning component.
 - Mappers derive ready-to-render labels, formatted values, and destination URLs where those are part of the projection.

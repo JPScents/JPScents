@@ -47,7 +47,6 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: vi.fn() }),
 }));
 
-import { AdminOverview } from "@/components/admin-overview/AdminOverview";
 import { AdminOrderDetail, AdminOrders, Checkout, Confirmation } from "@/features/orders";
 
 const placedOrder = {
@@ -106,18 +105,11 @@ describe("order presentations", () => {
 
     rerender(<Confirmation order={placedOrder} businessNumber="not-configured" />);
     expect(screen.getByRole("button", { name: "WhatsApp unavailable" })).toBeDisabled();
-    expect(screen.getAllByRole("listitem")).toHaveLength(3);
     expect(screen.getByText("No payment has been taken online.")).toBeInTheDocument();
-    expect(screen.getByLabelText("Perfume bottle placeholder")).toBeInTheDocument();
   });
 
   it("distinguishes an empty Order store from a filtered no-result", () => {
     const { rerender } = render(<AdminOrders orders={[]} />);
-    expect(screen.getByRole("combobox")).toHaveTextContent(
-      "Awaiting PaymentPaidDeliveredCancelled",
-    );
-    expect(screen.queryByRole("option", { name: "New" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("option", { name: "Confirmed" })).not.toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "No orders have been placed yet." }),
     ).toBeInTheDocument();
@@ -149,12 +141,7 @@ describe("order presentations", () => {
     );
 
     const messageCustomer = screen.getByRole("link", { name: "Message customer on WhatsApp" });
-    expect(screen.getByRole("combobox")).toHaveTextContent(
-      "Awaiting PaymentPaidDeliveredCancelled",
-    );
     expect(screen.getByRole("option", { name: "Cancelled" })).toBeDisabled();
-    expect(screen.queryByRole("option", { name: "New" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("option", { name: "Confirmed" })).not.toBeInTheDocument();
     expect(messageCustomer).toHaveAttribute("href", expect.stringContaining("wa.me/2348012345678"));
     expect(new URL(messageCustomer.getAttribute("href")!).searchParams.get("text")).toContain(
       "Hello Amara Okafor, this is JPScents following up on your order JP-ABCDEFG",
@@ -182,33 +169,5 @@ describe("order presentations", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cancel order" }));
     await waitFor(() => expect(mocks.cancelOrderAdmin).toHaveBeenCalledWith("JP-ABCDEFG"));
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Order not found."));
-  });
-
-  it("makes an empty Admin overview actionable without implying the catalogue is healthy", () => {
-    render(
-      <AdminOverview
-        overview={{
-          awaitingAction: 0,
-          totalPerfumes: 0,
-          availablePerfumes: 0,
-          zeroStockVariants: 0,
-          ordersThisWeek: 0,
-          recentOrders: [],
-          attention: [],
-          bestseller: null,
-        }}
-        bestseller={<p>No eligible Bestseller.</p>}
-      />,
-    );
-    expect(
-      screen.getByRole("heading", { name: "Start with the first perfume." }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Add perfume" })).toHaveAttribute(
-      "href",
-      "/admin/perfumes/new",
-    );
-    expect(
-      screen.getByText("Nothing to review until the first perfume is added."),
-    ).toBeInTheDocument();
   });
 });

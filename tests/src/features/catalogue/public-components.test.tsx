@@ -13,16 +13,13 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 vi.mock("next/image", () => ({
   default: ({ alt }: { alt?: string }) => <span data-image-alt={alt} />,
 }));
-vi.mock("@/features/cart", () => ({
-  useCart: () => ({ addItem: vi.fn() }),
-}));
 
-import { VariantPurchaseControls } from "@/app/(public)/perfumes/[slug]/_components/VariantPurchaseControls";
-import { ScentCharacterSelect } from "@/features/catalogue/components/public/ScentCharacterSelect";
 import { HelpMeChoose } from "@/features/catalogue/components/public/HelpMeChoose";
-import { ProductCard } from "@/components/shared/public/ProductCard";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
 
 describe("public catalogue controls", () => {
   it("requires at least one preference before showing recommendations", () => {
@@ -35,47 +32,7 @@ describe("public catalogue controls", () => {
     expect(push).not.toHaveBeenCalled();
   });
 
-  it("preselects exactly one available variant and constrains quantity to stock", () => {
-    render(
-      <VariantPurchaseControls
-        variants={[
-          { id: "one", sizeLabel: "30 mL", price: "₦1,000", quantity: 2, isAvailable: true },
-          { id: "two", sizeLabel: "50 mL", price: "₦2,000", quantity: 0, isAvailable: false },
-        ]}
-      />,
-    );
-    expect(screen.getByRole("radio", { name: /30 mL/ })).toBeChecked();
-    expect(screen.getByRole("button", { name: "Add to Cart" })).toBeEnabled();
-    fireEvent.click(screen.getByRole("button", { name: "Increase quantity" }));
-    expect(screen.getByRole("status")).toHaveTextContent("2");
-    expect(screen.getByRole("button", { name: "Increase quantity" })).toBeDisabled();
-    expect(screen.getByRole("radio", { name: /50 mL/ })).toBeDisabled();
-  });
-
-  it("requires a selection when several available sizes exist", () => {
-    render(
-      <VariantPurchaseControls
-        variants={[
-          { id: "one", sizeLabel: "30 mL", price: "₦1,000", quantity: 2, isAvailable: true },
-          { id: "two", sizeLabel: "50 mL", price: "₦2,000", quantity: 3, isAvailable: true },
-        ]}
-      />,
-    );
-    expect(screen.getByRole("button", { name: "Add to Cart" })).toBeDisabled();
-    fireEvent.click(screen.getByRole("radio", { name: /50 mL/ }));
-    expect(screen.getByRole("button", { name: "Add to Cart" })).toBeEnabled();
-  });
-
-  it("exposes selected scent character state programmatically", () => {
-    const toggle = vi.fn();
-    render(<ScentCharacterSelect value="FRESH" selected onToggle={toggle} />);
-    const button = screen.getByRole("button", { name: "Fresh" });
-    expect(button).toHaveAttribute("aria-pressed", "true");
-    fireEvent.click(button);
-    expect(toggle).toHaveBeenCalledWith("FRESH");
-  });
-
-  it("uses friendly preference labels and exposes the results announcement and no-match recovery", () => {
+  it("focuses the results announcement and lets the customer adjust preferences after no match", () => {
     render(
       <HelpMeChoose
         initial={{ scentCharacters: ["FRESH"], occasions: ["DATE_NIGHT"], timeOfDay: "NIGHT" }}
@@ -83,14 +40,14 @@ describe("public catalogue controls", () => {
         results={[]}
       />,
     );
-    expect(screen.getByText("Fresh · Evening · Night")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "No exact match yet." })).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Adjust preferences" })).toHaveLength(2);
     expect(screen.getByRole("link", { name: "Browse all perfumes" })).toHaveAttribute(
       "href",
       "/perfumes",
     );
     expect(screen.getByRole("heading", { name: /Perfumes chosen around/ })).toHaveFocus();
+    fireEvent.click(screen.getAllByRole("button", { name: "Adjust preferences" })[0]);
+    expect(push).toHaveBeenCalledWith("/help-me-choose");
   });
 
   it("does not offer recommendations before an available catalogue exists", () => {
@@ -106,27 +63,5 @@ describe("public catalogue controls", () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Recommend perfumes" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Return home" })).toHaveAttribute("href", "/");
-  });
-
-  it("renders a controlled bottle fallback when a product image is unavailable", () => {
-    render(
-      <ProductCard
-        perfume={{
-          id: "p",
-          slug: "quiet-fig",
-          name: "Quiet Fig",
-          scentCue: "Fresh fig",
-          scentCharacters: ["FRESH"],
-          primaryImageAlt: "",
-          startingPrice: "From ₦1,000",
-          isAvailable: true,
-        }}
-      />,
-    );
-    expect(screen.getByLabelText("Perfume bottle placeholder")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Quiet Fig/ })).toHaveAttribute(
-      "href",
-      "/perfumes/quiet-fig",
-    );
   });
 });

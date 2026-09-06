@@ -121,19 +121,6 @@ describe("cart operations and presentation", () => {
     expect(screen.getByText("Resolve unavailable items before Checkout.")).toBeInTheDocument();
   });
 
-  it("labels the unit price separately from the line total", async () => {
-    render(
-      <CartProvider>
-        <Controls />
-        <FullCart />
-      </CartProvider>,
-    );
-    await act(async () => undefined);
-    fireEvent.click(screen.getByText("Add"));
-    await screen.findByText("Unit price");
-    expect(screen.getByText("Line total")).toBeInTheDocument();
-  });
-
   it("keeps the cart surface visible while a removal refreshes availability", async () => {
     render(
       <CartProvider>

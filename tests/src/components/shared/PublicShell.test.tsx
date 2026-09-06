@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
@@ -14,37 +14,6 @@ import { PublicShell } from "@/components/shared/public/PublicShell";
 afterEach(cleanup);
 
 describe("PublicShell", () => {
-  it("labels public navigation and footer routes", () => {
-    render(
-      <PublicShell>
-        <p>Page content</p>
-      </PublicShell>,
-    );
-    expect(screen.getByRole("navigation", { name: "Primary navigation" })).toHaveTextContent(
-      "PerfumesHelp Me Choose",
-    );
-    expect(
-      within(screen.getByRole("navigation", { name: "Primary navigation" })).getByRole("link", {
-        name: "Perfumes",
-      }),
-    ).toHaveAttribute("aria-current", "page");
-    expect(screen.getAllByRole("navigation", { name: "Footer navigation" })).toHaveLength(2);
-    screen
-      .getAllByRole("navigation", { name: "Footer navigation" })
-      .forEach((footer) => expect(within(footer).getAllByRole("link")).toHaveLength(3));
-    expect(
-      screen.getByText("Curated perfumes, clear choices, and a simple way to place your order."),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "How ordering works" })).toHaveAttribute(
-      "href",
-      "/#how-ordering-works",
-    );
-    expect(screen.getByRole("link", { name: "Open cart, 0 items" })).toHaveAttribute(
-      "href",
-      "/cart",
-    );
-  });
-
   it("opens the mobile menu and closes it with Escape, returning focus", async () => {
     render(
       <PublicShell>

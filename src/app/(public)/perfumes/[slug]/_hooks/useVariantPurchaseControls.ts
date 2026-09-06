@@ -1,0 +1,47 @@
+"use client";
+
+import { useState } from "react";
+
+import { useCart } from "@/features/cart";
+import type { PublicPerfumeDetail } from "@/features/catalogue";
+
+export function useVariantPurchaseControls(variants: PublicPerfumeDetail["variants"]) {
+  const [selectedId, setSelectedId] = useState<string | undefined>(() => {
+    const available = variants.filter((variant) => variant.isAvailable);
+    return available.length === 1 ? available[0]?.id : undefined;
+  });
+  const [quantity, setQuantity] = useState(1);
+  const selectedVariant = variants.find((variant) => variant.id === selectedId);
+  const { addItem } = useCart();
+
+  function selectVariant(id: string) {
+    setSelectedId(id);
+    setQuantity(1);
+  }
+
+  function increaseQuantity() {
+    if (selectedVariant) {
+      setQuantity((value) => Math.min(selectedVariant.quantity, value + 1));
+    }
+  }
+
+  function decreaseQuantity() {
+    setQuantity((value) => Math.max(1, value - 1));
+  }
+
+  function addSelectedVariant() {
+    if (selectedVariant) addItem(selectedVariant.id, quantity, selectedVariant.quantity);
+  }
+
+  return {
+    selectedVariant,
+    quantity,
+    canIncreaseQuantity: Boolean(selectedVariant && quantity < selectedVariant.quantity),
+    canDecreaseQuantity: Boolean(selectedVariant && quantity > 1),
+    canAddToCart: Boolean(selectedVariant),
+    selectVariant,
+    increaseQuantity,
+    decreaseQuantity,
+    addSelectedVariant,
+  };
+}

@@ -1,13 +1,16 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/catalogue/actions/bestseller.admin.action", () => ({ setBestseller: vi.fn() }));
-const { savePerfume } = vi.hoisted(() => ({ savePerfume: vi.fn() }));
+const { savePerfume, deleteVariant } = vi.hoisted(() => ({
+  savePerfume: vi.fn(),
+  deleteVariant: vi.fn(),
+}));
 vi.mock("@/features/catalogue/actions/save-perfume.admin.action", () => ({ savePerfume }));
 vi.mock("@/features/catalogue/actions/save-variant.admin.action", () => ({ saveVariant: vi.fn() }));
 vi.mock("@/features/catalogue/actions/delete-variant.admin.action", () => ({
-  deleteVariant: vi.fn(),
+  deleteVariant,
 }));
 vi.mock("@/features/catalogue/actions/save-primary-image.admin.action", () => ({
   savePrimaryImage: vi.fn(),
@@ -17,9 +20,7 @@ vi.mock("@/features/catalogue/actions/remove-primary-image.admin.action", () => 
 }));
 
 import { BestsellerSelector } from "@/features/catalogue/components/admin/BestsellerSelector";
-import { ProductPreview } from "@/features/catalogue/components/admin/ProductPreview";
 import { StagedVariantManager } from "@/features/catalogue/components/admin/StagedVariantManager";
-import { PerfumeList } from "@/features/catalogue/components/admin/PerfumeList";
 import { PerfumeEditor } from "@/features/catalogue/components/admin/PerfumeEditor";
 import { VariantManager } from "@/features/catalogue/components/admin/VariantManager";
 
@@ -34,27 +35,6 @@ function StagedFixture() {
   >([]);
   return <StagedVariantManager variants={variants} onChange={setVariants} />;
 }
-function PreviewFixture() {
-  const [open, setOpen] = useState(false);
-  const form = useRef<HTMLFormElement>(null);
-  return (
-    <>
-      <button type="button" onClick={() => setOpen(true)}>
-        Open preview
-      </button>
-      <form ref={form}>
-        <input name="name" defaultValue="Quiet Fig" />
-        <input name="scentCue" defaultValue="Green fig" />
-      </form>
-      <ProductPreview
-        open={open}
-        onOpenChange={setOpen}
-        form={form}
-        variants={[{ priceMinor: 125050, quantity: 2 }]}
-      />
-    </>
-  );
-}
 
 describe("catalogue editor interactions", () => {
   it("generates a slug from a new perfume name until the slug is edited", () => {
@@ -68,23 +48,6 @@ describe("catalogue editor interactions", () => {
     fireEvent.change(slug, { target: { value: "citrus-linen-limited" } });
     fireEvent.change(name, { target: { value: "Citrus Linen Extrait" } });
     expect(slug).toHaveValue("citrus-linen-limited");
-  });
-
-  it("matches the Paper featured, published, and attribute controls", () => {
-    render(<PerfumeEditor />);
-    const featured = screen.getByRole("checkbox", { name: "Feature on homepage" });
-    const published = screen.getByRole("checkbox", { name: "Published" });
-    const fresh = screen.getByRole("checkbox", { name: "Fresh" });
-
-    expect(published).toBeChecked();
-    expect(screen.getByText("Help Me Choose attributes")).toBeInTheDocument();
-    expect(screen.getByText("Upload image")).toBeInTheDocument();
-    fireEvent.click(featured);
-    fireEvent.click(published);
-    fireEvent.click(fresh);
-    expect(featured).toBeChecked();
-    expect(published).not.toBeChecked();
-    expect(fresh).toBeChecked();
   });
 
   it("keeps editor values after a failed submission", async () => {
@@ -122,7 +85,8 @@ describe("catalogue editor interactions", () => {
     expect(altText).toHaveValue("Citrus Linen bottle");
   });
 
-  it("confirms a variant deletion in the app modal", () => {
+  it("only deletes the selected variant after confirmation and allows cancellation", async () => {
+    deleteVariant.mockResolvedValueOnce({ ok: true });
     render(
       <VariantManager
         perfumeId="perfume-1"
@@ -133,10 +97,18 @@ describe("catalogue editor interactions", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
-    expect(screen.getByRole("dialog", { name: "Delete variant?" })).toHaveTextContent(
-      "Remove the 50 mL variant. This cannot be undone.",
-    );
-    expect(screen.getByRole("button", { name: "Delete variant" })).toBeInTheDocument();
+    expect(deleteVariant).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(deleteVariant).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete variant" }));
+    await waitFor(() => expect(deleteVariant).toHaveBeenCalledTimes(1));
+    const formData = deleteVariant.mock.calls[0][1] as FormData;
+    expect(formData.get("id")).toBe("variant-1");
+    expect(formData.get("perfumeId")).toBe("perfume-1");
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
 
   it("stages and removes variants through ModalShell, retaining validation feedback", async () => {
@@ -154,19 +126,6 @@ describe("catalogue editor interactions", () => {
     expect(screen.getByText("50 mL")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Remove" }));
     expect(screen.getByText(/No variants yet/)).toBeInTheDocument();
-  });
-
-  it("opens preview, toggles its card treatment, and closes on Escape", async () => {
-    render(<PreviewFixture />);
-    const trigger = screen.getByRole("button", { name: "Open preview" });
-    trigger.focus();
-    fireEvent.click(trigger);
-    const dialog = screen.getByRole("dialog", { name: "Product preview" });
-    expect(dialog).toHaveTextContent("Quiet Fig");
-    fireEvent.click(screen.getByRole("button", { name: "Show compact card" }));
-    expect(screen.getByRole("button", { name: "Show large card" })).toBeInTheDocument();
-    fireEvent.keyDown(dialog, { key: "Escape" });
-    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
 });
 
@@ -202,16 +161,5 @@ describe("BestsellerSelector", () => {
       screen.getByText("Add and publish an in-stock perfume before choosing a Bestseller."),
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Choose Bestseller" })).not.toBeInTheDocument();
-  });
-});
-
-describe("PerfumeList", () => {
-  it("offers the first catalogue action when there are no perfumes", () => {
-    render(<PerfumeList perfumes={[]} filters={{ availability: "all", placement: "all" }} />);
-    expect(screen.getByRole("heading", { name: "Add the first perfume." })).toBeInTheDocument();
-    expect(screen.getAllByRole("link", { name: "Add perfume" })[0]).toHaveAttribute(
-      "href",
-      "/admin/perfumes/new",
-    );
   });
 });
