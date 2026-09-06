@@ -13,8 +13,11 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 vi.mock("next/image", () => ({
   default: ({ alt }: { alt?: string }) => <span data-image-alt={alt} />,
 }));
+vi.mock("@/features/cart", () => ({
+  useCart: () => ({ addItem: vi.fn() }),
+}));
 
-import { VariantPurchaseControls } from "@/features/catalogue/components/public/VariantPurchaseControls";
+import { VariantPurchaseControls } from "@/app/(public)/perfumes/[slug]/_components/VariantPurchaseControls";
 import { ScentCharacterSelect } from "@/features/catalogue/components/public/ScentCharacterSelect";
 import { HelpMeChoose } from "@/features/catalogue/components/public/HelpMeChoose";
 import { ProductCard } from "@/components/shared/public/ProductCard";
@@ -35,7 +38,6 @@ describe("public catalogue controls", () => {
   it("preselects exactly one available variant and constrains quantity to stock", () => {
     render(
       <VariantPurchaseControls
-        onAddItem={vi.fn()}
         variants={[
           { id: "one", sizeLabel: "30 mL", price: "₦1,000", quantity: 2, isAvailable: true },
           { id: "two", sizeLabel: "50 mL", price: "₦2,000", quantity: 0, isAvailable: false },
@@ -53,7 +55,6 @@ describe("public catalogue controls", () => {
   it("requires a selection when several available sizes exist", () => {
     render(
       <VariantPurchaseControls
-        onAddItem={vi.fn()}
         variants={[
           { id: "one", sizeLabel: "30 mL", price: "₦1,000", quantity: 2, isAvailable: true },
           { id: "two", sizeLabel: "50 mL", price: "₦2,000", quantity: 3, isAvailable: true },
