@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { notFound } from "next/navigation";
 
 import { siteConfig } from "@/config/site";
-import { getPerfumeBySlug } from "@/features/catalogue";
+import { getPerfumeBySlug } from "@/features/catalogue/server";
 import { getBrandLogoDataUrl } from "@/lib/metadata/brand-image";
 
 export const runtime = "nodejs";

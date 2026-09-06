@@ -4,7 +4,7 @@ import Link from "next/link";
 import { MotionReveal } from "@/components/shared/MotionReveal";
 import { ProductBottlePlaceholder } from "@/components/shared/public/ProductBottlePlaceholder";
 import { siteConfig } from "@/config/site";
-import type { PublicPerfumeDetail } from "@/features/catalogue";
+import type { PublicPerfumeDetail } from "@/features/catalogue/shared";
 
 import { ProductDetailsAccordion } from "./ProductDetailsAccordion";
 import { VariantPurchaseControls } from "./VariantPurchaseControls";

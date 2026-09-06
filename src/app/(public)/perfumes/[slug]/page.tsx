@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 import { MotionReveal } from "@/components/shared/MotionReveal";
 import { absoluteUrl, siteConfig } from "@/config/site";
-import { getPerfumeBySlug, getRelatedPerfumes } from "@/features/catalogue";
+import { getPerfumeBySlug, getRelatedPerfumes } from "@/features/catalogue/server";
 
 import { DesktopProfile } from "./_components/DesktopProfile";
 import { PerfumeDetails } from "./_components/PerfumeDetails";

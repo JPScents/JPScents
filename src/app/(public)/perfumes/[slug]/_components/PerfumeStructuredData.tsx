@@ -1,6 +1,6 @@
 import { JsonLd } from "@/components/shared/JsonLd";
 import { absoluteUrl, siteConfig } from "@/config/site";
-import type { PublicPerfumeDetail } from "@/features/catalogue";
+import type { PublicPerfumeDetail } from "@/features/catalogue/shared";
 
 export function PerfumeStructuredData({ perfume }: { perfume: PublicPerfumeDetail }) {
   const url = absoluteUrl(siteConfig.routes.perfume(perfume.slug));

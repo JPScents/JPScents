@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { JsonLd } from "@/components/shared/JsonLd";
 import { siteConfig } from "@/config/site";
-import { getFeaturedPerfumes } from "@/features/catalogue";
+import { getFeaturedPerfumes } from "@/features/catalogue/server";
 import { ClosingCta } from "./_components/ClosingCta";
 import { Faqs } from "./_components/Faqs";
 import { FeaturedPerfumes } from "./_components/FeaturedPerfumes";

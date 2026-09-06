@@ -3,23 +3,14 @@
 import Image from "next/image";
 import { useState, useTransition } from "react";
 import { ModalShell } from "@/components/shared/ModalShell";
+import type { BestsellerCandidate } from "../../types";
 import { setBestseller } from "../../actions/bestseller.admin.action";
-
-type Candidate = {
-  id: string;
-  name: string;
-  scentCharacters: string[];
-  primaryImageUrl?: string;
-  variantCount: number;
-  totalQuantity: number;
-  orderCount: number;
-};
 
 export function BestsellerSelector({
   candidates,
   currentId,
 }: {
-  candidates: Candidate[];
+  candidates: BestsellerCandidate[];
   currentId?: string;
 }) {
   const [open, setOpen] = useState(false);

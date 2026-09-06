@@ -1,8 +1,8 @@
+import { BestsellerSelector } from "@/features/catalogue/client";
 import {
-  BestsellerSelector,
   getCatalogueAdminOverview,
   getEligibleBestsellerCandidates,
-} from "@/features/catalogue";
+} from "@/features/catalogue/server";
 import { AdminOverview } from "@/components/admin-overview/AdminOverview";
 import { getOrdersAdminOverview } from "@/features/orders/server";
 

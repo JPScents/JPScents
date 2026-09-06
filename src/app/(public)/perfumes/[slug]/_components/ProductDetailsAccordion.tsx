@@ -4,7 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { preferenceLabel, type PublicPerfumeDetail } from "@/features/catalogue";
+import { preferenceLabel, type PublicPerfumeDetail } from "@/features/catalogue/shared";
 
 function Trigger({ title, summary }: { title: string; summary: string }) {
   return (

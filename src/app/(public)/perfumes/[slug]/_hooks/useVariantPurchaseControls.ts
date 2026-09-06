@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { commerceConfig } from "@/config/commerce";
 import { useCart } from "@/features/cart";
-import type { PublicPerfumeDetail } from "@/features/catalogue";
+import type { PublicPerfumeDetail } from "@/features/catalogue/shared";
 
 export function useVariantPurchaseControls(variants: PublicPerfumeDetail["variants"]) {
   const [selectedId, setSelectedId] = useState<string | undefined>(() => {

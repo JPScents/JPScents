@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { PublicPerfumeDetail } from "@/features/catalogue";
+import type { PublicPerfumeDetail } from "@/features/catalogue/shared";
 
 const { addItem } = vi.hoisted(() => ({ addItem: vi.fn() }));
 vi.mock("@/features/cart", () => ({ useCart: () => ({ addItem }) }));

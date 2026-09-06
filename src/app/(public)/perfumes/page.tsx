@@ -9,8 +9,8 @@ import {
   listPerfumes,
   parseScent,
   publicScentCharacters,
-  scentCharacterContent,
-} from "@/features/catalogue";
+} from "@/features/catalogue/server";
+import { scentCharacterContent } from "@/features/catalogue/shared";
 import { siteConfig } from "@/config/site";
 
 export const dynamic = "force-dynamic";

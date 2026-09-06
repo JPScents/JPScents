@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { PerfumeEditor, getAdminPerfume } from "@/features/catalogue";
+import { PerfumeEditor } from "@/features/catalogue/client";
+import { getAdminPerfume } from "@/features/catalogue/server";
 
 export default async function EditPerfumePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

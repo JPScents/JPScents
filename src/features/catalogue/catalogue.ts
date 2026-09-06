@@ -5,7 +5,12 @@ import { prisma } from "@/db/prisma";
 import { getPerfumeImageUrl } from "@/lib/supabase/storage";
 import { scentCharacters } from "./constants";
 
-import type { CatalogueFilters } from "./types";
+import type {
+  AdminPerfume,
+  AdminPerfumeListItem,
+  BestsellerCandidate,
+  CatalogueFilters,
+} from "./types";
 
 export type { CatalogueFilters } from "./types";
 
@@ -14,7 +19,9 @@ const details = {
   variants: { orderBy: { sizeValue: "asc" } },
 } satisfies Prisma.PerfumeInclude;
 
-export async function listAdminPerfumes(filters: CatalogueFilters = {}) {
+export async function listAdminPerfumes(
+  filters: CatalogueFilters = {},
+): Promise<AdminPerfumeListItem[]> {
   const rows = await prisma.perfume.findMany({ include: details, orderBy: { updatedAt: "desc" } });
   const query = filters.query?.trim().toLocaleLowerCase();
   const projected = await Promise.all(
@@ -28,7 +35,11 @@ export async function listAdminPerfumes(filters: CatalogueFilters = {}) {
       );
       const isAvailable = perfume.status === "PUBLISHED" && availableVariantCount > 0;
       return {
-        ...perfume,
+        id: perfume.id,
+        name: perfume.name,
+        scentCharacters: perfume.scentCharacters,
+        isFeatured: perfume.isFeatured,
+        isBestseller: perfume.isBestseller,
         primaryImageUrl: await getPerfumeImageUrl(perfume.images[0]?.path),
         variantCount: perfume.variants.length,
         availableVariantCount,
@@ -56,7 +67,7 @@ export async function listAdminPerfumes(filters: CatalogueFilters = {}) {
   });
 }
 
-export async function getAdminPerfume(id: string) {
+export async function getAdminPerfume(id: string): Promise<AdminPerfume | null> {
   const perfume = await prisma.perfume.findUnique({ where: { id }, include: details });
   if (!perfume) return null;
   const images = await Promise.all(
@@ -91,7 +102,7 @@ export async function getAdminPerfume(id: string) {
   };
 }
 
-export async function getEligibleBestsellerCandidates(query = "") {
+export async function getEligibleBestsellerCandidates(query = ""): Promise<BestsellerCandidate[]> {
   const value = query.trim();
   const character = scentCharacters.find((item) => item.toLowerCase() === value.toLowerCase()) as
     ScentCharacter | undefined;
@@ -108,7 +119,13 @@ export async function getEligibleBestsellerCandidates(query = "") {
           }
         : {}),
     },
-    include: details,
+    include: {
+      images: { orderBy: { position: "asc" } },
+      variants: {
+        orderBy: { sizeValue: "asc" },
+        include: { _count: { select: { orderItems: true } } },
+      },
+    },
     orderBy: { name: "asc" },
   });
   return Promise.all(
@@ -119,9 +136,7 @@ export async function getEligibleBestsellerCandidates(query = "") {
       primaryImageUrl: await getPerfumeImageUrl(perfume.images[0]?.path),
       variantCount: perfume.variants.length,
       totalQuantity: perfume.variants.reduce((total, variant) => total + variant.quantity, 0),
-      orderCount: await prisma.orderItem.count({
-        where: { perfumeVariant: { perfumeId: perfume.id } },
-      }),
+      orderCount: perfume.variants.reduce((total, variant) => total + variant._count.orderItems, 0),
     })),
   );
 }

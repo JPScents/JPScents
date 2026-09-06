@@ -7,10 +7,10 @@ import { prisma } from "@/db/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { parsePerfumeForm } from "../parsers/perfume-form.parser";
 import { parseStagedVariants } from "../parsers/staged-variants-form.parser";
+import { validateImageInput } from "../schemas/image.schema";
 import { getPublishingErrors } from "../validators/publishing.validator";
 
 export type PerfumeActionState = { errors?: Record<string, string>; message?: string };
-const allowedImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 function stagedImage(formData: FormData) {
   const file = formData.get("primaryImage");
   const altText =
@@ -18,10 +18,8 @@ function stagedImage(formData: FormData) {
       ? String(formData.get("primaryImageAlt")).trim()
       : "";
   if (!(file instanceof File) || file.size === 0) return { file: null, altText };
-  if (!allowedImageTypes.has(file.type) || file.size > 5 * 1024 * 1024) {
-    return { file: null, altText, error: "Use JPEG, PNG, or WebP up to 5 MiB." };
-  }
-  if (!altText) return { file: null, altText, error: "Useful alt text is required." };
+  const error = validateImageInput(file, altText);
+  if (error) return { file: null, altText, error };
   return { file, altText };
 }
 export async function savePerfume(

@@ -4,7 +4,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { MotionReveal } from "@/components/shared/MotionReveal";
 import { ProductBottlePlaceholder } from "@/components/shared/public/ProductBottlePlaceholder";
 import { siteConfig } from "@/config/site";
-import type { PublicPerfumeCard } from "@/features/catalogue";
+import type { PublicPerfumeCard } from "@/features/catalogue/shared";
 
 function HeroImage({ perfume }: { perfume: PublicPerfumeCard }) {
   return perfume.primaryImageUrl ? (

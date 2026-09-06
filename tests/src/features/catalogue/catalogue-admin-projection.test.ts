@@ -1,14 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
-const { findMany, count } = vi.hoisted(() => ({
+const { findMany } = vi.hoisted(() => ({
   findMany: vi.fn(),
-  count: vi.fn(),
 }));
 
 vi.mock("@/db/prisma", () => ({
   prisma: {
     perfume: { findMany },
-    orderItem: { count },
   },
 }));
 vi.mock("@/lib/supabase/storage", () => ({
@@ -30,11 +28,11 @@ describe("Admin catalogue projections", () => {
             id: "variant-id",
             sizeValue: { toString: () => "50", marker: "prisma-decimal" },
             quantity: 3,
+            _count: { orderItems: 0 },
           },
         ],
       },
     ]);
-    count.mockResolvedValue(0);
 
     const candidates = await getEligibleBestsellerCandidates();
 
@@ -49,6 +47,15 @@ describe("Admin catalogue projections", () => {
         orderCount: 0,
       },
     ]);
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({
+          variants: expect.objectContaining({
+            include: { _count: { select: { orderItems: true } } },
+          }),
+        }),
+      }),
+    );
     expect(JSON.stringify(candidates)).not.toContain("prisma-decimal");
   });
 });

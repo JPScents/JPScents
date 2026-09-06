@@ -3,7 +3,7 @@
 import { Minus, Plus } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 
-import type { PublicPerfumeDetail } from "@/features/catalogue";
+import type { PublicPerfumeDetail } from "@/features/catalogue/shared";
 import { cn } from "@/lib/utils";
 
 import { useVariantPurchaseControls } from "../_hooks/useVariantPurchaseControls";

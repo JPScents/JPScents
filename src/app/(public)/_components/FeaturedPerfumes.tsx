@@ -2,7 +2,7 @@ import Link from "next/link";
 import { MotionReveal } from "@/components/shared/MotionReveal";
 import { ProductCard } from "@/components/shared/public/ProductCard";
 import { siteConfig } from "@/config/site";
-import type { PublicPerfumeCard } from "@/features/catalogue";
+import type { PublicPerfumeCard } from "@/features/catalogue/shared";
 import { MobileFeaturedPerfumes } from "./MobileFeaturedPerfumes";
 
 export function FeaturedPerfumes({ products }: { products: PublicPerfumeCard[] }) {

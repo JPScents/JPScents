@@ -9,8 +9,8 @@ import { PrimaryImageManager } from "./PrimaryImageManager";
 import { ProductPreview } from "./ProductPreview";
 import { StagedVariantManager } from "./StagedVariantManager";
 import { VariantManager } from "./VariantManager";
+import type { AdminPerfume } from "../../types";
 
-type Perfume = NonNullable<Awaited<ReturnType<typeof import("../../catalogue").getAdminPerfume>>>;
 type StagedVariant = { sizeValue: string; price: string; quantity: string };
 const initial: PerfumeActionState = {};
 const labels: Record<string, string> = {
@@ -145,7 +145,7 @@ function Field({
   );
 }
 
-export function PerfumeEditor({ perfume }: { perfume?: Perfume }) {
+export function PerfumeEditor({ perfume }: { perfume?: AdminPerfume }) {
   const formId = "perfume-editor-form";
   const [state, action, pending] = useActionState(savePerfume, initial);
   const formRef = useRef<HTMLFormElement>(null);

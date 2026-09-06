@@ -1,7 +1,7 @@
 "use server";
 
 import { commerceConfig } from "@/config/commerce";
-import { getPublishedVariantsByIds } from "@/features/catalogue";
+import { getPublishedVariantsByIds } from "@/features/catalogue/server";
 import { getPerfumeImageUrl } from "@/lib/supabase/storage";
 
 import type { CartRequestLine, ResolvedCartLine } from "../types";

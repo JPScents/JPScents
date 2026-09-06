@@ -1,5 +1,5 @@
 import { ProductCard } from "@/components/shared/public/ProductCard";
-import type { PublicPerfumeCard } from "@/features/catalogue";
+import type { PublicPerfumeCard } from "@/features/catalogue/shared";
 
 export function MobileFeaturedPerfumes({ products }: { products: PublicPerfumeCard[] }) {
   return (
