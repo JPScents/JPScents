@@ -4,6 +4,7 @@ export const commerceConfig = {
   sizeUnit: "mL",
   paymentMode: "manual",
   whatsappHandoff: "post-order",
+  maximumVariantQuantity: 99,
   orderReference: {
     prefix: "JP-",
     minimumDigits: 4,

@@ -6,21 +6,25 @@ import { Minus, Plus } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 
 import { ProductBottlePlaceholder } from "@/components/shared/public/ProductBottlePlaceholder";
+import { commerceConfig } from "@/config/commerce";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 
 import { useCart } from "../CartProvider";
+import type { ResolvedCartLine } from "../types";
 
-function issueText(issue?: string, stock?: number) {
+function issueText(issue: ResolvedCartLine["issue"], stock?: number) {
   return issue === "missing"
     ? "This perfume is no longer available."
     : issue === "unavailable"
       ? "This size is currently out of stock."
-      : `Only ${stock ?? 0} available — reduce the quantity.`;
+      : (stock ?? 0) > commerceConfig.maximumVariantQuantity
+        ? `Limit ${commerceConfig.maximumVariantQuantity} per size — reduce the quantity.`
+        : `Only ${stock ?? 0} available — reduce the quantity.`;
 }
 
-function QuantityStepper({ line }: { line: ReturnType<typeof useCart>["lines"][number] }) {
+function QuantityStepper({ line }: { line: ResolvedCartLine }) {
   const { changeQuantity } = useCart();
-  const maximum = line.stock ?? 0;
+  const maximum = Math.min(line.stock ?? 0, commerceConfig.maximumVariantQuantity);
   return (
     <div className="flex h-10 items-center border">
       <button
@@ -48,12 +52,13 @@ function QuantityStepper({ line }: { line: ReturnType<typeof useCart>["lines"][n
   );
 }
 
-export const CartLine = forwardRef<
-  HTMLElement,
-  { line: ReturnType<typeof useCart>["lines"][number] }
->(function CartLine({ line }, ref) {
+export const CartItem = forwardRef<HTMLElement, { line: ResolvedCartLine }>(function CartItem(
+  { line },
+  ref,
+) {
   const { removeItem, changeQuantity } = useCart();
   const reduceMotion = useReducedMotion();
+  const maximum = Math.min(line.stock ?? 0, commerceConfig.maximumVariantQuantity);
   const name = line.name ?? "Unavailable perfume";
   return (
     <motion.article
@@ -119,9 +124,9 @@ export const CartLine = forwardRef<
               <button
                 type="button"
                 className="mt-2 text-sm underline"
-                onClick={() => changeQuantity(line.perfumeVariantId, line.stock ?? 1)}
+                onClick={() => changeQuantity(line.perfumeVariantId, maximum)}
               >
-                Set quantity to {line.stock}
+                Set quantity to {maximum}
               </button>
             ) : null}
           </div>

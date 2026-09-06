@@ -7,7 +7,7 @@ import { siteConfig } from "@/config/site";
 
 import { useCart } from "../CartProvider";
 
-export function CartUtility() {
+export function CartButton() {
   const { count, setOpen } = useCart();
   const contents = (
     <>

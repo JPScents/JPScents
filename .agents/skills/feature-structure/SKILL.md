@@ -10,7 +10,7 @@ Apply only the rules defined here. Already compliant means leave it unchanged; p
 ## Ownership
 
 - Keep domain code inside `features/<domain>/` until real reuse proves otherwise.
-- A route/page that composes existing domains is not automatically a feature. Keep route-only presentation and interactions beside the owning route in `_components/` and `_hooks/`; use `_types/` only when separate route-local contracts improve clarity. Keep domain-owned equivalents in the feature's `components/`, `hooks/`, and `types/`.
+- A route/page that composes existing domains is not automatically a feature. Keep route-only presentation and interactions beside the owning route in `_components/` and `_hooks/`; use `_types/` only when separate route-local contracts improve clarity. Keep domain-owned equivalents in the feature's `components/`, `hooks/`, and `types.ts` (or `types/` when substantial).
 - Organise public and Admin behaviour by domain. Admin-only UI may live in `components/admin/`; do not create a mixed feature-root `admin/` bucket.
 - Do not create empty layers or duplicate files for structural symmetry.
 
@@ -19,12 +19,12 @@ Apply only the rules defined here. Already compliant means leave it unchanged; p
 - A feature exposes intentional external consumers through its root `index.ts`.
 - Export only public components, services, functions, and types.
 - External route/application code imports the feature entry point. Feature internals import concrete modules directly.
-- Features do not import other features. Compose domains at the route/application boundary or move proven shared code to an appropriate shared capability.
+- Prefer composing independent domains at the route/application boundary. A feature may depend on another domain through its intentional public API when ownership requires it (for example, cart reads published variants from catalogue). Keep dependencies one-way; never import another feature’s repositories, services, or other internals, and never create cycles. Do not move domain code into shared folders merely to avoid a justified dependency.
 - Remove wrappers whose only purpose is re-exporting or composition already clear at the route.
 
 ## Responsibilities
 
-- `actions/`: delivery adapters; authenticate, parse, invoke services, and handle framework concerns. Use one exported action per file; Admin files end `.admin.action.ts`.
+- `actions/`: server entry points; authenticate where required, validate runtime input, and handle framework concerns. Keep a simple cohesive operation directly in its action; invoke a service when orchestration complexity or reuse justifies one. Use one exported action per file; Admin files end `.admin.action.ts`.
 - `schemas/`: external-input schemas. Do not maintain parallel schema and validation implementations.
 - `parsers/`: decode transport input, invoke schemas, and return typed input. Form parsers end `-form.parser.ts`.
 - `validators/`: substantial pure state-aware domain validation only. Validators receive normalized input and already-loaded state; they perform no I/O.
@@ -33,9 +33,12 @@ Apply only the rules defined here. Already compliant means leave it unchanged; p
 - `mappers/`: transform persisted/external records into application projections.
 - `utils/`: pure feature utilities. Avoid catch-all `helpers.ts`, `utils.ts`, or catalogue dumping grounds.
 - `constants/index.ts`: immutable feature-owned values only.
-- `types/index.ts`: real feature inputs, projections, serialization boundaries, or UI state—not duplicate persisted models.
+- `types.ts` (or `types/` when substantial): real feature inputs, projections, serialization boundaries, or UI state—not duplicate persisted models.
 
 ## Repository and service sizing
+
+- Layers are optional, not a feature template. Frontend features can consist of components, hooks, types, storage, and a server action. Add services, repositories, parsers, or mappers only when they clarify substantial responsibility or support real reuse; inline single-use pass-through layers.
+- Database access belongs to the domain that owns the records. Extend its existing cohesive data module first; introduce a repository only when refactoring that domain warrants it. For example, published variant lookup belongs to catalogue, not cart.
 
 - Start with `<feature>.repository.ts` while reads and writes remain cohesive.
 - When genuinely oversized or substantially mixed, replace it with `<feature>.query.repository.ts` and `<feature>.mutation.repository.ts`.

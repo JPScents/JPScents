@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { commerceConfig } from "@/config/commerce";
 import { useCart } from "@/features/cart";
 import type { PublicPerfumeDetail } from "@/features/catalogue";
 
@@ -12,6 +13,10 @@ export function useVariantPurchaseControls(variants: PublicPerfumeDetail["varian
   });
   const [quantity, setQuantity] = useState(1);
   const selectedVariant = variants.find((variant) => variant.id === selectedId);
+  const maximumQuantity = Math.min(
+    selectedVariant?.quantity ?? 0,
+    commerceConfig.maximumVariantQuantity,
+  );
   const { addItem } = useCart();
 
   function selectVariant(id: string) {
@@ -21,7 +26,7 @@ export function useVariantPurchaseControls(variants: PublicPerfumeDetail["varian
 
   function increaseQuantity() {
     if (selectedVariant) {
-      setQuantity((value) => Math.min(selectedVariant.quantity, value + 1));
+      setQuantity((value) => Math.min(maximumQuantity, value + 1));
     }
   }
 
@@ -36,7 +41,7 @@ export function useVariantPurchaseControls(variants: PublicPerfumeDetail["varian
   return {
     selectedVariant,
     quantity,
-    canIncreaseQuantity: Boolean(selectedVariant && quantity < selectedVariant.quantity),
+    canIncreaseQuantity: Boolean(selectedVariant && quantity < maximumQuantity),
     canDecreaseQuantity: Boolean(selectedVariant && quantity > 1),
     canAddToCart: Boolean(selectedVariant),
     selectVariant,

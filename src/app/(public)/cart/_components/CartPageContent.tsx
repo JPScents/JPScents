@@ -5,16 +5,14 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { siteConfig } from "@/config/site";
 
-import { useCart } from "../CartProvider";
-import { CartLine } from "./CartLine";
-import { CartSummary } from "./CartSummary";
+import { CartItem, CartCheckoutSummary, useCart } from "@/features/cart";
 
-export function FullCart() {
-  const { lines, count, resolutionState } = useCart();
+export function CartPageContent() {
+  const { lines, count, resolutionState, isHydrated } = useCart();
   const reduceMotion = useReducedMotion();
   const cartIsEmpty = count === 0 && lines.length === 0;
 
-  if (count && !lines.length && resolutionState === "resolving") {
+  if (!isHydrated || (count && !lines.length && resolutionState === "resolving")) {
     return (
       <section className="mx-auto max-w-public-container px-public-gutter-mobile py-16 lg:px-public-gutter-desktop">
         <h1 className="font-display text-6xl">Your cart</h1>
@@ -28,10 +26,7 @@ export function FullCart() {
     return (
       <section className="mx-auto max-w-public-container px-public-gutter-mobile py-16 lg:px-public-gutter-desktop">
         <h1 className="font-display text-6xl">Your cart</h1>
-        <p className="mt-5 text-destructive" role="alert">
-          We could not check your cart. Please reload before Checkout.
-        </p>
-        <CartSummary />
+        <CartCheckoutSummary />
       </section>
     );
   }
@@ -100,7 +95,7 @@ export function FullCart() {
             <div>
               <AnimatePresence initial={false} mode="popLayout">
                 {lines.map((line) => (
-                  <CartLine key={line.perfumeVariantId} line={line} />
+                  <CartItem key={line.perfumeVariantId} line={line} />
                 ))}
               </AnimatePresence>
               <Link
@@ -110,7 +105,7 @@ export function FullCart() {
                 ← Continue Browsing
               </Link>
             </div>
-            <CartSummary />
+            <CartCheckoutSummary />
           </div>
         </motion.section>
       )}

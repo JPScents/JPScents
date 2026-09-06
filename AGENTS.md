@@ -21,7 +21,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ## Persistent rules
 
 - Inspect existing code, tests, documentation, and patterns before adding files or abstractions.
-- Keep domain code feature-owned. Promote code only after real cross-feature reuse is demonstrated.
+- Keep domain code feature-owned. Promote code only after real cross-feature reuse is demonstrated. Use intentional one-way public feature APIs for justified domain dependencies; never import another feature’s internals or create cycles.
+- Match feature structure to its responsibilities. Services, repositories, and mappers are optional; avoid pass-through layers. Keep database access with the domain that owns the records, extending existing cohesive modules before adding new layers.
 - Keep routes/pages focused on framework concerns and composition; a page is not automatically a domain feature.
 - Keep route-only UI and interactions in local `_components/` and `_hooks/`. Follow the feature-structure skill for component/hook boundaries and type placement; extract only when it clarifies responsibility.
 - Treat the configured database schema and generated types as authoritative for persisted entities. Add application types only for real input, projection, serialization, or UI-state boundaries.

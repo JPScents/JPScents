@@ -1,6 +1,7 @@
-import type { CartPayload, CartRequestLine } from "../types";
+import type { CartPayload, CartRequestLine } from "./types";
 
 const CART_VERSION = 1;
+export const CART_STORAGE_KEY = "jpscents.cart";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function parseCartStorage(value: string | null): CartPayload {
@@ -37,5 +38,21 @@ export function parseCartStorage(value: string | null): CartPayload {
     return { version: CART_VERSION, items };
   } catch {
     return { version: CART_VERSION, items: [] };
+  }
+}
+
+export function readCartStorage(): CartPayload {
+  try {
+    return parseCartStorage(window.localStorage.getItem(CART_STORAGE_KEY));
+  } catch {
+    return { version: CART_VERSION, items: [] };
+  }
+}
+
+export function writeCartStorage(items: CartRequestLine[]) {
+  try {
+    window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({ version: CART_VERSION, items }));
+  } catch {
+    // Storage can be denied; the current basket remains usable in memory.
   }
 }

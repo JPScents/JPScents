@@ -23,6 +23,15 @@ const detailInclude = {
 
 type PerfumeRow = Perfume & { images: PerfumeImage[]; variants: PerfumeVariant[] };
 
+export async function getPublishedVariantsByIds(ids: string[]) {
+  if (!ids.length) return [];
+
+  return prisma.perfumeVariant.findMany({
+    where: { id: { in: ids }, perfume: { status: "PUBLISHED" } },
+    include: { perfume: { include: { images: { orderBy: { position: "asc" }, take: 1 } } } },
+  });
+}
+
 async function publishedRows(where: Prisma.PerfumeWhereInput = {}) {
   return prisma.perfume.findMany({
     where: { status: "PUBLISHED", ...where },

@@ -17,6 +17,7 @@ export {
 export {
   getFeaturedPerfumes,
   getPerfumeBySlug,
+  getPublishedVariantsByIds,
   getRelatedPerfumes,
   hasAvailablePerfumes,
   hasPublishedPerfumes,

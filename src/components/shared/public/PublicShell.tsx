@@ -16,7 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { siteConfig } from "@/config/site";
-import { CartPreview, CartProvider, CartUtility } from "@/features/cart";
+import { CartPreview, CartProvider, CartButton } from "@/features/cart";
 import { cn } from "@/lib/utils";
 
 import { Footer } from "./Footer";
@@ -77,7 +77,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
                     Menu
                   </button>
                 </DialogTrigger>
-                <CartUtility />
+                <CartButton />
               </div>
             </div>
           </header>

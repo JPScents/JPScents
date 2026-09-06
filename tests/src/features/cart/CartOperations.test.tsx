@@ -1,10 +1,11 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { resolveCart } = vi.hoisted(() => ({
   resolveCart: vi.fn(async (items: Array<{ perfumeVariantId: string; quantity: number }>) =>
     items.map((item) => ({
-      ...item,
+      perfumeVariantId: item.perfumeVariantId,
+      requestedQuantity: item.quantity,
       name: "Santal Veil",
       sizeLabel: "50 mL",
       unitPriceMinor: 120000,
@@ -24,8 +25,26 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-import { CartPreview, FullCart } from "@/features/cart";
+vi.mock("@/features/orders/client", () => ({
+  Checkout: () => <form aria-label="Order details" />,
+}));
+
+import { CartPreview } from "@/features/cart";
+import { CartPageContent } from "@/app/(public)/cart/_components/CartPageContent";
+import { Checkout } from "@/app/(public)/checkout/_components/Checkout";
 import { CartProvider, useCart } from "@/features/cart/CartProvider";
+
+beforeEach(() => {
+  const store = new Map<string, string>();
+  Object.defineProperty(window, "localStorage", {
+    configurable: true,
+    value: {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => store.set(key, value),
+    },
+  });
+  resolveCart.mockClear();
+});
 
 afterEach(cleanup);
 
@@ -108,7 +127,7 @@ describe("cart operations and presentation", () => {
     render(
       <CartProvider>
         <Controls />
-        <FullCart />
+        <CartPageContent />
       </CartProvider>,
     );
     fireEvent.click(screen.getByText("Add invalid"));
@@ -125,7 +144,7 @@ describe("cart operations and presentation", () => {
     render(
       <CartProvider>
         <Controls />
-        <FullCart />
+        <CartPageContent />
       </CartProvider>,
     );
     await act(async () => undefined);
@@ -162,5 +181,64 @@ describe("cart operations and presentation", () => {
     ).not.toThrow();
     expect(() => fireEvent.click(screen.getByText("Add"))).not.toThrow();
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("1"));
+  });
+  it("updates the stepper immediately and blocks checkout while quantities are rechecked", async () => {
+    render(
+      <CartProvider>
+        <Controls />
+        <CartPageContent />
+      </CartProvider>,
+    );
+    fireEvent.click(screen.getByText("Add"));
+    await screen.findByText("Santal Veil");
+    resolveCart.mockImplementationOnce(() => new Promise<never>(() => undefined));
+    fireEvent.click(screen.getByRole("button", { name: "Increase quantity for Santal Veil" }));
+    expect(within(screen.getByRole("article")).getByRole("status")).toHaveTextContent("2");
+    expect(screen.getByRole("link", { name: "Checkout" })).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Decrease quantity for Santal Veil" }));
+    expect(within(screen.getByRole("article")).getByRole("status")).toHaveTextContent("1");
+    await waitFor(() =>
+      expect(screen.getByRole("link", { name: "Checkout" })).toHaveAttribute(
+        "aria-disabled",
+        "false",
+      ),
+    );
+  });
+
+  it("allows retry after the initial preview lookup fails", async () => {
+    resolveCart.mockRejectedValueOnce(new Error("Offline"));
+    render(
+      <CartProvider>
+        <Controls />
+        <CartPreview />
+      </CartProvider>,
+    );
+    fireEvent.click(screen.getByText("Add"));
+    fireEvent.click(await screen.findByRole("button", { name: "Retry availability check" }));
+    await waitFor(() =>
+      expect(screen.getByRole("link", { name: "Checkout" })).toHaveAttribute(
+        "aria-disabled",
+        "false",
+      ),
+    );
+  });
+
+  it("holds the checkout form until a restored basket passes availability checks", async () => {
+    window.localStorage.setItem(
+      "jpscents.cart",
+      JSON.stringify({
+        version: 1,
+        items: [{ perfumeVariantId: variantId, quantity: 1 }],
+      }),
+    );
+    resolveCart.mockRejectedValueOnce(new Error("Offline"));
+    render(
+      <CartProvider>
+        <Checkout />
+      </CartProvider>,
+    );
+    expect(screen.queryByRole("form")).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole("button", { name: "Retry availability check" }));
+    expect(await screen.findByRole("form", { name: "Order details" })).toBeInTheDocument();
   });
 });

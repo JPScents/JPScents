@@ -1,4 +1,4 @@
-import { FullCart } from "@/features/cart";
+import { CartPageContent } from "./_components/CartPageContent";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function CartPage() {
-  return <FullCart />;
+  return <CartPageContent />;
 }

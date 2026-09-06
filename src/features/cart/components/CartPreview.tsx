@@ -15,8 +15,8 @@ import {
 import { siteConfig } from "@/config/site";
 
 import { useCart } from "../CartProvider";
-import { CartLine } from "./CartLine";
-import { CartSummary } from "./CartSummary";
+import { CartItem } from "./CartItem";
+import { CartCheckoutSummary } from "./CartCheckoutSummary";
 
 function useDesktopViewport() {
   return useSyncExternalStore(
@@ -32,7 +32,7 @@ function useDesktopViewport() {
 }
 
 export function CartPreview() {
-  const { isOpen, setOpen, lines, count, resolutionState } = useCart();
+  const { isOpen, setOpen, lines, count, isHydrated } = useCart();
   const isDesktop = useDesktopViewport();
   const focusBeforeOpen = useRef<HTMLElement | null>(null);
   const wasOpen = useRef(false);
@@ -58,15 +58,11 @@ export function CartPreview() {
         <DialogDescription className="sr-only">Review items in your cart.</DialogDescription>
         <DialogCloseButton />
         <AnimatePresence initial={false} mode="wait">
-          {resolutionState === "resolving" && count && !lines.length ? (
+          {!isHydrated ? (
             <p className="mt-6 text-sm text-jp-text-secondary" role="status">
-              Checking your cart…
+              Loading your cart…
             </p>
-          ) : resolutionState === "error" && count && !lines.length ? (
-            <p className="mt-6 text-sm text-destructive" role="alert">
-              We could not check your cart. Checkout is unavailable until it is resolved.
-            </p>
-          ) : lines.length ? (
+          ) : count ? (
             <motion.div
               key="cart"
               exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
@@ -75,10 +71,10 @@ export function CartPreview() {
             >
               <AnimatePresence initial={false} mode="popLayout">
                 {lines.map((line) => (
-                  <CartLine key={line.perfumeVariantId} line={line} />
+                  <CartItem key={line.perfumeVariantId} line={line} />
                 ))}
               </AnimatePresence>
-              <CartSummary preview />
+              <CartCheckoutSummary preview />
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 <DialogClose asChild>
                   <Link

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseCartStorage } from "@/features/cart";
+import { parseCartStorage } from "@/features/cart/cart-storage";
 
 describe("cart persistence", () => {
   it("accepts only the current minimal cart version and safe unique quantities", () => {

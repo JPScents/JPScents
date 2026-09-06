@@ -30,13 +30,15 @@ function parseLines(lines: unknown): OrderCartLine[] | null {
       !Number.isSafeInteger(quantity) ||
       quantity === undefined ||
       quantity < 1 ||
-      quantity > 99
+      quantity > commerceConfig.maximumVariantQuantity
     ) {
       return null;
     }
     merged.set(perfumeVariantId, (merged.get(perfumeVariantId) ?? 0) + quantity);
   }
-  if ([...merged.values()].some((quantity) => quantity > 99)) return null;
+  if ([...merged.values()].some((quantity) => quantity > commerceConfig.maximumVariantQuantity)) {
+    return null;
+  }
   return [...merged].map(([perfumeVariantId, quantity]) => ({ perfumeVariantId, quantity }));
 }
 

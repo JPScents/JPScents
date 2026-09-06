@@ -1,10 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/db/prisma", () => ({ prisma: { perfume: { findMany: vi.fn(), findFirst: vi.fn() } } }));
+vi.mock("@/db/prisma", () => ({
+  prisma: {
+    perfume: { findMany: vi.fn(), findFirst: vi.fn() },
+    perfumeVariant: { findMany: vi.fn() },
+  },
+}));
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: vi.fn() }));
 
 import {
   getFeaturedPerfumes,
+  getPublishedVariantsByIds,
   getPerfumeBySlug,
   getRelatedPerfumes,
   hasAvailablePerfumes,
@@ -176,4 +182,14 @@ describe("public catalogue URL parsing", () => {
       }),
     ).toEqual(["Fresh", "Evening", "Night"]);
   });
+});
+
+it("restricts cart variant lookups to published perfumes", async () => {
+  vi.mocked(prisma.perfumeVariant.findMany).mockResolvedValueOnce([]);
+  await getPublishedVariantsByIds(["variant-id"]);
+  expect(prisma.perfumeVariant.findMany).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: { id: { in: ["variant-id"] }, perfume: { status: "PUBLISHED" } },
+    }),
+  );
 });

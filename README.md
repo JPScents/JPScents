@@ -40,7 +40,7 @@ The application supports an empty production database. Public and Admin pages sh
 - `src/app` — public and protected route composition
 - `src/components` — shared UI, public and Admin components
 - `src/features/catalogue` — perfumes, variants, merchandising and recommendations
-- `src/features/cart` — client-side cart state and persistence
+- `src/features/cart` — cart state hook, browser persistence, preview, items and checkout summary; its server action resolves published variants through catalogue’s public API
 - `src/features/customers` — customer persistence and Admin operations
 - `src/features/orders` — checkout, order creation, status history and cancellation
 - `src/config` — typed, non-secret application configuration
@@ -48,6 +48,8 @@ The application supports an empty production database. Public and Admin pages sh
 - `prisma` — schema, forward-only migrations and optional demo seed
 - `supabase` — reproducible local Supabase configuration and Auth template
 - `.agents/skills` — focused repository workflows and structural rules
+
+Cart page composition lives in `src/app/(public)/cart/_components`; the checkout route owns its cart-to-orders integration in `_components`. Feature layers follow actual responsibilities: frontend features do not need services or repositories just for symmetry.
 
 ## Local setup
 
