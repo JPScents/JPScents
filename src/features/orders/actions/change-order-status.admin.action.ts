@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { getCurrentAdmin } from "@/lib/auth/admin";
-import { updateOrderStatus } from "../orders";
+import { updateOrderStatus } from "../orders.mutation";
 
 export async function changeOrderStatus(reference: string, status: string) {
   if (!(await getCurrentAdmin())) return { error: "You are not authorized." };

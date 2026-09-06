@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("next/headers", () => ({ cookies: vi.fn(async () => mocks.cookies) }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 vi.mock("@/lib/auth/admin", () => ({ getCurrentAdmin: mocks.getCurrentAdmin }));
-vi.mock("@/features/orders/orders", () => ({
+vi.mock("@/features/orders/orders.mutation", () => ({
   createOrder: mocks.createOrder,
   updateOrderStatus: mocks.updateOrderStatus,
   cancelOrder: mocks.cancelOrder,

@@ -4,7 +4,7 @@ import {
   getEligibleBestsellerCandidates,
 } from "@/features/catalogue";
 import { AdminOverview } from "@/components/admin-overview/AdminOverview";
-import { getOrdersAdminOverview } from "@/features/orders";
+import { getOrdersAdminOverview } from "@/features/orders/server";
 
 export default async function AdminPage() {
   const [ordersOverview, catalogueOverview, candidates] = await Promise.all([

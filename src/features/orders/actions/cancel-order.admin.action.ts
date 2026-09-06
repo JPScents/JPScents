@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { getCurrentAdmin } from "@/lib/auth/admin";
 
-import { cancelOrder } from "../orders";
+import { cancelOrder } from "../orders.mutation";
 
 export async function cancelOrderAdmin(reference: unknown) {
   if (!(await getCurrentAdmin())) return { error: "You are not authorized." } as const;

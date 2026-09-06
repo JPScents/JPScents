@@ -63,7 +63,7 @@ import {
   listOrders,
   parseCheckoutInput,
   updateOrderStatus,
-} from "@/features/orders/orders";
+} from "@/features/orders/server";
 import { nigeriaStates } from "@/features/orders/constants/nigeria-locations";
 import { normalizeWhatsappNumber } from "@/lib/whatsapp";
 

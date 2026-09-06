@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 
-import { createOrder } from "../orders";
+import { createOrder } from "../orders.mutation";
 
 const confirmationCookie = "jpscents.order-confirmation";
 
