@@ -183,7 +183,7 @@ await context.close();
 JS
 ```
 
-For documentation-only changes, format/check the changed Markdown and inspect links and stale references. For skill changes, run the available skill validator and review behavior against a realistic request. The Codex skill-creator validator requires Python with PyYAML; use an existing compatible interpreter instead of adding Python dependencies to this Node project.
+For documentation-only changes, format/check the changed Markdown and inspect links and stale references. For skill changes, run the available skill validator and review behavior against a realistic request. The Codex skill-creator validator requires Python with PyYAML; use an existing compatible interpreter instead of adding Python dependencies to this Node project. If none is available, report that validator limitation and validate YAML metadata, required fields, references, and scenarios with an existing repository YAML parser; do not claim the Python validator passed.
 
 Build or database verification requires an environment that complies with the task's permissions. Never copy or inspect secret files to set it up. If unavailable, complete independent checks and state exactly what remains unverified; unit tests do not replace a Next.js build or actual database checks.
 
@@ -191,6 +191,8 @@ Build or database verification requires an environment that complies with the ta
 
 [AGENTS.md](AGENTS.md) routes ordinary implementation/refactor requests to two core skills: [feature-structure](.agents/skills/feature-structure/SKILL.md) for architectural decisions and [delivery-workflow](.agents/skills/delivery-workflow/SKILL.md) for inspection, verification, diff review, and local commits. [Design-to-development](.agents/skills/design-to-development/SKILL.md) applies only to visual implementation/design work.
 
-“Refactor the catalog feature” targets the existing catalogue domain and its affected consumers. The agent should inspect actual responsibilities, apply the standards, preserve behavior, remove unjustified structure, verify, and commit; it should not create a predetermined set of layers or reopen the approved architecture.
+"Refactor the catalog feature" targets the entire existing catalogue domain and its affected consumers. Inspect every module's actual responsibility and necessity, remove or merge unjustified abstractions, correct names and locations, preserve behavior, verify, and commit. A few isolated improvements or file moves do not complete a feature-wide refactor.
 
-The skills are portable decision rules. Keep project-specific aliases, commands, import paths, pool settings, product constraints, and design references in the receiving project's instructions/README rather than adding them to the reusable skills. They do not install CI or lint enforcement; current checks and their limits are documented above.
+The feature skill defines this repository's required folder semantics, filename conventions, and root-file allowlist. Create only the responsibility folders a feature needs; do not preserve a root query/mutation/projection module or introduce pass-through layers for symmetry. Customers is the structural reference, with its existing abstractions still subject to review. These current rules supersede historical structural choices, not established product behavior.
+
+Before completing a full feature refactor, run `node .agents/skills/feature-structure/scripts/check-structure.mjs src/features/<feature>` and resolve its findings. This scoped check enforces file/folder names and export-only root entry points. It does not inspect semantic responsibilities or run automatically in `npm run check`; the required content/readability review and behavioral checks remain separate. Existing features are assessed against the rule when refactored, without forcing an unrelated repository-wide migration during focused work.
