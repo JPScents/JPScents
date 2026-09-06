@@ -5,10 +5,10 @@ import type { Metadata } from "next";
 
 import { absoluteUrl, siteConfig } from "@/config/site";
 import { ProductBottlePlaceholder } from "@/components/shared/public/ProductBottlePlaceholder";
+import { ProductCard } from "@/components/shared/public/ProductCard";
 import { MotionReveal } from "@/components/shared/MotionReveal";
 import { JsonLd } from "@/components/shared/JsonLd";
 import {
-  GalleryProductCard,
   getPerfumeBySlug,
   getRelatedPerfumes,
   preferenceLabel,
@@ -309,7 +309,7 @@ export default async function PerfumeDetailPage({ params }: { params: Promise<{ 
               <div className="mt-8 grid gap-[68px] lg:grid-cols-3 lg:gap-14">
                 {related.map((item, index) => (
                   <MotionReveal key={item.id} delay={Math.min(index, 2) * 0.04}>
-                    <GalleryProductCard perfume={item} />
+                    <ProductCard perfume={item} />
                   </MotionReveal>
                 ))}
               </div>

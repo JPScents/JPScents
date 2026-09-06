@@ -10,10 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # JPScents project agent rules
 
-- Read `documentation/system/project-workflow.md` before planning substantial work or delegating agents.
-- Read `documentation/system/engineering-architecture.md` before changing source structure, module ownership, or shared areas.
-- Read `documentation/system/domain-data-contracts.md` before changing persisted domains, schemas, migrations, storage, authentication, or external data contracts.
-- Read `documentation/system/design-foundations.md` before implementing or changing shared UI foundations or translating approved designs.
+- Read `README.md` for the current product boundary, project structure, environment, database, authentication and deployment requirements.
 - Apply `.agents/skills/feature-structure/SKILL.md` when implementing or refactoring a feature or page. Enforce only its stated rules; preserve everything outside its scope.
 - Apply `.agents/skills/shared-structure/SKILL.md` before creating, promoting, or reorganising shared code.
 - Apply `.agents/skills/database-seeding/SKILL.md` before creating, extending, or reorganising database seeds.
@@ -33,4 +30,4 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Run checks relevant to the change and report anything that could not be verified.
 - Never stage unrelated work. Never commit, push, merge, rebase, deploy, or mutate external systems unless explicitly authorized.
 - Keep secrets out of source, logs, tests, output, and commits. Inspect example environment files and documented variable names, never secret environment files.
-- Do not invoke milestone or release workflows unless the configured trigger in `documentation/system/project-workflow.md` is explicitly requested.
+- Do not invoke milestone or release workflows unless the user explicitly requests the configured workflow trigger.
