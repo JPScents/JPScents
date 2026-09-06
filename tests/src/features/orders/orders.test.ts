@@ -58,6 +58,7 @@ vi.mock("@/lib/supabase/storage", () => ({
 import {
   cancelOrder,
   createOrder,
+  getOrderByReference,
   getOrdersAdminOverview,
   getOrderConfirmation,
   listOrders,
@@ -230,6 +231,22 @@ describe("orders", () => {
     await expect(getOrderConfirmation("a".repeat(43))).resolves.toMatchObject({
       reference: "JP-ABC",
     });
+  });
+
+  it("keeps confirmation data public and reserves customer details for admin reads", async () => {
+    mocks.orderFindUnique.mockResolvedValue(order);
+
+    const confirmation = await getOrderConfirmation("a".repeat(43));
+    expect(confirmation).toMatchObject({ reference: "JP-ABC" });
+    expect(confirmation).not.toHaveProperty("customerName");
+    const confirmationQuery = mocks.orderFindUnique.mock.calls.at(-1)?.[0];
+    expect(confirmationQuery.include).not.toHaveProperty("customer");
+    expect(confirmationQuery.include).not.toHaveProperty("statusEvents");
+
+    const adminOrder = await getOrderByReference("JP-ABC");
+    expect(adminOrder).toMatchObject({ customerName: "Ada", whatsappNumber: "2348031234567" });
+    const adminQuery = mocks.orderFindUnique.mock.calls.at(-1)?.[0];
+    expect(adminQuery.include).toMatchObject({ customer: true, statusEvents: expect.any(Object) });
   });
 
   it("filters newest-first order reads and prevents generic status changes from bypassing cancellation", async () => {

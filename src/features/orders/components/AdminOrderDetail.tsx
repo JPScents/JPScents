@@ -11,15 +11,10 @@ import { formatEnumLabel } from "@/shared/utils/format-enum-label";
 
 import { changeOrderStatus } from "../actions/change-order-status.admin.action";
 import { cancelOrderAdmin } from "../actions/cancel-order.admin.action";
-import type { PublicOrder } from "../types";
+import { orderStatuses } from "../constants/order-statuses";
+import type { AdminOrder, PublicOrder } from "../types";
 import { OrderSummary } from "./OrderSummary";
 
-const orderStatuses = [
-  "AWAITING_PAYMENT",
-  "PAID",
-  "DELIVERED",
-  "CANCELLED",
-] as const satisfies readonly OrderStatus[];
 function whatsappUrl(
   number: string | undefined,
   customerName: string | undefined,
@@ -32,22 +27,6 @@ function whatsappUrl(
     .join(", ");
   return `https://wa.me/${number}?text=${encodeURIComponent(`Hello ${customerName || "there"}, this is JPScents following up on your order ${reference} (${context}). How can we help?`)}`;
 }
-
-type AdminOrder = PublicOrder & {
-  customerName?: string;
-  whatsappNumber?: string;
-  email?: string | null;
-  deliveryState?: string;
-  deliveryCity?: string;
-  deliveryAddress?: string;
-  orderNote?: string | null;
-  events?: {
-    id: string;
-    fromStatus: OrderStatus | null;
-    toStatus: OrderStatus;
-    createdAt: Date;
-  }[];
-};
 
 export function AdminOrderDetail({ order }: { order: AdminOrder | null }) {
   const router = useRouter();
@@ -91,7 +70,7 @@ export function AdminOrderDetail({ order }: { order: AdminOrder | null }) {
           <section className="border bg-jp-admin-surface p-6">
             <h2 className="font-display text-3xl">Activity</h2>
             <ol className="mt-5 space-y-4">
-              {(order.events ?? []).map((event) => (
+              {order.events.map((event) => (
                 <li key={event.id} className="border-l pl-4 text-sm">
                   <strong>{formatEnumLabel(event.toStatus)}</strong>
                   <p className="mt-1 text-jp-text-secondary">

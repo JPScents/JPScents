@@ -7,12 +7,12 @@ import { prisma } from "@/db/prisma";
 import { commerceConfig } from "@/config/commerce";
 import { CustomerIdentityConflict, resolveCustomerForOrder } from "@/features/customers";
 
+import { orderStatuses } from "./constants/order-statuses";
 import { parseCheckoutInput } from "./parsers/checkout.parser";
-import { orderInclude, projectOrder } from "./orders.projection";
+import { projectPublicOrder, publicOrderInclude } from "./orders.projection";
 import type { OrderCartLine } from "./types";
 
 export { parseCheckoutInput } from "./parsers/checkout.parser";
-export const orderStatuses = Object.values(OrderStatus);
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const REFERENCE_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -71,7 +71,7 @@ export async function createOrder(linesRaw: unknown, checkoutRaw: unknown, submi
       async (tx) => {
         const duplicate = await tx.order.findUnique({
           where: { submissionKey },
-          include: orderInclude,
+          include: publicOrderInclude,
         });
         if (duplicate) return { order: duplicate, duplicate: true };
 
@@ -135,7 +135,7 @@ export async function createOrder(linesRaw: unknown, checkoutRaw: unknown, submi
         });
         const complete = await tx.order.findUniqueOrThrow({
           where: { id: created.id },
-          include: orderInclude,
+          include: publicOrderInclude,
         });
         return { order: complete, duplicate: false };
       },
@@ -143,7 +143,7 @@ export async function createOrder(linesRaw: unknown, checkoutRaw: unknown, submi
     );
 
     return {
-      order: await projectOrder(result.order),
+      order: await projectPublicOrder(result.order),
       confirmationToken: result.order.confirmationToken,
       duplicate: result.duplicate,
     } as const;

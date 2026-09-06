@@ -64,6 +64,17 @@ const placedOrder = {
     },
   ],
 };
+const adminOrder = {
+  ...placedOrder,
+  customerName: "Amara Okafor",
+  whatsappNumber: "2348012345678",
+  email: null,
+  deliveryState: "Lagos",
+  deliveryCity: "Lekki",
+  deliveryAddress: "12 Palm Avenue",
+  orderNote: null,
+  events: [],
+};
 
 describe("order presentations", () => {
   beforeEach(() => vi.clearAllMocks());
@@ -126,19 +137,7 @@ describe("order presentations", () => {
   });
 
   it("opens WhatsApp as JPScents following up with the customer", () => {
-    render(
-      <AdminOrderDetail
-        order={{
-          ...placedOrder,
-          customerName: "Amara Okafor",
-          whatsappNumber: "2348012345678",
-          deliveryState: "Lagos",
-          deliveryCity: "Lekki",
-          deliveryAddress: "12 Palm Avenue",
-          events: [],
-        }}
-      />,
-    );
+    render(<AdminOrderDetail order={adminOrder} />);
 
     const messageCustomer = screen.getByRole("link", { name: "Message customer on WhatsApp" });
     expect(screen.getByRole("option", { name: "Cancelled" })).toBeDisabled();
@@ -150,19 +149,7 @@ describe("order presentations", () => {
 
   it("requires explicit cancellation confirmation and exposes cancellation failures", async () => {
     mocks.cancelOrderAdmin.mockResolvedValue({ error: "Order not found." });
-    render(
-      <AdminOrderDetail
-        order={{
-          ...placedOrder,
-          customerName: "Amara Okafor",
-          whatsappNumber: "2348012345678",
-          deliveryState: "Lagos",
-          deliveryCity: "Lekki",
-          deliveryAddress: "12 Palm Avenue",
-          events: [],
-        }}
-      />,
-    );
+    render(<AdminOrderDetail order={adminOrder} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Cancel order" }));
     expect(screen.getByRole("heading", { name: "Cancel this order?" })).toBeInTheDocument();

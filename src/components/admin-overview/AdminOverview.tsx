@@ -5,7 +5,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { siteConfig } from "@/config/site";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 import { formatEnumLabel } from "@/shared/utils/format-enum-label";
-import type { OrderRow } from "@/features/orders";
+import type { AdminOrderRow } from "@/features/orders";
 
 export function AdminOverview({
   overview,
@@ -17,7 +17,7 @@ export function AdminOverview({
     availablePerfumes: number;
     zeroStockVariants: number;
     ordersThisWeek: number;
-    recentOrders: OrderRow[];
+    recentOrders: AdminOrderRow[];
     attention: { id: string; name: string; status: string }[];
     bestseller: { id: string; name: string } | null;
   };

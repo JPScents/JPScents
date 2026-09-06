@@ -2,7 +2,12 @@ import "server-only";
 
 import { prisma } from "@/db/prisma";
 
-import { orderInclude, projectOrder } from "./orders.projection";
+import {
+  adminOrderInclude,
+  projectAdminOrder,
+  projectPublicOrder,
+  publicOrderInclude,
+} from "./orders.projection";
 import type { OrderFilters } from "./types";
 
 const clean = (value: unknown, maximum: number) =>
@@ -12,9 +17,9 @@ export async function getOrderConfirmation(confirmationToken: string | undefined
   if (!confirmationToken || confirmationToken.length < 40) return null;
   const order = await prisma.order.findUnique({
     where: { confirmationToken },
-    include: orderInclude,
+    include: publicOrderInclude,
   });
-  return order ? projectOrder(order) : null;
+  return order ? projectPublicOrder(order) : null;
 }
 
 export async function listOrders(filters: OrderFilters = {}) {
@@ -50,9 +55,9 @@ export async function listOrders(filters: OrderFilters = {}) {
 export async function getOrderByReference(referenceValue: string) {
   const order = await prisma.order.findUnique({
     where: { reference: referenceValue },
-    include: orderInclude,
+    include: adminOrderInclude,
   });
-  return order ? projectOrder(order, true) : null;
+  return order ? projectAdminOrder(order) : null;
 }
 
 export async function getOrdersAdminOverview() {

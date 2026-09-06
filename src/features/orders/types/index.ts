@@ -29,7 +29,23 @@ export type PublicOrder = {
   items: OrderLine[];
 };
 
-export type OrderRow = {
+export type AdminOrder = PublicOrder & {
+  customerName: string;
+  whatsappNumber: string;
+  email: string | null;
+  deliveryState: string;
+  deliveryCity: string;
+  deliveryAddress: string;
+  orderNote: string | null;
+  events: Array<{
+    id: string;
+    fromStatus: OrderStatus | null;
+    toStatus: OrderStatus;
+    createdAt: Date;
+  }>;
+};
+
+export type AdminOrderRow = {
   reference: string;
   customerName: string;
   whatsappNumber: string;
