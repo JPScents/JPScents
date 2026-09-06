@@ -5,7 +5,9 @@ import { useState } from "react";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 
+import { validateVariantInput } from "../../schemas/variant.schema";
 import { parseNairaToMinor } from "../../utils/price.utils";
+import { normalizeSizeValue } from "../../utils/size.utils";
 
 type StagedVariant = { sizeValue: string; price: string; quantity: string };
 
@@ -60,15 +62,15 @@ export function StagedVariantManager({
   const [draft, setDraft] = useState<StagedVariant>({ sizeValue: "", price: "", quantity: "" });
   const [error, setError] = useState("");
   const save = () => {
-    if (
-      !draft.sizeValue ||
-      parseNairaToMinor(draft.price) === null ||
-      !/^\d+$/.test(draft.quantity)
-    ) {
+    if (!validateVariantInput({ ...draft }).input) {
       setError("Enter a positive size, valid NGN price, and whole quantity.");
       return;
     }
-    if (variants.some((variant) => variant.sizeValue === draft.sizeValue)) {
+    const normalizedSize = normalizeSizeValue(draft.sizeValue);
+    if (
+      normalizedSize &&
+      variants.some((variant) => normalizeSizeValue(variant.sizeValue) === normalizedSize)
+    ) {
       setError("Each staged variant needs a unique size.");
       return;
     }

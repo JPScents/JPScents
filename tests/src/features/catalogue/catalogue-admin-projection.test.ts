@@ -13,9 +13,33 @@ vi.mock("@/lib/supabase/storage", () => ({
   getPerfumeImageUrl: vi.fn(async () => "https://signed.example/perfume"),
 }));
 
-import { getEligibleBestsellerCandidates } from "@/features/catalogue/catalogue";
+import {
+  getEligibleBestsellerCandidates,
+  listAdminPerfumes,
+} from "@/features/catalogue/admin-catalogue";
 
 describe("Admin catalogue projections", () => {
+  it("applies list filters before loading the admin projection", async () => {
+    findMany.mockResolvedValue([]);
+
+    await listAdminPerfumes({
+      query: "  fig ",
+      availability: "available",
+      placement: "featured",
+    });
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          name: { contains: "fig", mode: "insensitive" },
+          status: "PUBLISHED",
+          variants: { some: { quantity: { gt: 0 } } },
+          isFeatured: true,
+        },
+      }),
+    );
+  });
+
   it("keeps Prisma Decimal variants out of the client-facing Bestseller candidates", async () => {
     findMany.mockResolvedValue([
       {

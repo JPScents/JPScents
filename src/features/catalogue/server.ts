@@ -7,7 +7,7 @@ export {
   getCatalogueAdminOverview,
   getEligibleBestsellerCandidates,
   listAdminPerfumes,
-} from "./catalogue";
+} from "./admin-catalogue";
 export {
   getFeaturedPerfumes,
   getPerfumeBySlug,

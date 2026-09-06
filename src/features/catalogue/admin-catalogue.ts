@@ -22,8 +22,25 @@ const details = {
 export async function listAdminPerfumes(
   filters: CatalogueFilters = {},
 ): Promise<AdminPerfumeListItem[]> {
-  const rows = await prisma.perfume.findMany({ include: details, orderBy: { updatedAt: "desc" } });
-  const query = filters.query?.trim().toLocaleLowerCase();
+  const query = filters.query?.trim();
+  const where: Prisma.PerfumeWhereInput = {
+    ...(query ? { name: { contains: query, mode: "insensitive" } } : {}),
+    ...(filters.availability === "available"
+      ? { status: "PUBLISHED", variants: { some: { quantity: { gt: 0 } } } }
+      : filters.availability === "unavailable"
+        ? { NOT: { status: "PUBLISHED", variants: { some: { quantity: { gt: 0 } } } } }
+        : {}),
+    ...(filters.placement === "featured"
+      ? { isFeatured: true }
+      : filters.placement === "bestseller"
+        ? { isBestseller: true }
+        : {}),
+  };
+  const rows = await prisma.perfume.findMany({
+    where,
+    include: details,
+    orderBy: { updatedAt: "desc" },
+  });
   const projected = await Promise.all(
     rows.map(async (perfume) => {
       const availableVariantCount = perfume.variants.filter(
@@ -49,22 +66,7 @@ export async function listAdminPerfumes(
     }),
   );
 
-  return projected.filter((perfume) => {
-    const nameMatches = !query || perfume.name.toLocaleLowerCase().includes(query);
-    const availabilityMatches =
-      filters.availability === "available"
-        ? perfume.isAvailable
-        : filters.availability === "unavailable"
-          ? !perfume.isAvailable
-          : true;
-    const placementMatches =
-      filters.placement === "featured"
-        ? perfume.isFeatured
-        : filters.placement === "bestseller"
-          ? perfume.isBestseller
-          : true;
-    return nameMatches && availabilityMatches && placementMatches;
-  });
+  return projected;
 }
 
 export async function getAdminPerfume(id: string): Promise<AdminPerfume | null> {
