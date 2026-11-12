@@ -138,20 +138,20 @@ function main() {
   }
   if (!browserFailed || existsSync(reportPath)) {
     const report = JSON.parse(readFileSync(reportPath, "utf8"));
-    const { expected, unexpected, flaky, skipped } = report;
+    const { passed, failed, flaky, skipped } = report;
     const head = run("git", ["rev-parse", "HEAD"]).trim();
     if (process.env.GITHUB_SHA && process.env.GITHUB_SHA !== head) {
       throw new Error("The browser report does not match the GitHub candidate.");
     }
-    const stats = { head, expected, unexpected, flaky, skipped };
+    const stats = { head, passed, failed, flaky, skipped };
     console.log(
-      `Browser E2E: ${expected} passed, ${unexpected} failed, ${flaky} flaky, ${skipped} skipped.`,
+      `Browser E2E: ${passed} passed, ${failed} failed, ${flaky} flaky, ${skipped} skipped.`,
     );
     if (
       !browserFailed &&
-      Number.isInteger(expected) &&
-      expected >= 3 &&
-      unexpected === 0 &&
+      Number.isInteger(passed) &&
+      passed >= 3 &&
+      failed === 0 &&
       flaky === 0 &&
       skipped === 0
     ) {

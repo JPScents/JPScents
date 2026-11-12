@@ -191,9 +191,9 @@ function validateBrowserEvidence(reportPath, head) {
   if (
     !/^[0-9a-f]{40}$/.test(head) ||
     report?.head !== head ||
-    !Number.isInteger(report.expected) ||
-    report.expected < 3 ||
-    report.unexpected !== 0 ||
+    !Number.isInteger(report.passed) ||
+    report.passed < 3 ||
+    report.failed !== 0 ||
     report.flaky !== 0 ||
     report.skipped !== 0
   ) {

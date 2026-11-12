@@ -31,6 +31,12 @@ export function toPublicOrder(order: PublicOrderRecord, imageUrls: OrderImageUrl
     subtotalMinor: order.subtotalMinor,
     status: order.status,
     createdAt: order.createdAt,
+    usesCurrentCatalogueDetails: order.items.some(
+      (item) =>
+        item.perfumeNameSnapshot == null ||
+        item.sizeValueSnapshot == null ||
+        item.sizeUnitSnapshot == null,
+    ),
     items: toOrderItems(order, imageUrls),
   };
 }

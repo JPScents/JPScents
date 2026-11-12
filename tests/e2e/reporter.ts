@@ -10,12 +10,17 @@ export default class BrowserEvidence implements Reporter {
   }
 
   onEnd() {
-    const stats = { expected: 0, unexpected: 0, flaky: 0, skipped: 0 };
+    const stats = { passed: 0, failed: 0, flaky: 0, skipped: 0 };
     for (const test of this.suite?.allTests() ?? []) {
       const outcome = test.outcome();
-      stats[outcome]++;
-      if (outcome !== "expected") {
-        const error = test.results.at(-1)?.errors[0];
+      const result = test.results.at(-1);
+
+      if (outcome === "expected" && result?.status === "passed") {
+        stats.passed++;
+      } else {
+        const bucket = outcome === "flaky" || outcome === "skipped" ? outcome : "failed";
+        stats[bucket]++;
+        const error = result?.errors[0];
         const line =
           error?.location?.line ?? error?.stack?.match(/release\.spec\.ts:(\d+):\d+/)?.[1];
         const operation = error?.message?.match(/\b(?:locator|page|route|browser)\.\w+:/)?.[0];
@@ -25,7 +30,7 @@ export default class BrowserEvidence implements Reporter {
         const details = [operation, timeout, line ? `at line ${line}` : null]
           .filter(Boolean)
           .join(" ");
-        console.error(`${test.title}: ${outcome} ${details}`.trim());
+        console.error(`${test.title}: ${bucket} ${details}`.trim());
       }
     }
     const path = process.env.JP_E2E_REPORT_PATH;

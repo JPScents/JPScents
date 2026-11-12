@@ -395,7 +395,7 @@ describe("PostgreSQL approved acceptance", () => {
       deliveryAddress: input.deliveryAddress,
       items: expectedItems,
     });
-    expect(publicOrder).toMatchObject({ items: expectedItems });
+    expect(publicOrder).toMatchObject({ usesCurrentCatalogueDetails: false, items: expectedItems });
   });
 
   it("D3 identifies legacy orders and uses current details only when original facts are absent", async () => {
@@ -425,12 +425,27 @@ describe("PostgreSQL approved acceptance", () => {
     if (!saved) {
       throw new Error("Legacy order was not found.");
     }
+    const expectedItems = [{ name: "Original Test Perfume", sizeLabel: "50 mL" }];
     expect(orderMapper.toAdminOrder(saved, new Map())).toMatchObject({
       legacy: true,
       customerName: input.customerName,
       deliveryAddress: input.deliveryAddress,
-      items: [{ name: "Original Test Perfume", sizeLabel: "50 mL" }],
+      items: expectedItems,
     });
+
+    const confirmation = await orders.findOrderConfirmation(legacy.confirmationToken);
+    if (!confirmation) {
+      throw new Error("Legacy order confirmation was not found.");
+    }
+    const publicOrder = orderMapper.toPublicOrder(confirmation, new Map());
+    expect(publicOrder).toMatchObject({
+      reference: legacy.reference,
+      usesCurrentCatalogueDetails: true,
+      items: expectedItems,
+    });
+    expect(publicOrder).not.toHaveProperty("customerName");
+    expect(publicOrder).not.toHaveProperty("deliveryAddress");
+    expect(publicOrder).not.toHaveProperty("whatsappNumber");
   });
 
   it("D4 preserves a checkout deduction when an admin saves a non-stock edit", async () => {

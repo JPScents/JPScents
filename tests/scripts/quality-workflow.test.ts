@@ -175,11 +175,50 @@ describe.each(["quality", "acceptance"] as const)("%s workflow evidence", (mode)
 });
 
 describe("browser workflow evidence", () => {
-  const pass = { head: candidateSha, expected: 3, unexpected: 0, flaky: 0, skipped: 0 };
+  it("reports an expected Playwright assertion failure as a failed case", () => {
+    const directory = mkdtempSync(join(tmpdir(), "jpscents-browser-reporter-"));
+    const reportPath = join(directory, "report.json");
+    try {
+      const playwright = join(root, "node_modules/@playwright/test");
+      writeFileSync(
+        join(directory, "playwright.config.cjs"),
+        `module.exports = { testDir: ".", workers: 1, reporter: ${JSON.stringify(join(root, "tests/e2e/reporter.ts"))} };
+`,
+      );
+      writeFileSync(
+        join(directory, "fixture.spec.cjs"),
+        `const { test, expect } = require(${JSON.stringify(playwright)});
+test("passing assertion", () => expect(true).toBe(true));
+test("known failure", () => {
+  test.fail();
+  expect(false).toBe(true);
+});
+`,
+      );
+      const result = spawnSync(process.execPath, [join(playwright, "cli.js"), "test"], {
+        cwd: directory,
+        env: { NODE_ENV: "test", PATH: process.env.PATH, CI: "1", JP_E2E_REPORT_PATH: reportPath },
+        timeout: 10_000,
+      });
+
+      expect(result.status).toBe(0);
+      expect(JSON.parse(readFileSync(reportPath, "utf8"))).toEqual({
+        passed: 1,
+        failed: 1,
+        flaky: 0,
+        skipped: 0,
+      });
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  }, 15_000);
+
+  const pass = { head: candidateSha, passed: 3, failed: 0, flaky: 0, skipped: 0 };
   it.each([
     ["all cases passed", pass, 0, 0],
     ["missing report", null, 0, 1],
-    ["empty suite", { ...pass, expected: 0 }, 0, 1],
+    ["empty suite", { ...pass, passed: 0 }, 0, 1],
+    ["failed case despite zero browser exit", { ...pass, failed: 1 }, 0, 1],
     ["skipped case", { ...pass, skipped: 1 }, 0, 1],
     ["wrong candidate", { ...pass, head: "b".repeat(40) }, 0, 1],
     ["non-zero browser exit", pass, 7, 7],

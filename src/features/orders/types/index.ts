@@ -26,6 +26,7 @@ export type PublicOrder = {
   subtotalMinor: number;
   status: OrderStatus;
   createdAt: Date;
+  usesCurrentCatalogueDetails: boolean;
   items: OrderLine[];
 };
 

@@ -55,6 +55,7 @@ const placedOrder = {
   subtotalMinor: 125000,
   status: "AWAITING_PAYMENT" as const,
   createdAt: new Date("2026-08-28T12:00:00Z"),
+  usesCurrentCatalogueDetails: false,
   items: [
     {
       name: "Quiet Fig",
@@ -176,6 +177,28 @@ describe("order presentations", () => {
     rerender(<Confirmation order={placedOrder} businessNumber="not-configured" />);
     expect(screen.getByRole("button", { name: "WhatsApp unavailable" })).toBeDisabled();
     expect(screen.getByText("No payment has been taken online.")).toBeInTheDocument();
+  });
+
+  it("labels legacy catalogue details and uses only the order reference in WhatsApp", () => {
+    const businessNumber = "2348012345678";
+    const { rerender } = render(
+      <Confirmation
+        order={{ ...placedOrder, usesCurrentCatalogueDetails: true }}
+        businessNumber={businessNumber}
+      />,
+    );
+
+    const message = () => {
+      const link = screen.getByRole<HTMLAnchorElement>("link", { name: "Continue on WhatsApp" });
+      return new URL(link.href).searchParams.get("text");
+    };
+
+    expect(screen.getByText(/summary shows current catalogue details/i)).toBeInTheDocument();
+    expect(message()).toBe("Hello JPScents, I’m following up on order JP-ABCDEFG.");
+
+    rerender(<Confirmation order={placedOrder} businessNumber={businessNumber} />);
+    expect(screen.queryByText(/summary shows current catalogue details/i)).not.toBeInTheDocument();
+    expect(message()).toContain("JP-ABCDEFG (Quiet Fig 30 mL ×1)");
   });
 
   it("distinguishes an empty Order store from a filtered no-result", () => {
