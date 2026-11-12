@@ -206,17 +206,26 @@ describe("orders", () => {
   });
 
   it("reuses a matching customer and rejects conflicting WhatsApp and email identities", async () => {
-    mocks.customerFindUnique.mockResolvedValueOnce(customer).mockResolvedValueOnce(null);
-    await createOrder(
+    mocks.customerFindUnique.mockResolvedValueOnce(customer);
+    mocks.customerUpdate.mockResolvedValueOnce(customer);
+    const result = await createOrder(
       [{ perfumeVariantId: id, quantity: 1 }],
       checkout,
       "22222222-2222-4222-8222-222222222222",
     );
+    expect(result).toMatchObject({
+      duplicate: false,
+      order: { reference: order.reference, status: "AWAITING_PAYMENT" },
+    });
     expect(mocks.customerCreate).not.toHaveBeenCalled();
     expect(mocks.customerUpdate).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: "customer" } }),
     );
+    expect(mocks.orderCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ customerId: customer.id }) }),
+    );
 
+    mocks.orderCreate.mockClear();
     mocks.customerFindUnique.mockReset();
     mocks.customerFindUnique.mockResolvedValueOnce(customer).mockResolvedValueOnce({
       ...customer,
@@ -230,6 +239,7 @@ describe("orders", () => {
         "33333333-3333-4333-8333-333333333333",
       ),
     ).resolves.toMatchObject({ error: expect.stringContaining("different customers") });
+    expect(mocks.orderCreate).not.toHaveBeenCalled();
   });
 
   it("returns an existing idempotent order without stock or customer mutation", async () => {

@@ -1,0 +1,16 @@
+[
+  {
+    "finding": "GAP-006",
+    "rule": "@next/next/no-img-element",
+    "path": "src/features/catalogue/components/public/ScentCharacterBrowse.tsx",
+    "component": "ScentCharacterBrowse",
+    "directive": "/* eslint-disable @next/next/no-img-element -- local controlled scent assets are decorative. */"
+  },
+  {
+    "finding": "GAP-006",
+    "rule": "@next/next/no-img-element",
+    "path": "src/features/catalogue/components/public/ScentCharacterSelect.tsx",
+    "component": "ScentCharacterSelect",
+    "directive": "/* eslint-disable @next/next/no-img-element -- local controlled scent assets are decorative. */"
+  }
+]

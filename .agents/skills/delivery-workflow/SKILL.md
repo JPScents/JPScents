@@ -19,6 +19,8 @@ Use the project's instructions for commands, paths, and authorization. An implem
 
 ## Verify the actual boundary
 
+For an authorised JPScents milestone, apply the [milestone completion checkpoints](../../../docs/engineering/MILESTONE_INTEGRATION.md) within the existing milestone workflow. Run and validate the required canonical and scope-specific evidence before independent review. Use the same frozen candidate for the READY decision. Ordinary delivery keeps the change-specific requirements below.
+
 | Change                                                    | Required evidence                                                                                                                                                                                                         |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Documentation / skills and bundled checks                 | Format changed files, validate skills, check references and contradictory guidance. Exercise changed checks with compliant and violating inputs; review realistic mixed-responsibility examples against the instructions. |

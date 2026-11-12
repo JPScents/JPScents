@@ -10,30 +10,39 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # JPScents project agent rules
 
-## Start here
+## Canonical guidance
 
-- Read [README.md](README.md) for the current product, paths, commands, and deployment constraints. Read [prisma/README.md](prisma/README.md) for database or seed work.
-- Apply [feature-structure](.agents/skills/feature-structure/SKILL.md) when implementing/refactoring a feature, page, or shared code.
-- Apply [delivery-workflow](.agents/skills/delivery-workflow/SKILL.md) to repository-changing work: inspect, implement, verify, review, and commit.
-- Apply [design-to-development](.agents/skills/design-to-development/SKILL.md) when implementing approved visual references or changing UI design. Structural refactors preserve existing UI.
-- A request such as “Refactor the catalog feature” means review the entire feature, remove unjustified architecture, correct semantic responsibilities and locations, verify, and commit. A narrow improvement pass does not complete that request. “Catalog” refers to `src/features/catalogue`; inspect before resolving other informal names. Do not rename domains or refactor neighboring features merely for consistency.
+- [Architecture](docs/architecture/ARCHITECTURE.md) and [Coding standards](docs/engineering/CODING_STANDARDS.md) define the approved rules. [Accepted ADRs](docs/architecture/adr/README.md) record their rationale and decision history. Check status before relying on a decision.
+- [Compliance baseline](docs/engineering/COMPLIANCE_BASELINE.md) records existing debt, pending implementation, and missing evidence. [Exceptions](docs/engineering/EXCEPTIONS.md) records explicit approvals with exact scope. A pending change, legacy violation, or existing suppression carries no approval by itself. [Controls audit](docs/engineering/CONTROLS_AUDIT.md) describes what the tools currently enforce.
+- Use the approved contracts for engineering decisions, the skills for execution, and the [README](README.md) for product and commands. Current approved decisions take precedence over archived milestones and historical implementation. For database or seed work, also read [Prisma guidance](prisma/README.md).
 
-## Non-negotiable boundaries
+## Workflow routing
 
-- Implement only current requirements. Existing and new layers must justify their responsibility; merge or delete those that add no value. Do not preserve an abstraction merely because it exists.
-- Feature roots allow only explicit public entry points (`index.ts`, `server.ts`, `client.ts`) and optional maintained `README.md` / `AGENTS.md`. Implementations belong in the feature skill's defined responsibility folders. Folders are optional; their semantics and names are mandatory. No root query/mutation/projection modules or catch-all utilities.
-- All Prisma database operations belong in repositories, including model reads/writes, raw SQL, and transaction creation/execution. Transaction clients stay within repository operations; services and actions do not receive them or import the Prisma client. Services own non-persistence business orchestration; mappers own pure transformations. Classify mixed files by actual responsibility before splitting or merging. Ordinary validation functions are parsers/validators, not schemas; do not add a schema library to preserve a misleading name.
-- Keep page-only presentation local, domain behavior feature-owned, and generic shared code independent. Features may depend one-way on intentional public feature APIs; never on another feature's internals.
-- Application repositories use `@/db/prisma`; that infrastructure module owns client initialization only, not queries or transactions. Never construct a client/pool in a feature or request, disconnect the shared client per request, or use it inside a transaction whose client was supplied. Atomic checks and their dependent writes stay together in a meaningful repository operation, not a service-controlled transaction callback.
-- Preserve authorization, minimal client projections, atomic order/stock/customer updates, duplicate-submission protection, and single stock restoration on cancellation. Refactoring is not permission to alter product rules or database history.
-- Never read, search, copy, or expose secret files or values. Use documented names/non-secret examples and account for commands that auto-load environment files. Follow README's isolated agent verification path.
-- Preserve unrelated work. Do not reset, clean, overwrite, or stage another agent's/user's changes.
+- Apply [feature-structure](.agents/skills/feature-structure/SKILL.md) when implementing or refactoring a feature, page, or shared code. Apply [delivery-workflow](.agents/skills/delivery-workflow/SKILL.md) to repository changes for inspection, verification, and review. Read the canonical guidance above before applying either skill.
+- Apply [design-to-development](.agents/skills/design-to-development/SKILL.md) when implementing approved visual references or changing UI design. Preserve existing UI during structural refactors.
+- Use the global `milestone-authoring` skill for an explicit milestone creation or revision request. Use `milestone-workflow` for **Run Active Milestone** or **Resume Active Milestone**. Preserve the existing branch, PR history and review count on resume. The workflow requires independent review and only the human merges.
+- During authoring, run and resume, apply the repository's [milestone completion checkpoints](docs/engineering/MILESTONE_INTEGRATION.md) through the existing skills. Require snapshot-matched verification evidence and a separate `independent-review` PASS for READY. The checkpoint applies to JPScents, including resumed contracts, without altering approved scope.
+- **Sync After Merge** uses the milestone skill's synchronization path only. Verify the merged PR, then safely fast-forward or switch to its base while preserving local changes. Keep the active contract at the locally ignored `.agents/milestones/active.md`. Ordinary changes use the delivery workflow. Milestone and release workflows require an explicit request.
+- “Catalog” means `src/features/catalogue`. A full feature refactor covers every module and affected consumer. A whole-codebase refactor also covers routes, shared code, infrastructure, scripts, tests and tooling. Keep the scope of focused changes and retain compliant code.
 
-## Completion
+## Before changing code
 
-- Follow the delivery skill's change-specific verification. Code refactors require targeted checks and `npm run check` or README's documented isolated equivalent; documentation-only changes require formatting, reference review, and applicable skill validation.
-- Full feature refactors must pass `npm run architecture:check` (included in `npm run check`) and a semantic review of every module. Explain what complexity was removed, why significant retained layers are needed, and any unresolved violations. A passing file check or test suite alone does not establish completion. Whole-codebase requests also cover routes, shared code, infrastructure, operational scripts, tests, and tooling; keep compliant code rather than forcing changes into every file.
-- Format changed files and inspect readability after formatting: clear names, separated logical steps, readable branching, and no compressed statements or deeply nested expressions hidden behind a passing formatter.
-- Keep meaningful behavior tests in the root `tests/` tree, mirroring source ownership. No tests or abstractions merely to increase coverage or satisfy a template.
-- Commit completed, verified work locally by default unless the user explicitly asks otherwise. Inspect the entire staged diff; staging exact paths does not exclude already-staged unrelated work. Preserve others' index/worktree changes, isolate the commit, and never reset shared history to repair a mixed commit. Report the commit and verification limitations.
-- Do not push, merge, rebase, deploy, run destructive database operations, or mutate external systems without authorization. Invoke milestone/release workflows only when explicitly requested.
+Agents MUST complete both steps before editing code.
+
+1. Inspect Git status, applicable instructions, and the approved contracts, related ADRs, baseline findings and scoped exceptions for the change.
+2. Trace the normal entry points and consumers. Identify effects on dependencies, data flow, authorization, transactions, client projections and tests. Reuse the existing owner and plan verification at each affected boundary.
+
+## Implementation and approval
+
+- Follow approved ownership, dependencies and product invariants. Keep new layers proportional to current requirements. Preserve the architecture's authorization, data projection, atomicity, idempotency and cancellation guarantees. Keep existing violations visible by finding ID and avoid expanding them.
+- Agents MUST NOT silently introduce a new architecture, exception, suppression or rule override. If a request conflicts with an approved rule, identify the rule and proposed change. Obtain explicit approval for a [new ADR](docs/architecture/adr/README.md#naming-and-lifecycle) or [scoped exception](docs/engineering/EXCEPTIONS.md#recording-review-and-supersession) before proceeding with the conflicting part. Approval applies to the documented scope.
+- Use [engineering change control](docs/engineering/CHANGE_CONTROL.md) to propose, record and verify changes to approved architecture, standards or mandatory checks.
+- Never inspect, copy or expose secret files or values. Use documented variable names and non-secret examples. Account for commands that load environment files automatically.
+- Preserve unrelated index and working-tree changes. Commit, push, merge, rebase, deploy, run destructive database operations, or mutate external systems only with applicable user authorization. Inspect the entire index before any authorized commit and keep the commit limited to the task.
+
+## Verification and completion
+
+- Run `npm test -- <test-path>` for affected behavior and `npm run check` or the documented isolated equivalent for code refactors and architecture-affecting changes. The full check includes `npm run architecture:check`, formatting, lint, type checking and Vitest. For a full refactor, review every affected module's actual responsibility and explain any retained layers or unresolved violations.
+- Follow VER-02 and the [isolated verification instructions](README.md#agent-verification-without-secret-file-access). Use an isolated production build for runtime boundary changes, a disposable migrated database for changed persistence invariants, and real browser or provider evidence for affected flows. Prisma and Next commands can auto-load configured environment files. For documentation-only changes, run `npm run format:check`, validate references and review any changed skills.
+- Review the diff for scope and readability. Report the checked revision for architecture changes, commands run, results, failures and unverified boundaries. Passing a structural check or mock test establishes only what that check exercised.
+- These instructions route work and require evidence. Local scripts enforce their configured checks when run. Semantic review and integration evidence still require execution. The required merge gate is approved under VER-03, and hosted enforcement remains unverified in the [controls audit](docs/engineering/CONTROLS_AUDIT.md#executed-verification).
