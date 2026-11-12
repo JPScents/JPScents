@@ -165,6 +165,19 @@ export async function setBestsellerRecord(perfumeId: string | null) {
   }
 }
 
+const slugInUseMessage = "That slug is already in use.";
+const saveFailureMessage = "The perfume could not be saved. Please try again.";
+
+export async function checkPerfumeCreationSlug(slug: string): Promise<PerfumeActionState | null> {
+  try {
+    const conflict = await prisma.perfume.findUnique({ where: { slug }, select: { id: true } });
+    return conflict ? { errors: { slug: slugInUseMessage } } : null;
+  } catch {
+    console.error("Catalogue perfume slug check failed.");
+    return { message: saveFailureMessage };
+  }
+}
+
 export async function savePerfumeRecord(
   id: string,
   input: PerfumeInput,
@@ -184,7 +197,7 @@ export async function savePerfumeRecord(
           select: { id: true },
         });
         if (conflict && conflict.id !== id) {
-          return { errors: { slug: "That slug is already in use." } };
+          return { errors: { slug: slugInUseMessage } };
         }
         const variants = existing?.variants ?? creation!.variants;
         const errors = getPublishingErrors(
@@ -221,6 +234,6 @@ export async function savePerfumeRecord(
       return { errors: { slug: "That slug was just claimed. Choose another stable slug." } };
     }
     console.error("Catalogue perfume save failed.");
-    return { message: "The perfume could not be saved. Please try again." };
+    return { message: saveFailureMessage };
   }
 }
