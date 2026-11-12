@@ -13,6 +13,7 @@ let applicationClient: PrismaClient | undefined;
 let orders: typeof import("@/features/orders/repositories/order.repository");
 let orderMapper: typeof import("@/features/orders/mappers/order.mapper");
 let variants: typeof import("@/features/catalogue/repositories/variant.repository");
+let catalogue: typeof import("@/features/catalogue/server");
 let fixtureNumber = 0;
 
 beforeAll(async () => {
@@ -32,10 +33,11 @@ beforeAll(async () => {
              current_setting('unix_socket_directories') AS directory
     `,
   ).toEqual([{ onSocket: true, directory: cluster.directory }]);
-  [orders, orderMapper, variants] = await Promise.all([
+  [orders, orderMapper, variants, catalogue] = await Promise.all([
     import("@/features/orders/repositories/order.repository"),
     import("@/features/orders/mappers/order.mapper"),
     import("@/features/catalogue/repositories/variant.repository"),
+    import("@/features/catalogue/server"),
   ]);
 });
 
@@ -85,6 +87,21 @@ async function checkoutFixture(quantity: number) {
     submissionKey: namespace,
     lines: [{ perfumeVariantId: variant.id, quantity: 1 }],
   };
+}
+
+async function waitForOrderLock() {
+  await vi.waitFor(
+    async () => {
+      const activity = await db.$queryRaw<{ waiting: boolean }[]>`
+        SELECT EXISTS (
+          SELECT FROM pg_stat_activity
+          WHERE application_name = ${APPLICATION_NAME} AND wait_event_type = 'Lock'
+        ) AS waiting
+      `;
+      expect(activity).toEqual([{ waiting: true }]);
+    },
+    { timeout: 5_000, interval: 50 },
+  );
 }
 
 describe("PostgreSQL current", () => {
@@ -153,18 +170,7 @@ describe("PostgreSQL current", () => {
         const checkout = orders.createOrderWithStockDeduction(lines, input, submissionKey);
         // Retain the result for assertion after commit, even if checkout rejects early.
         void checkout.catch(() => {});
-        await vi.waitFor(
-          async () => {
-            const activity = await db.$queryRaw<{ waiting: boolean }[]>`
-              SELECT EXISTS (
-                SELECT FROM pg_stat_activity
-                WHERE application_name = ${APPLICATION_NAME} AND wait_event_type = 'Lock'
-              ) AS waiting
-            `;
-            expect(activity).toEqual([{ waiting: true }]);
-          },
-          { timeout: 5_000, interval: 50 },
-        );
+        await waitForOrderLock();
         return { checkout };
       },
       { timeout: 10_000 },
@@ -257,6 +263,87 @@ describe("PostgreSQL approved acceptance", () => {
       id: placed.order.id,
     });
     expect(await db.orderStatusEvent.count({ where: { orderId: placed.order.id } })).toBe(1);
+    await expect(
+      orders.createOrderWithStockDeduction(lines, input, submissionKey),
+    ).resolves.toMatchObject({
+      duplicate: true,
+      order: { id: placed.order.id },
+    });
+    await expect(orders.cancelOrderAndRestoreStock(placed.order.reference)).resolves.toEqual({
+      ok: true,
+    });
+    await expect(orders.cancelOrderAndRestoreStock(placed.order.reference)).resolves.toEqual({
+      unchanged: true,
+    });
+    expect(await db.perfumeVariant.findUniqueOrThrow({ where: { id: variant.id } })).toMatchObject({
+      quantity: 1,
+    });
+    expect(await db.perfume.findUniqueOrThrow({ where: { id: perfume.id } })).toMatchObject({
+      isBestseller: false,
+    });
+  });
+
+  it("D2 rolls back the final-unit debit and bestseller clearance if the order write fails", async () => {
+    const { perfume, variant, input, lines, submissionKey } = await checkoutFixture(1);
+    await db.perfume.update({ where: { id: perfume.id }, data: { isBestseller: true } });
+    await db.$executeRaw`ALTER TABLE "Order" ADD CONSTRAINT "reject_bestseller_fixture" CHECK ("orderNote" IS DISTINCT FROM 'reject final unit')`;
+    try {
+      await expect(
+        orders.createOrderWithStockDeduction(
+          lines,
+          { ...input, orderNote: "reject final unit" },
+          submissionKey,
+        ),
+      ).rejects.toThrow();
+    } finally {
+      await db.$executeRaw`ALTER TABLE "Order" DROP CONSTRAINT "reject_bestseller_fixture"`;
+    }
+    expect(await db.perfume.findUniqueOrThrow({ where: { id: perfume.id } })).toMatchObject({
+      isBestseller: true,
+    });
+    expect(await db.perfumeVariant.findUniqueOrThrow({ where: { id: variant.id } })).toMatchObject({
+      quantity: 1,
+    });
+    expect(await db.order.count({ where: { submissionKey } })).toBe(0);
+    await db.perfume.update({ where: { id: perfume.id }, data: { isBestseller: false } });
+  });
+
+  it("D2 serialises sales of different variants of the same bestseller", async () => {
+    const { perfume, input, lines } = await checkoutFixture(1);
+    const second = await db.perfumeVariant.create({
+      data: {
+        perfumeId: perfume.id,
+        sizeValue: "100",
+        sizeUnit: "ML",
+        priceMinor: 200_000,
+        quantity: 1,
+      },
+    });
+    await db.perfume.update({ where: { id: perfume.id }, data: { isBestseller: true } });
+
+    const { checkout } = await db.$transaction(
+      async (tx) => {
+        await expect(catalogue.deductStockForOrder(tx, lines)).resolves.toHaveProperty("variants");
+        const checkout = orders.createOrderWithStockDeduction(
+          [{ perfumeVariantId: second.id, quantity: 1 }],
+          input,
+          randomUUID(),
+        );
+        void checkout.catch(() => {});
+        await waitForOrderLock();
+        return { checkout };
+      },
+      { timeout: 10_000 },
+    );
+    const large = await checkout;
+    assertOrder(large);
+    expect(large.order.subtotalMinor).toBe(200_000);
+    expect(await db.perfume.findUniqueOrThrow({ where: { id: perfume.id } })).toMatchObject({
+      isBestseller: false,
+    });
+    expect(await db.perfumeVariant.count({ where: { perfumeId: perfume.id, quantity: 0 } })).toBe(
+      2,
+    );
   });
 
   it("D3 retains order-time contact, fulfilment and item facts after source rows change", async () => {
@@ -290,10 +377,16 @@ describe("PostgreSQL approved acceptance", () => {
       { name: perfume.name, sizeLabel: "50 mL", quantity: 1, unitPriceMinor: 120_000 },
     ];
     const publicOrder = orderMapper.toPublicOrder(saved, new Map());
+    const confirmation = await orders.findOrderConfirmation(placed.order.confirmationToken);
+    expect(confirmation).not.toBeNull();
+    expect(confirmation).not.toHaveProperty("customerNameSnapshot");
+    expect(confirmation).not.toHaveProperty("deliveryAddressSnapshot");
+    expect(confirmation).not.toHaveProperty("confirmationToken");
     expect(publicOrder).not.toHaveProperty("deliveryAddress");
     expect(publicOrder).not.toHaveProperty("whatsappNumber");
     expect(publicOrder).not.toHaveProperty("email");
     expect(orderMapper.toAdminOrder(saved, new Map())).toMatchObject({
+      legacy: false,
       customerName: input.customerName,
       whatsappNumber: input.whatsappNumber,
       email: input.email,
@@ -303,6 +396,41 @@ describe("PostgreSQL approved acceptance", () => {
       items: expectedItems,
     });
     expect(publicOrder).toMatchObject({ items: expectedItems });
+  });
+
+  it("D3 identifies legacy orders and uses current details only when original facts are absent", async () => {
+    const { variant, input, submissionKey } = await checkoutFixture(2);
+    const customer = await db.customer.create({
+      data: {
+        name: input.customerName,
+        whatsappNumber: input.whatsappNumber,
+        deliveryState: input.deliveryState,
+        deliveryCity: input.deliveryCity,
+        deliveryAddress: input.deliveryAddress,
+      },
+    });
+    const legacy = await db.order.create({
+      data: {
+        customerId: customer.id,
+        reference: "JP-LEGACY",
+        confirmationToken: randomUUID(),
+        submissionKey,
+        subtotalMinor: 120_000,
+        items: {
+          create: { perfumeVariantId: variant.id, quantity: 1, unitPriceMinor: 120_000 },
+        },
+      },
+    });
+    const saved = await orders.findAdminOrder(legacy.reference);
+    if (!saved) {
+      throw new Error("Legacy order was not found.");
+    }
+    expect(orderMapper.toAdminOrder(saved, new Map())).toMatchObject({
+      legacy: true,
+      customerName: input.customerName,
+      deliveryAddress: input.deliveryAddress,
+      items: [{ name: "Original Test Perfume", sizeLabel: "50 mL" }],
+    });
   });
 
   it("D4 preserves a checkout deduction when an admin saves a non-stock edit", async () => {
@@ -319,6 +447,34 @@ describe("PostgreSQL approved acceptance", () => {
     expect(saved).toEqual({ ok: true });
     expect(await db.perfumeVariant.findUniqueOrThrow({ where: { id: variant.id } })).toMatchObject({
       quantity: 1,
+      priceMinor: 150_000,
+    });
+  });
+
+  it("D4 rejects absolute stock adjustments after an intervening sale or restoration", async () => {
+    const { perfume, variant, input, lines, submissionKey } = await checkoutFixture(2);
+    const placed = await orders.createOrderWithStockDeduction(lines, input, submissionKey);
+    assertOrder(placed);
+    const adjustment = { sizeValue: "50", priceMinor: 150_000, quantity: 7 };
+    const conflict = { message: expect.stringContaining("Stock changed") };
+    await expect(
+      variants.saveVariantRecord(perfume.id, variant.id, adjustment, 2),
+    ).resolves.toEqual(conflict);
+    await expect(orders.cancelOrderAndRestoreStock(placed.order.reference)).resolves.toEqual({
+      ok: true,
+    });
+    await expect(
+      variants.saveVariantRecord(perfume.id, variant.id, adjustment, 1),
+    ).resolves.toEqual(conflict);
+    expect(await db.perfumeVariant.findUniqueOrThrow({ where: { id: variant.id } })).toMatchObject({
+      quantity: 2,
+      priceMinor: 120_000,
+    });
+    await expect(
+      variants.saveVariantRecord(perfume.id, variant.id, adjustment, 2),
+    ).resolves.toEqual({ ok: true });
+    expect(await db.perfumeVariant.findUniqueOrThrow({ where: { id: variant.id } })).toMatchObject({
+      quantity: 7,
       priceMinor: 150_000,
     });
   });

@@ -92,6 +92,12 @@ export function AdminOrderDetail({ order }: { order: AdminOrder | null }) {
         <aside className="space-y-6">
           <section className="border bg-jp-admin-surface p-5">
             <h2 className="font-display text-3xl">Customer</h2>
+            {order.legacy ? (
+              <p className="mt-2 text-sm text-jp-text-secondary">
+                This legacy order shows current customer and catalogue details where the original
+                details are unavailable.
+              </p>
+            ) : null}
             <dl className="mt-4 space-y-3 text-sm">
               <div>
                 <dt className="text-jp-text-secondary">Name</dt>

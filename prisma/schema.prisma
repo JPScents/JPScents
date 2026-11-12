@@ -103,33 +103,42 @@ model Customer {
 }
 
 model Order {
-  id                String             @id @default(uuid()) @db.Uuid
-  customerId        String             @db.Uuid
-  reference         String             @unique
-  confirmationToken String             @unique
-  submissionKey     String             @unique
-  orderNote         String?
-  subtotalMinor     Int
-  status            OrderStatus        @default(AWAITING_PAYMENT)
-  stockRestoredAt   DateTime?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  customer          Customer           @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  items             OrderItem[]
-  statusEvents      OrderStatusEvent[]
+  id                      String             @id @default(uuid()) @db.Uuid
+  customerId              String             @db.Uuid
+  reference               String             @unique
+  confirmationToken       String             @unique
+  submissionKey           String             @unique
+  orderNote               String?
+  customerNameSnapshot    String?
+  whatsappNumberSnapshot  String?
+  emailSnapshot           String?
+  deliveryStateSnapshot   String?
+  deliveryCitySnapshot    String?
+  deliveryAddressSnapshot String?
+  subtotalMinor           Int
+  status                  OrderStatus        @default(AWAITING_PAYMENT)
+  stockRestoredAt         DateTime?
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+  customer                Customer           @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  items                   OrderItem[]
+  statusEvents            OrderStatusEvent[]
 
   @@index([status, createdAt])
   @@index([customerId, createdAt])
 }
 
 model OrderItem {
-  id               String         @id @default(uuid()) @db.Uuid
-  orderId          String         @db.Uuid
-  perfumeVariantId String         @db.Uuid
-  quantity         Int
-  unitPriceMinor   Int
-  order            Order          @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  perfumeVariant   PerfumeVariant @relation(fields: [perfumeVariantId], references: [id], onDelete: Restrict)
+  id                  String         @id @default(uuid()) @db.Uuid
+  orderId             String         @db.Uuid
+  perfumeVariantId    String         @db.Uuid
+  quantity            Int
+  unitPriceMinor      Int
+  perfumeNameSnapshot String?
+  sizeValueSnapshot   Decimal?       @db.Decimal(8, 2)
+  sizeUnitSnapshot    String?
+  order               Order          @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  perfumeVariant      PerfumeVariant @relation(fields: [perfumeVariantId], references: [id], onDelete: Restrict)
 
   @@index([orderId])
   @@index([perfumeVariantId])

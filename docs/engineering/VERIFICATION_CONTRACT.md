@@ -9,9 +9,12 @@ Run from the repository root with Node 24.x, npm, the installed project dependen
 ```sh
 npm run verify
 npm run verify:acceptance
+npm run test:e2e
 ```
 
 `npm run verify` is the canonical quality command. It requires every stage below, including the passing PostgreSQL cases, on every invocation. The previous `npm run check` remains available for the existing static and unit checks. `npm run verify:acceptance` independently runs the approved D2–D4 scenarios and returns the actual acceptance status.
+
+The hosted `JPScents quality` check requires all three commands. Database acceptance tests use a top-level `PostgreSQL approved acceptance` suite in `tests/integration/**/*.integration.test.ts`. Chromium specs use `tests/e2e/`, with Playwright discovery and a separate Vitest exclusion. Run `npx --no-install playwright install --with-deps chromium` on Linux CI. To run E2E locally, use an isolated checkout with Node 24, installed Chromium and a running Docker daemon. The runner provisions disposable Supabase Auth, Storage and the inbox, applies migrations and tests a production build. It retains only sanitised outcome counts and the candidate SHA. [Workflow](../../.github/workflows/quality.yml)
 
 | Stage                 | Underlying command                                                        | Scope and prerequisites                                                                          |
 | --------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
@@ -48,9 +51,9 @@ Release readiness is a reviewer decision recorded against the exact candidate re
 3. For transaction, schema, constraint, or policy changes, include the applicable migrated-database evidence. The canonical suite covers a specific set of transaction and SQL policy invariants. Changes outside that scope require their own real-boundary cases.
 4. For affected Auth, Storage, or browser workflows, exercise the actual boundary with synthetic fixtures. Record applicable independent semantic architecture review and retain limitations in the release decision. [Architecture](../architecture/ARCHITECTURE.md#4-verification-and-exceptions) · [Integration gaps](INTEGRATION_VERIFICATION.md#evidence-still-needed)
 
-**Current release readiness is FAIL.** Acceptance still reproduces three defects. The bestseller trigger blocks the valid final-unit purchase (D2), order views show edited fulfilment and product facts (D3), and a stale Admin price edit overwrites a checkout deduction (D4). Real browser and Supabase HTTP evidence remains unverified. The prior isolated build stopped at Google Fonts DNS resolution. This task records no new build result. [Executed acceptance and gaps](INTEGRATION_VERIFICATION.md#risk-and-evidence-matrix) · [Build audit](CONTROLS_AUDIT.md#executed-verification)
+**Pre-fix release readiness was FAIL.** Acceptance reproduced three defects. The bestseller trigger blocks the valid final-unit purchase (D2), order views show edited fulfilment and product facts (D3), and a stale Admin price edit overwrites a checkout deduction (D4). Real browser and Supabase HTTP evidence remains unverified. The prior isolated build stopped at Google Fonts DNS resolution. This task records no new build result. [Executed acceptance and gaps](INTEGRATION_VERIFICATION.md#risk-and-evidence-matrix) · [Build audit](CONTROLS_AUDIT.md#executed-verification)
 
-Task 12 should invoke `npm run verify` for the full required quality gate on the candidate revision and provision Node, generated Prisma files, and a disposable PostgreSQL-capable runner. It must verify hosted enforcement. Keep acceptance visible as separate release evidence and preserve its failing exit until the production fixes land.
+The hosted workflow provisions Node, generated Prisma files, disposable PostgreSQL and a local browser stack. Verify hosted enforcement on the exact eligible candidate.
 
 ## Executed verification
 

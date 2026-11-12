@@ -10,14 +10,16 @@ type OrderImageUrls = ReadonlyMap<string, string | undefined>;
 function toOrderItems(order: PublicOrderRecord, imageUrls: OrderImageUrls) {
   return order.items.map((item) => {
     const variant = item.perfumeVariant;
-    const sizeUnit = variant.sizeUnit === "ML" ? "mL" : variant.sizeUnit || "unit";
+    const unit = item.sizeUnitSnapshot ?? variant.sizeUnit;
+    const sizeUnit = unit === "ML" ? "mL" : unit || "unit";
+    const size = item.sizeValueSnapshot ?? variant.sizeValue;
 
     return {
       quantity: item.quantity,
       unitPriceMinor: item.unitPriceMinor,
       lineTotalMinor: item.quantity * item.unitPriceMinor,
-      name: variant.perfume.name,
-      sizeLabel: `${variant.sizeValue.toString()} ${sizeUnit}`,
+      name: item.perfumeNameSnapshot ?? variant.perfume.name,
+      sizeLabel: `${size.toString()} ${sizeUnit}`,
       imageUrl: imageUrls.get(variant.perfume.images[0]?.path ?? ""),
     };
   });
@@ -34,14 +36,16 @@ export function toPublicOrder(order: PublicOrderRecord, imageUrls: OrderImageUrl
 }
 
 export function toAdminOrder(order: AdminOrderRecord, imageUrls: OrderImageUrls): AdminOrder {
+  const legacy = order.customerNameSnapshot == null;
   return {
     ...toPublicOrder(order, imageUrls),
-    customerName: order.customer.name,
-    whatsappNumber: order.customer.whatsappNumber,
-    email: order.customer.email,
-    deliveryState: order.customer.deliveryState,
-    deliveryCity: order.customer.deliveryCity,
-    deliveryAddress: order.customer.deliveryAddress,
+    legacy,
+    customerName: order.customerNameSnapshot ?? order.customer.name,
+    whatsappNumber: order.whatsappNumberSnapshot ?? order.customer.whatsappNumber,
+    email: legacy ? order.customer.email : order.emailSnapshot,
+    deliveryState: order.deliveryStateSnapshot ?? order.customer.deliveryState,
+    deliveryCity: order.deliveryCitySnapshot ?? order.customer.deliveryCity,
+    deliveryAddress: order.deliveryAddressSnapshot ?? order.customer.deliveryAddress,
     orderNote: order.orderNote,
     events: order.statusEvents.map((event) => ({
       id: event.id,
@@ -55,8 +59,8 @@ export function toAdminOrder(order: AdminOrderRecord, imageUrls: OrderImageUrls)
 export function toAdminOrderRow(order: OrderRowRecord): AdminOrderRow {
   return {
     reference: order.reference,
-    customerName: order.customer.name,
-    whatsappNumber: order.customer.whatsappNumber,
+    customerName: order.customerNameSnapshot ?? order.customer.name,
+    whatsappNumber: order.whatsappNumberSnapshot ?? order.customer.whatsappNumber,
     subtotalMinor: order.subtotalMinor,
     status: order.status,
     createdAt: order.createdAt,

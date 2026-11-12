@@ -15,7 +15,7 @@ jobs:
   quality:
     name: JPScents quality
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - name: Prepare evidence
         shell: bash
@@ -87,6 +87,16 @@ jobs:
             node scripts/milestone-evidence.mjs validate-ci \
               "$verification_log" "$GITHUB_SHA" "$evidence_dir/$report.json" "$mode"
           done
+
+      - name: Install Chromium for end-to-end tests
+        run: npx --no-install playwright install --with-deps chromium
+
+      - name: Run browser end-to-end tests
+        shell: bash
+        run: |
+          report="$RUNNER_TEMP/quality-evidence/e2e.json"
+          JP_E2E_EVIDENCE_PATH="$report" npm run test:e2e
+          node scripts/milestone-evidence.mjs validate-e2e "$report" "$GITHUB_SHA"
 
       - name: Retain quality evidence
         if: ${{ !cancelled() }}

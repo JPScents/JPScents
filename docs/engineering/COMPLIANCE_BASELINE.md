@@ -84,3 +84,7 @@ Handle targeted accessibility, feedback, diagnostics, typing and import fixes wi
 ## Remaining evidence limits
 
 Hosted GitHub and Vercel gates, production upload behaviour, live RLS and Storage permissions, and release-only browser and Auth interactions remain unverified. The tests and source review support the sampled flows and configured controls. Full semantic coverage of every file and dependency path, performance under production concurrency, and historical review evidence for every change were outside this baseline. [Controls audit](CONTROLS_AUDIT.md#executed-verification) · [Architecture gaps](../architecture/ARCHITECTURE.md#implementation-and-enforcement-gaps)
+
+## Milestone 6 changes against the baseline
+
+[PR #1](https://github.com/JPScents/JPScents/pull/1) addresses GAP-002 through GAP-005. Catalogue owns stock participation in the Orders transaction, an absolute Admin adjustment checks the observed quantity, and new order snapshots retain placed facts alongside the original relations. Existing orders retain a labelled fallback. The original baseline above records the audited revision. Consult the PR for exact candidate evidence and disposition.

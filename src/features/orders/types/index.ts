@@ -30,6 +30,7 @@ export type PublicOrder = {
 };
 
 export type AdminOrder = PublicOrder & {
+  legacy: boolean;
   customerName: string;
   whatsappNumber: string;
   email: string | null;

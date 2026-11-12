@@ -6,33 +6,46 @@ import { Prisma, type OrderStatus } from "@/db/generated/client";
 import { prisma } from "@/db/prisma";
 
 import { commerceConfig } from "@/config/commerce";
+import { deductStockForOrder, restoreStockForOrder } from "@/features/catalogue/server";
 import { CustomerIdentityConflict, resolveCustomerForOrder } from "@/features/customers/server";
 
 import type { CheckoutInput, OrderCartLine, OrderFilters } from "../types";
 
-const publicOrderInclude = {
-  items: {
-    include: {
-      perfumeVariant: {
-        include: { perfume: { include: { images: { orderBy: { position: "asc" }, take: 1 } } } },
-      },
+const orderItems = {
+  include: {
+    perfumeVariant: {
+      include: { perfume: { include: { images: { orderBy: { position: "asc" }, take: 1 } } } },
     },
   },
-} satisfies Prisma.OrderInclude;
+} satisfies Prisma.Order$itemsArgs;
+
+const publicOrderSelect = {
+  reference: true,
+  subtotalMinor: true,
+  status: true,
+  createdAt: true,
+  items: orderItems,
+} satisfies Prisma.OrderSelect;
+
+const checkoutOrderSelect = {
+  ...publicOrderSelect,
+  id: true,
+  confirmationToken: true,
+} satisfies Prisma.OrderSelect;
 
 const adminOrderInclude = {
-  ...publicOrderInclude,
+  items: orderItems,
   customer: true,
   statusEvents: { orderBy: { createdAt: "asc" } },
 } satisfies Prisma.OrderInclude;
 
-export type PublicOrderRecord = Prisma.OrderGetPayload<{ include: typeof publicOrderInclude }>;
+export type PublicOrderRecord = Prisma.OrderGetPayload<{ select: typeof publicOrderSelect }>;
 export type AdminOrderRecord = Prisma.OrderGetPayload<{ include: typeof adminOrderInclude }>;
 
 export async function findOrderConfirmation(confirmationToken: string) {
   return await prisma.order.findUnique({
     where: { confirmationToken },
-    include: publicOrderInclude,
+    select: publicOrderSelect,
   });
 }
 
@@ -49,8 +62,17 @@ export async function listOrderRecords(filters: OrderFilters = {}, take?: number
         ? {
             OR: [
               { reference: { contains: query, mode: "insensitive" } },
-              { customer: { name: { contains: query, mode: "insensitive" } } },
-              { customer: { whatsappNumber: { contains: query } } },
+              { customerNameSnapshot: { contains: query, mode: "insensitive" } },
+              { whatsappNumberSnapshot: { contains: query } },
+              {
+                customerNameSnapshot: null,
+                customer: {
+                  OR: [
+                    { name: { contains: query, mode: "insensitive" } },
+                    { whatsappNumber: { contains: query } },
+                  ],
+                },
+              },
             ],
           }
         : {}),
@@ -60,6 +82,8 @@ export async function listOrderRecords(filters: OrderFilters = {}, take?: number
       subtotalMinor: true,
       status: true,
       createdAt: true,
+      customerNameSnapshot: true,
+      whatsappNumberSnapshot: true,
       customer: { select: { name: true, whatsappNumber: true } },
       _count: { select: { items: true } },
     },
@@ -96,39 +120,17 @@ export async function createOrderWithStockDeduction(
       async (tx) => {
         const duplicate = await tx.order.findUnique({
           where: { submissionKey },
-          include: publicOrderInclude,
+          select: checkoutOrderSelect,
         });
         if (duplicate) {
           return { order: duplicate, duplicate: true };
         }
 
-        const variants = await tx.perfumeVariant.findMany({
-          where: {
-            id: { in: lines.map((line) => line.perfumeVariantId) },
-            perfume: { status: "PUBLISHED" },
-          },
-        });
-        if (variants.length !== lines.length) {
-          throw new OrderConflict("One or more perfumes are no longer available.");
+        const stock = await deductStockForOrder(tx, lines);
+        if ("error" in stock) {
+          throw new OrderConflict(stock.error);
         }
-
-        const byId = new Map(variants.map((variant) => [variant.id, variant]));
-        for (const line of lines) {
-          const updated = await tx.perfumeVariant.updateMany({
-            where: {
-              id: line.perfumeVariantId,
-              quantity: { gte: line.quantity },
-              perfume: { status: "PUBLISHED" },
-            },
-            data: { quantity: { decrement: line.quantity } },
-          });
-          if (updated.count !== 1) {
-            throw new OrderConflict(
-              "One or more perfumes are no longer available in the requested quantity.",
-            );
-          }
-        }
-
+        const byId = stock.variants;
         const subtotalMinor = lines.reduce(
           (total, line) => total + byId.get(line.perfumeVariantId)!.priceMinor * line.quantity,
           0,
@@ -142,9 +144,15 @@ export async function createOrderWithStockDeduction(
           deliveryAddress: input.deliveryAddress,
         });
         const complete = await tx.order.create({
-          include: publicOrderInclude,
+          select: checkoutOrderSelect,
           data: {
             customerId: customer.id,
+            customerNameSnapshot: input.customerName,
+            whatsappNumberSnapshot: input.whatsappNumber,
+            emailSnapshot: input.email ?? null,
+            deliveryStateSnapshot: input.deliveryState,
+            deliveryCitySnapshot: input.deliveryCity,
+            deliveryAddressSnapshot: input.deliveryAddress,
             reference: createReference(),
             confirmationToken: randomBytes(32).toString("base64url"),
             submissionKey,
@@ -152,11 +160,17 @@ export async function createOrderWithStockDeduction(
             subtotalMinor,
             status: "AWAITING_PAYMENT",
             items: {
-              create: lines.map((line) => ({
-                perfumeVariantId: line.perfumeVariantId,
-                quantity: line.quantity,
-                unitPriceMinor: byId.get(line.perfumeVariantId)!.priceMinor,
-              })),
+              create: lines.map(({ perfumeVariantId, quantity }) => {
+                const variant = byId.get(perfumeVariantId)!;
+                return {
+                  perfumeVariantId,
+                  quantity,
+                  unitPriceMinor: variant.priceMinor,
+                  perfumeNameSnapshot: variant.perfume.name,
+                  sizeValueSnapshot: variant.sizeValue,
+                  sizeUnitSnapshot: variant.sizeUnit,
+                };
+              }),
             },
             statusEvents: { create: { toStatus: "AWAITING_PAYMENT" } },
           },
@@ -174,7 +188,7 @@ export async function createOrderWithStockDeduction(
     ) {
       const duplicate = await prisma.order.findUnique({
         where: { submissionKey },
-        include: publicOrderInclude,
+        select: checkoutOrderSelect,
       });
       if (duplicate) {
         return { order: duplicate, duplicate: true };
@@ -243,14 +257,12 @@ export async function cancelOrderAndRestoreStock(reference: string) {
           (quantities.get(item.perfumeVariantId) ?? 0) + item.quantity,
         );
       }
-      for (const [id, quantity] of quantities) {
-        const restored = await tx.perfumeVariant.updateMany({
-          where: { id },
-          data: { quantity: { increment: quantity } },
-        });
-        if (restored.count !== 1) {
-          throw new OrderConflict("Unable to restore order stock.");
-        }
+      const restored = await restoreStockForOrder(
+        tx,
+        [...quantities].map(([perfumeVariantId, quantity]) => ({ perfumeVariantId, quantity })),
+      );
+      if (!restored) {
+        throw new OrderConflict("Unable to restore order stock.");
       }
       await tx.orderStatusEvent.create({
         data: { orderId: order.id, fromStatus: order.status, toStatus: "CANCELLED" },

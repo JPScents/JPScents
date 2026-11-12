@@ -186,6 +186,22 @@ function validateCi(logPath, head, artifactPath, mode = "quality") {
   return 0;
 }
 
+function validateBrowserEvidence(reportPath, head) {
+  const report = JSON.parse(readFileSync(reportPath, "utf8"));
+  if (
+    !/^[0-9a-f]{40}$/.test(head) ||
+    report?.head !== head ||
+    !Number.isInteger(report.expected) ||
+    report.expected < 3 ||
+    report.unexpected !== 0 ||
+    report.flaky !== 0 ||
+    report.skipped !== 0
+  ) {
+    throw new Error("Browser tests did not produce complete evidence for the candidate.");
+  }
+  return 0;
+}
+
 function validateCapture(directory) {
   const record = JSON.parse(readFileSync(join(directory, "verify.json"), "utf8"));
   const log = readFileSync(join(directory, "verify.log"));
@@ -250,8 +266,11 @@ function main([mode, ...args]) {
   if (mode === "validate-ci" && (args.length === 3 || args.length === 4)) {
     return validateCi(...args);
   }
+  if (mode === "validate-e2e" && args.length === 2) {
+    return validateBrowserEvidence(...args);
+  }
   throw new Error(
-    "Use snapshot <base>, capture <base> <evidence-dir>, validate <evidence-dir>, or validate-ci <log> <sha> <artifact> [quality|acceptance].",
+    "Use snapshot <base>, capture <base> <evidence-dir>, validate <evidence-dir>, or validate-ci <log> <sha> <artifact> [quality|acceptance], or validate-e2e <report> <sha>.",
   );
 }
 

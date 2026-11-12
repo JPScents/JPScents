@@ -67,6 +67,7 @@ const placedOrder = {
 };
 const adminOrder = {
   ...placedOrder,
+  legacy: false,
   customerName: "Amara Okafor",
   whatsappNumber: "2348012345678",
   email: null,

@@ -3,19 +3,34 @@ import "server-only";
 import { Prisma } from "@/db/generated/client";
 import { prisma } from "@/db/prisma";
 import type { VariantInput, VariantActionState } from "../types";
+import { lockPerfumeStock } from "./stock.repository";
 
 export async function saveVariantRecord(
   perfumeId: string,
   id: string | null,
   input: VariantInput,
+  expectedQuantity?: number,
 ): Promise<VariantActionState> {
   try {
     return await prisma.$transaction(async (tx) => {
+      await lockPerfumeStock(tx, [perfumeId]);
       const perfume = await tx.perfume.findUnique({ where: { id: perfumeId } });
       if (!perfume) {
         return { message: "Perfume not found." };
       }
-      if (perfume.isBestseller && input.quantity === 0) {
+      if (id && expectedQuantity !== undefined) {
+        const existing = await tx.perfumeVariant.findUnique({
+          where: { id },
+          select: { perfumeId: true, quantity: true },
+        });
+        if (!existing || existing.perfumeId !== perfumeId) {
+          return { message: "Variant not found." };
+        }
+        if (existing.quantity !== expectedQuantity) {
+          return { message: "Stock changed since this form was opened. Refresh and try again." };
+        }
+      }
+      if (perfume.isBestseller && (!id || expectedQuantity !== undefined) && input.quantity === 0) {
         const otherStock = await tx.perfumeVariant.count({
           where: {
             perfumeId,
@@ -31,16 +46,23 @@ export async function saveVariantRecord(
         }
       }
       if (id) {
-        const existing = await tx.perfumeVariant.findUnique({
-          where: { id },
-          select: { perfumeId: true },
+        const updated = await tx.perfumeVariant.updateMany({
+          where: { id, perfumeId, quantity: expectedQuantity },
+          data: {
+            sizeValue: input.sizeValue,
+            priceMinor: input.priceMinor,
+            sizeUnit: "ML",
+            quantity: expectedQuantity === undefined ? undefined : input.quantity,
+          },
         });
-        if (!existing || existing.perfumeId !== perfumeId) {
-          return { message: "Variant not found." };
+        if (updated.count !== 1) {
+          return {
+            message:
+              expectedQuantity === undefined
+                ? "Variant not found."
+                : "Stock changed since this form was opened. Refresh and try again.",
+          };
         }
-      }
-      if (id) {
-        await tx.perfumeVariant.update({ where: { id }, data: { ...input, sizeUnit: "ML" } });
       } else {
         await tx.perfumeVariant.create({ data: { perfumeId, ...input, sizeUnit: "ML" } });
       }
@@ -61,6 +83,7 @@ export async function deleteVariantRecord(
 ): Promise<VariantActionState> {
   try {
     return await prisma.$transaction(async (tx) => {
+      await lockPerfumeStock(tx, [perfumeId]);
       const variant = await tx.perfumeVariant.findUnique({
         where: { id },
         include: { orderItems: { take: 1 }, perfume: true },

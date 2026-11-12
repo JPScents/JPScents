@@ -23,12 +23,23 @@ export async function saveVariant(
   if (!input) {
     return { errors };
   }
-  const id = formData.get("id");
-  const result = await saveVariantRecord(
-    perfumeId,
-    typeof id === "string" && id ? id : null,
-    input,
-  );
+  const rawId = formData.get("id");
+  const id = typeof rawId === "string" && rawId ? rawId : null;
+  const original = formData.get("originalQuantity");
+  let expectedQuantity: number | undefined;
+  if (id) {
+    if (
+      typeof original !== "string" ||
+      !/^\d+$/.test(original) ||
+      !Number.isSafeInteger(Number(original))
+    ) {
+      return { message: "Refresh the variant before editing it." };
+    }
+    if (input.quantity !== Number(original)) {
+      expectedQuantity = Number(original);
+    }
+  }
+  const result = await saveVariantRecord(perfumeId, id, input, expectedQuantity);
   if (!result.ok) {
     return result;
   }

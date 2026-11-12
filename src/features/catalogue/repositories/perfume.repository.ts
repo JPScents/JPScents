@@ -4,6 +4,7 @@ import { prisma } from "@/db/prisma";
 import { getPublishingErrors } from "../validators/publishing.validator";
 import type { CatalogueFilters, PerfumeInput, PerfumeActionState, VariantInput } from "../types";
 import { scentCharacters } from "../constants/catalogue";
+import { lockPerfumeStock } from "./stock.repository";
 
 const details = {
   images: { orderBy: { position: "asc" } },
@@ -140,6 +141,7 @@ export async function listPublishedPerfumeSitemapEntries() {
 export async function setBestsellerRecord(perfumeId: string | null) {
   try {
     return await prisma.$transaction(async (tx) => {
+      await lockPerfumeStock(tx, perfumeId ? [perfumeId] : [], true);
       if (perfumeId) {
         const eligible = await tx.perfume.findFirst({
           where: {

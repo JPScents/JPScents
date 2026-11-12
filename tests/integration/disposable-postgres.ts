@@ -11,7 +11,7 @@ const POSTGRES_USER = "jpscents_test";
 const POSTGRES_PORT = "5432";
 export const APPLICATION_NAME = "jpscents_integration_app";
 
-export function startDisposablePostgres() {
+export function startDisposablePostgres({ replayMigrations = true } = {}) {
   for (const name of ["DATABASE_URL", "DIRECT_URL", "APP_ENV_FILE"]) {
     if (Object.hasOwn(process.env, name)) {
       throw new Error(`Unset ${name} before running the disposable PostgreSQL suite.`);
@@ -88,15 +88,17 @@ export function startDisposablePostgres() {
     }
 
     sql(["--single-transaction", "--file", prerequisites]);
-    const migrationDirectories = readdirSync(migrations, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => entry.name)
-      .sort();
-    if (migrationDirectories.length === 0) {
-      throw new Error("No application migrations found.");
-    }
-    for (const migration of migrationDirectories) {
-      sql(["--single-transaction", "--file", join(migrations, migration, "migration.sql")]);
+    if (replayMigrations) {
+      const migrationDirectories = readdirSync(migrations, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => entry.name)
+        .sort();
+      if (migrationDirectories.length === 0) {
+        throw new Error("No application migrations found.");
+      }
+      for (const migration of migrationDirectories) {
+        sql(["--single-transaction", "--file", join(migrations, migration, "migration.sql")]);
+      }
     }
 
     const url = new URL(`postgresql://${POSTGRES_USER}@localhost:${POSTGRES_PORT}/postgres`);

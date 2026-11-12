@@ -47,15 +47,19 @@ function verificationReport(mode: Mode) {
   };
 }
 
-function runQualityStep(mode: Mode, verifierOutput: string, verifierExit = 0) {
+function workflowStep(name: string) {
   const workflow = readFileSync(join(root, ".github/workflows/quality.yml"), "utf8");
-  const step = workflow.match(
-    /^      - name: Run canonical quality verification\n        shell: bash\n        run: \|\n((?:^ {10}.*\n|^\n)+)/m,
-  );
-  if (!step) {
-    throw new Error("Could not locate the canonical quality shell step.");
+  const steps = workflow.split(/^      - name: /m);
+  const step = steps.find((section) => section.startsWith(name + "\n"));
+  const shell = step?.match(/^        run: \|\n((?:^ {10}.*\n|^\n)+)/m)?.[1];
+  if (!shell) {
+    throw new Error(`Could not locate workflow step: ${name}.`);
   }
-  const shell = step[1].replace(/^ {10}/gm, "");
+  return shell.replace(/^ {10}/gm, "");
+}
+
+function runQualityStep(mode: Mode, verifierOutput: string, verifierExit = 0) {
+  const shell = workflowStep("Run canonical quality verification");
   const directory = mkdtempSync(join(tmpdir(), "jpscents-ci-quality-"));
   try {
     const evidence = join(directory, "quality-evidence");
@@ -167,5 +171,54 @@ describe.each(["quality", "acceptance"] as const)("%s workflow evidence", (mode)
     expect(result.exit).toBe(7);
     expect(result.context).toContain(`${artifactName}_exit=7\n`);
     expect(result.artifact).toBeNull();
+  });
+});
+
+describe("browser workflow evidence", () => {
+  const pass = { head: candidateSha, expected: 3, unexpected: 0, flaky: 0, skipped: 0 };
+  it.each([
+    ["all cases passed", pass, 0, 0],
+    ["missing report", null, 0, 1],
+    ["empty suite", { ...pass, expected: 0 }, 0, 1],
+    ["skipped case", { ...pass, skipped: 1 }, 0, 1],
+    ["wrong candidate", { ...pass, head: "b".repeat(40) }, 0, 1],
+    ["non-zero browser exit", pass, 7, 7],
+  ] as const)("%s", (_name, report, browserExit, expectedExit) => {
+    const directory = mkdtempSync(join(tmpdir(), "jpscents-ci-browser-"));
+    try {
+      mkdirSync(join(directory, "quality-evidence"));
+      if (report) {
+        writeFileSync(join(directory, "fixture.json"), JSON.stringify(report));
+      }
+      writeFileSync(
+        join(directory, "npm"),
+        `#!/bin/sh\n[ "$*" = 'run test:e2e' ] || exit 99\nif [ -f "$RUNNER_TEMP/fixture.json" ]; then cp "$RUNNER_TEMP/fixture.json" "$JP_E2E_EVIDENCE_PATH"; fi\nexit ${browserExit}\n`,
+        { mode: 0o700 },
+      );
+      const result = spawnSync(
+        "bash",
+        [
+          "--noprofile",
+          "--norc",
+          "-e",
+          "-o",
+          "pipefail",
+          "-c",
+          workflowStep("Run browser end-to-end tests"),
+        ],
+        {
+          cwd: root,
+          env: {
+            NODE_ENV: "test",
+            PATH: [directory, dirname(process.execPath), "/usr/bin", "/bin"].join(delimiter),
+            GITHUB_SHA: candidateSha,
+            RUNNER_TEMP: directory,
+          },
+        },
+      );
+      expect(result.status).toBe(expectedExit);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 });

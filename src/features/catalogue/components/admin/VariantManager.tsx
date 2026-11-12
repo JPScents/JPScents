@@ -127,6 +127,9 @@ export function VariantManager({
         <form action={action} className="grid gap-4">
           <input type="hidden" name="perfumeId" value={perfumeId} />
           {editing ? <input type="hidden" name="id" value={editing.id} /> : null}
+          {editing ? (
+            <input type="hidden" name="originalQuantity" value={editing.quantity} />
+          ) : null}
           <VariantField label="Size (mL)" error={state.errors?.sizeValue}>
             <input
               name="sizeValue"

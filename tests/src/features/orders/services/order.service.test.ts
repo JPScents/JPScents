@@ -35,6 +35,8 @@ vi.mock("@/db/prisma", () => ({
       mocks.transactionActive = true;
       try {
         return await callback({
+          $queryRaw: vi.fn().mockResolvedValue([]),
+          perfume: { updateMany: vi.fn().mockResolvedValue({ count: 0 }) },
           order: {
             findUnique: mocks.orderFindUnique,
             create: mocks.orderCreate,
@@ -139,7 +141,14 @@ describe("orders", () => {
     mocks.customerFindUnique.mockResolvedValue(null);
     mocks.customerCreate.mockResolvedValue(customer);
     mocks.variantFindMany.mockResolvedValue([
-      { id, priceMinor: 120000, sizeValue: 50, sizeUnit: "ML" },
+      {
+        id,
+        perfumeId: "perfume",
+        priceMinor: 120000,
+        sizeValue: 50,
+        sizeUnit: "ML",
+        perfume: { name: "Quiet Fig" },
+      },
     ]);
     mocks.variantUpdateMany.mockResolvedValue({ count: 1 });
     mocks.orderUpdateMany.mockResolvedValue({ count: 1 });
@@ -194,7 +203,18 @@ describe("orders", () => {
           customerId: "customer",
           subtotalMinor: 120000,
           status: "AWAITING_PAYMENT",
-          items: { create: [{ perfumeVariantId: id, quantity: 1, unitPriceMinor: 120000 }] },
+          items: {
+            create: [
+              {
+                perfumeVariantId: id,
+                quantity: 1,
+                unitPriceMinor: 120000,
+                perfumeNameSnapshot: "Quiet Fig",
+                sizeValueSnapshot: 50,
+                sizeUnitSnapshot: "ML",
+              },
+            ],
+          },
           statusEvents: { create: { toStatus: "AWAITING_PAYMENT" } },
         }),
       }),
@@ -266,8 +286,9 @@ describe("orders", () => {
     expect(confirmation).not.toHaveProperty("confirmationToken");
     expect(confirmation).not.toHaveProperty("submissionKey");
     const confirmationQuery = mocks.orderFindUnique.mock.calls.at(-1)?.[0];
-    expect(confirmationQuery.include).not.toHaveProperty("customer");
-    expect(confirmationQuery.include).not.toHaveProperty("statusEvents");
+    expect(confirmationQuery.select).not.toHaveProperty("customer");
+    expect(confirmationQuery.select).not.toHaveProperty("statusEvents");
+    expect(confirmationQuery.select).not.toHaveProperty("deliveryAddressSnapshot");
 
     const adminOrder = await getOrderByReference("JP-ABC");
     expect(adminOrder).toMatchObject({ customerName: "Ada", whatsappNumber: "2348031234567" });
