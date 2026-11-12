@@ -1,4 +1,4 @@
-export { CartProvider, useCart } from "./CartProvider";
+export { CartProvider, useCart } from "./providers/CartProvider";
 export { CartPreview } from "./components/CartPreview";
 export { CartButton } from "./components/CartButton";
 export { CartItem } from "./components/CartItem";

@@ -14,14 +14,16 @@ import {
 } from "@/components/ui/dialog";
 import { siteConfig } from "@/config/site";
 
-import { useCart } from "../CartProvider";
+import { useCart } from "../providers/CartProvider";
 import { CartItem } from "./CartItem";
 import { CartCheckoutSummary } from "./CartCheckoutSummary";
 
 function useDesktopViewport() {
   return useSyncExternalStore(
     (notify) => {
-      if (!window.matchMedia) return () => undefined;
+      if (!window.matchMedia) {
+        return () => undefined;
+      }
       const query = window.matchMedia("(min-width: 1024px)");
       query.addEventListener("change", notify);
       return () => query.removeEventListener("change", notify);
@@ -42,7 +44,9 @@ export function CartPreview() {
       focusBeforeOpen.current =
         document.activeElement instanceof HTMLElement ? document.activeElement : null;
     }
-    if (wasOpen.current && !isOpen) focusBeforeOpen.current?.focus();
+    if (wasOpen.current && !isOpen) {
+      focusBeforeOpen.current?.focus();
+    }
     wasOpen.current = isOpen;
   }, [isOpen]);
   return (

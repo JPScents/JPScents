@@ -9,20 +9,17 @@ import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 export function ProductPreview({
   open,
   onOpenChange,
-  form,
+  perfume,
   imageUrl,
   variants,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  form: React.RefObject<HTMLFormElement | null>;
+  perfume: { name: string; scentCue: string; primaryImageAlt: string };
   imageUrl?: string;
   variants: Array<{ priceMinor: number; quantity: number }>;
 }) {
   const [compact, setCompact] = useState(false);
-  const input = (name: string) =>
-    (form.current?.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | null)
-      ?.value ?? "";
   const available = variants.some((variant) => variant.quantity > 0);
   const startingPrice = variants.length
     ? Math.min(...variants.map((variant) => variant.priceMinor))
@@ -56,7 +53,7 @@ export function ProductPreview({
             <Image
               unoptimized
               src={imageUrl}
-              alt={input("primaryImageAlt") || `${input("name") || "Perfume"} bottle`}
+              alt={perfume.primaryImageAlt || `${perfume.name || "Perfume"} bottle`}
               width={600}
               height={600}
               className="h-full w-full object-contain"
@@ -69,9 +66,9 @@ export function ProductPreview({
           <p className="text-[11px] uppercase tracking-[.14em] text-jp-text-secondary">
             {available ? "Available" : "Unavailable"}
           </p>
-          <h2 className="font-display text-3xl">{input("name") || "Untitled perfume"}</h2>
+          <h2 className="font-display text-3xl">{perfume.name || "Untitled perfume"}</h2>
           <p className="mt-1 text-sm text-jp-text-secondary">
-            {input("scentCue") || "A short scent cue will appear here."}
+            {perfume.scentCue || "A short scent cue will appear here."}
           </p>
           <p className="mt-3 text-sm font-semibold">
             {variants.length

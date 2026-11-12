@@ -9,10 +9,8 @@ import type { OrderStatus } from "@/db/generated/client";
 import { formatEnumLabel } from "@/shared/utils/format-enum-label";
 
 import { deleteCustomerAdmin } from "../../actions/delete-customer.admin.action";
-import {
-  saveCustomerAdmin,
-  type CustomerActionState,
-} from "../../actions/save-customer.admin.action";
+import { saveCustomerAdmin } from "../../actions/save-customer.admin.action";
+import type { CustomerActionState } from "../../types";
 
 type CustomerEditorRecord = {
   id: string;
@@ -93,6 +91,7 @@ export function CustomerEditor({ customer }: { customer?: CustomerEditorRecord }
       ) : null}
       <form
         action={action}
+        onReset={(event) => event.preventDefault()}
         className="mt-8 grid gap-5 border bg-jp-admin-surface p-5 sm:grid-cols-2"
       >
         <input name="id" type="hidden" value={customer?.id ?? ""} />
@@ -178,7 +177,9 @@ export function CustomerEditor({ customer }: { customer?: CustomerEditorRecord }
       <ModalShell
         open={deleteOpen}
         onOpenChange={(open) => {
-          if (!deleting) setDeleteOpen(open);
+          if (!deleting) {
+            setDeleteOpen(open);
+          }
         }}
         title="Delete this customer?"
         description="This customer has no orders. Deleting the record cannot be undone."

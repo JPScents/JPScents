@@ -7,7 +7,7 @@ import type { CustomerInput } from "../types";
 
 export type CustomerTransaction = Pick<Prisma.TransactionClient, "customer">;
 
-export async function findCustomersForCheckout(tx: CustomerTransaction, input: CustomerInput) {
+async function findCustomersForCheckout(tx: CustomerTransaction, input: CustomerInput) {
   const [customerByWhatsapp, customerByEmail] = await Promise.all([
     tx.customer.findUnique({ where: { whatsappNumber: input.whatsappNumber } }),
     input.email ? tx.customer.findUnique({ where: { email: input.email } }) : null,
@@ -15,33 +15,11 @@ export async function findCustomersForCheckout(tx: CustomerTransaction, input: C
   return { customerByWhatsapp, customerByEmail };
 }
 
-export function createCustomer(tx: CustomerTransaction, input: CustomerInput) {
-  return tx.customer.create({ data: input });
-}
-
-export function updateCustomerForCheckout(
-  tx: CustomerTransaction,
-  customerId: string,
-  input: CustomerInput,
-  existingEmail: string | null,
-) {
-  return tx.customer.update({
-    where: { id: customerId },
-    data: {
-      name: input.name,
-      email: input.email ?? existingEmail,
-      deliveryState: input.deliveryState,
-      deliveryCity: input.deliveryCity,
-      deliveryAddress: input.deliveryAddress,
-    },
-  });
-}
-
 const cleanQuery = (value: string | undefined) => value?.trim().slice(0, 120) ?? "";
 
-export function listCustomerRecords(query?: string) {
+export async function listCustomerRecords(query?: string) {
   const value = cleanQuery(query);
-  return prisma.customer.findMany({
+  return await prisma.customer.findMany({
     where: value
       ? {
           OR: [
@@ -51,25 +29,44 @@ export function listCustomerRecords(query?: string) {
           ],
         }
       : undefined,
-    include: { _count: { select: { orders: true } } },
+    select: {
+      id: true,
+      name: true,
+      whatsappNumber: true,
+      email: true,
+      _count: { select: { orders: true } },
+    },
     orderBy: { updatedAt: "desc" },
   });
 }
 
-export function findCustomerRecord(id: string) {
-  return prisma.customer.findUnique({
+export async function findCustomerRecord(id: string) {
+  return await prisma.customer.findUnique({
     where: { id },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      whatsappNumber: true,
+      email: true,
+      deliveryState: true,
+      deliveryCity: true,
+      deliveryAddress: true,
       orders: {
-        include: { _count: { select: { items: true } } },
+        select: {
+          reference: true,
+          status: true,
+          subtotalMinor: true,
+          createdAt: true,
+          _count: { select: { items: true } },
+        },
         orderBy: { createdAt: "desc" },
       },
     },
   });
 }
 
-export function findCustomerContactConflict(id: string | undefined, input: CustomerInput) {
-  return prisma.customer.findFirst({
+async function findCustomerContactConflict(id: string | undefined, input: CustomerInput) {
+  return await prisma.customer.findFirst({
     where: {
       OR: [
         { whatsappNumber: input.whatsappNumber },
@@ -80,19 +77,87 @@ export function findCustomerContactConflict(id: string | undefined, input: Custo
   });
 }
 
-export function saveCustomerRecord(id: string | undefined, input: CustomerInput) {
-  return id
-    ? prisma.customer.update({ where: { id }, data: input })
-    : prisma.customer.create({ data: input });
+export class CustomerIdentityConflict extends Error {
+  constructor() {
+    super(
+      "The WhatsApp number and email belong to different customers. Review the customer record before placing this order.",
+    );
+  }
 }
 
-export function findCustomerForDeletion(id: string) {
-  return prisma.customer.findUnique({
-    where: { id },
-    include: { _count: { select: { orders: true } } },
+export async function resolveCustomerForOrder(tx: CustomerTransaction, input: CustomerInput) {
+  const { customerByWhatsapp, customerByEmail } = await findCustomersForCheckout(tx, input);
+  if (
+    (customerByWhatsapp && customerByEmail && customerByWhatsapp.id !== customerByEmail.id) ||
+    (!customerByWhatsapp &&
+      customerByEmail &&
+      customerByEmail.whatsappNumber !== input.whatsappNumber)
+  ) {
+    throw new CustomerIdentityConflict();
+  }
+  const customer = customerByWhatsapp ?? customerByEmail;
+  if (!customer) {
+    return await tx.customer.create({ data: input });
+  }
+  return await tx.customer.update({
+    where: { id: customer.id },
+    data: {
+      name: input.name,
+      email: input.email ?? customer.email,
+      deliveryState: input.deliveryState,
+      deliveryCity: input.deliveryCity,
+      deliveryAddress: input.deliveryAddress,
+    },
   });
 }
 
-export function deleteCustomerRecord(id: string) {
-  return prisma.customer.delete({ where: { id } });
+export async function saveCustomer(id: string | undefined, input: CustomerInput) {
+  if (await findCustomerContactConflict(id, input)) {
+    return {
+      errors: {
+        form: "That WhatsApp number or email already belongs to another customer.",
+      },
+    } as const;
+  }
+  try {
+    return {
+      customer: await (id
+        ? prisma.customer.update({ where: { id }, data: input })
+        : prisma.customer.create({ data: input })),
+    } as const;
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return {
+        errors: {
+          form: "That WhatsApp number or email already belongs to another customer.",
+        },
+      } as const;
+    }
+    console.error("[customers] save failed", {
+      name: error instanceof Error ? error.name : "UnknownError",
+    });
+    return { errors: { form: "Unable to save this customer." } } as const;
+  }
+}
+
+export async function removeCustomer(id: string) {
+  const customer = await prisma.customer.findUnique({
+    where: { id },
+    select: { _count: { select: { orders: true } } },
+  });
+  if (!customer) {
+    return { error: "Customer not found." } as const;
+  }
+  if (customer._count.orders) {
+    return { error: "Customers with order history cannot be deleted." } as const;
+  }
+  try {
+    await prisma.customer.delete({ where: { id } });
+    return { ok: true } as const;
+  } catch (error) {
+    console.error("[customers] delete failed", {
+      name: error instanceof Error ? error.name : "UnknownError",
+    });
+    return { error: "Unable to delete this customer." } as const;
+  }
 }

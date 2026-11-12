@@ -5,7 +5,7 @@ import Link from "next/link";
 import { siteConfig } from "@/config/site";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 
-import { useCart } from "../CartProvider";
+import { useCart } from "../providers/CartProvider";
 
 export function CartCheckoutSummary({ preview = false }: { preview?: boolean }) {
   const { count, subtotalMinor, hasInvalidLines, resolutionState, setOpen, refreshCart } =

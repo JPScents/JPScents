@@ -1,4 +1,5 @@
-import { AdminOrderDetail, getOrderByReference } from "@/features/orders";
+import { AdminOrderDetail } from "@/features/orders/client";
+import { getOrderByReference } from "@/features/orders/server";
 
 export default async function AdminOrderPage({
   params,

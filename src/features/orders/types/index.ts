@@ -26,10 +26,28 @@ export type PublicOrder = {
   subtotalMinor: number;
   status: OrderStatus;
   createdAt: Date;
+  usesCurrentCatalogueDetails: boolean;
   items: OrderLine[];
 };
 
-export type OrderRow = {
+export type AdminOrder = PublicOrder & {
+  legacy: boolean;
+  customerName: string;
+  whatsappNumber: string;
+  email: string | null;
+  deliveryState: string;
+  deliveryCity: string;
+  deliveryAddress: string;
+  orderNote: string | null;
+  events: Array<{
+    id: string;
+    fromStatus: OrderStatus | null;
+    toStatus: OrderStatus;
+    createdAt: Date;
+  }>;
+};
+
+export type AdminOrderRow = {
   reference: string;
   customerName: string;
   whatsappNumber: string;
@@ -37,4 +55,23 @@ export type OrderRow = {
   status: OrderStatus;
   createdAt: Date;
   itemCount: number;
+};
+
+export type CheckoutForm = Required<CheckoutInput> & { customCity: string };
+
+export type CheckoutCart = {
+  items: OrderCartLine[];
+  lines: Array<{
+    perfumeVariantId: string;
+    requestedQuantity: number;
+    name?: string;
+    sizeLabel?: string;
+    unitPriceMinor?: number;
+    lineAmountMinor: number;
+    imageUrl?: string;
+    isValid: boolean;
+  }>;
+  subtotalMinor: number;
+  hasInvalidLines: boolean;
+  clearCart: () => void;
 };

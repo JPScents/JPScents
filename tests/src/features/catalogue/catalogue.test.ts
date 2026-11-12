@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { parsePerfumeForm } from "@/features/catalogue/parsers/perfume-form.parser";
 import { parseStagedVariants } from "@/features/catalogue/parsers/staged-variants-form.parser";
 import { parseVariantForm } from "@/features/catalogue/parsers/variant-form.parser";
-import { parseNairaToMinor } from "@/features/catalogue/utils/price.utils";
-import { normalizeSizeValue } from "@/features/catalogue/utils/size.utils";
+import { parseNairaToMinor } from "@/features/catalogue/utils/price";
+import { normalizeSizeValue } from "@/features/catalogue/utils/size";
 import { getPublishingErrors } from "@/features/catalogue/validators/publishing.validator";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 

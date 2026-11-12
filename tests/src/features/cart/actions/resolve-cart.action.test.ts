@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { lookup, imageUrl } = vi.hoisted(() => ({ lookup: vi.fn(), imageUrl: vi.fn() }));
-vi.mock("@/features/catalogue", () => ({ getPublishedVariantsByIds: lookup }));
+vi.mock("@/features/catalogue/server", () => ({ getPublishedVariantsByIds: lookup }));
 vi.mock("@/lib/supabase/storage", () => ({ getPerfumeImageUrl: imageUrl }));
 
 import { resolveCart } from "@/features/cart/actions/resolve-cart.action";

@@ -4,7 +4,7 @@ import { getCurrentAdmin } from "@/lib/auth/admin";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 
-import { LoginForm } from "./LoginForm";
+import { LoginForm } from "./_components/LoginForm";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -16,7 +16,9 @@ export default async function AdminLoginPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  if (await getCurrentAdmin()) redirect(siteConfig.routes.admin);
+  if (await getCurrentAdmin()) {
+    redirect(siteConfig.routes.admin);
+  }
   const { error } = await searchParams;
 
   return (

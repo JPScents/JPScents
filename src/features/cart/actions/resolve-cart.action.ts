@@ -1,7 +1,7 @@
 "use server";
 
 import { commerceConfig } from "@/config/commerce";
-import { getPublishedVariantsByIds } from "@/features/catalogue";
+import { getPublishedVariantsByIds } from "@/features/catalogue/server";
 import { getPerfumeImageUrl } from "@/lib/supabase/storage";
 
 import type { CartRequestLine, ResolvedCartLine } from "../types";
@@ -9,11 +9,15 @@ import type { CartRequestLine, ResolvedCartLine } from "../types";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function parseRequestedItems(value: unknown): CartRequestLine[] {
-  if (!Array.isArray(value)) throw new Error("Cart items must be an array.");
+  if (!Array.isArray(value)) {
+    throw new Error("Cart items must be an array.");
+  }
 
   const quantities = new Map<string, number>();
   for (const item of value) {
-    if (!item || typeof item !== "object") throw new Error("Invalid cart item.");
+    if (!item || typeof item !== "object") {
+      throw new Error("Invalid cart item.");
+    }
     const { perfumeVariantId, quantity } = item as Partial<CartRequestLine>;
     if (
       typeof perfumeVariantId !== "string" ||
@@ -25,7 +29,9 @@ function parseRequestedItems(value: unknown): CartRequestLine[] {
       throw new Error("Cart items require a variant ID and a positive whole quantity.");
     }
     const total = (quantities.get(perfumeVariantId) ?? 0) + quantity;
-    if (!Number.isSafeInteger(total)) throw new Error("Invalid cart quantity.");
+    if (!Number.isSafeInteger(total)) {
+      throw new Error("Invalid cart quantity.");
+    }
     quantities.set(perfumeVariantId, total);
   }
 

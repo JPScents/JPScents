@@ -1,18 +1,14 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { usePerfumeEditor } from "../../hooks/usePerfumeEditor";
 import Image from "next/image";
-import { occasions, scentCharacters, timesOfDay } from "../../constants";
-import { parseNairaToMinor } from "../../utils/price.utils";
-import { savePerfume, type PerfumeActionState } from "../../actions/save-perfume.admin.action";
+import { occasions, scentCharacters, timesOfDay } from "../../constants/catalogue";
 import { PrimaryImageManager } from "./PrimaryImageManager";
 import { ProductPreview } from "./ProductPreview";
 import { StagedVariantManager } from "./StagedVariantManager";
 import { VariantManager } from "./VariantManager";
+import type { AdminPerfume } from "../../types";
 
-type Perfume = NonNullable<Awaited<ReturnType<typeof import("../../catalogue").getAdminPerfume>>>;
-type StagedVariant = { sizeValue: string; price: string; quantity: string };
-const initial: PerfumeActionState = {};
 const labels: Record<string, string> = {
   FRESH: "Fresh",
   WARM: "Warm",
@@ -25,15 +21,6 @@ const labels: Record<string, string> = {
   DAY: "Day",
   NIGHT: "Night",
 };
-
-function slugFromName(name: string) {
-  return name
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
 
 function SelectionChip({
   checked,
@@ -145,54 +132,44 @@ function Field({
   );
 }
 
-export function PerfumeEditor({ perfume }: { perfume?: Perfume }) {
+export function PerfumeEditor({ perfume }: { perfume?: AdminPerfume }) {
   const formId = "perfume-editor-form";
-  const [state, action, pending] = useActionState(savePerfume, initial);
-  const formRef = useRef<HTMLFormElement>(null);
-  const [dirty, setDirty] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [stagedVariants, setStagedVariants] = useState<StagedVariant[]>([]);
-  const [imagePreview, setImagePreview] = useState<string>();
-  const [name, setName] = useState(perfume?.name ?? "");
-  const [slug, setSlug] = useState(perfume?.slug ?? "");
-  const [scentCue, setScentCue] = useState(perfume?.scentCue ?? "");
-  const [description, setDescription] = useState(perfume?.description ?? "");
-  const [status, setStatus] = useState(perfume?.status ?? "PUBLISHED");
-  const [isFeatured, setIsFeatured] = useState(perfume?.isFeatured ?? false);
-  const [scentCharacterValues, setScentCharacterValues] = useState(perfume?.scentCharacters ?? []);
-  const [occasionValues, setOccasionValues] = useState(perfume?.occasions ?? []);
-  const [timeOfDayValues, setTimeOfDayValues] = useState(perfume?.timesOfDay ?? []);
-  const [primaryImageAlt, setPrimaryImageAlt] = useState("");
-  const [slugEdited, setSlugEdited] = useState(Boolean(perfume));
-  const [restoreVersion, setRestoreVersion] = useState(0);
-  useEffect(() => {
-    const preventUnload = (event: BeforeUnloadEvent) => {
-      if (dirty) event.preventDefault();
-    };
-    window.addEventListener("beforeunload", preventUnload);
-    return () => window.removeEventListener("beforeunload", preventUnload);
-  }, [dirty]);
-  useEffect(
-    () => () => {
-      if (imagePreview) URL.revokeObjectURL(imagePreview);
-    },
-    [imagePreview],
-  );
-  useEffect(() => {
-    if (state.errors || state.message) {
-      queueMicrotask(() => setRestoreVersion((version) => version + 1));
-    }
-  }, [state.errors, state.message]);
-  const toggle = <T extends string>(values: T[], value: T) =>
-    values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
+  const {
+    state,
+    action,
+    pending,
+    form,
+    update,
+    updateName,
+    updateSlug,
+    toggleChoice,
+    previewOpen,
+    setPreviewOpen,
+    stagedVariants,
+    setStagedVariants,
+    imagePreview,
+    setImagePreview,
+    restoreVersion,
+    markDirty,
+    previewVariants,
+  } = usePerfumeEditor(perfume);
+  const {
+    name,
+    slug,
+    scentCue,
+    description,
+    status,
+    isFeatured,
+    scentCharacters: scentCharacterValues,
+    occasions: occasionValues,
+    timesOfDay: timeOfDayValues,
+    primaryImageAlt,
+  } = form;
 
   return (
     <div className="max-w-6xl">
-      <div
-        onChange={() => setDirty(true)}
-        className="border border-jp-admin-border bg-jp-admin-surface"
-      >
-        <form ref={formRef} action={action} id={formId} onReset={(event) => event.preventDefault()}>
+      <div onChange={markDirty} className="border border-jp-admin-border bg-jp-admin-surface">
+        <form action={action} id={formId} onReset={(event) => event.preventDefault()}>
           <input type="hidden" name="id" value={perfume?.id ?? ""} />
           <input type="hidden" name="stagedVariants" value={JSON.stringify(stagedVariants)} />
         </form>
@@ -236,9 +213,7 @@ export function PerfumeEditor({ perfume }: { perfume?: Perfume }) {
                       required
                       value={name}
                       onChange={(event) => {
-                        const nextName = event.target.value;
-                        setName(nextName);
-                        if (!perfume && !slugEdited) setSlug(slugFromName(nextName));
+                        updateName(event.target.value);
                       }}
                       className="h-10 border border-jp-admin-border bg-white px-3"
                     />
@@ -254,8 +229,7 @@ export function PerfumeEditor({ perfume }: { perfume?: Perfume }) {
                       required
                       value={slug}
                       onChange={(event) => {
-                        setSlugEdited(true);
-                        setSlug(event.target.value);
+                        updateSlug(event.target.value);
                       }}
                       className="h-10 border border-jp-admin-border bg-white px-3"
                     />
@@ -270,7 +244,7 @@ export function PerfumeEditor({ perfume }: { perfume?: Perfume }) {
                     form={formId}
                     name="scentCue"
                     value={scentCue}
-                    onChange={(event) => setScentCue(event.target.value)}
+                    onChange={(event) => update("scentCue", event.target.value)}
                     className="h-10 border border-jp-admin-border bg-white px-3"
                   />
                 </Field>
@@ -283,7 +257,7 @@ export function PerfumeEditor({ perfume }: { perfume?: Perfume }) {
                     form={formId}
                     name="description"
                     value={description}
-                    onChange={(event) => setDescription(event.target.value)}
+                    onChange={(event) => update("description", event.target.value)}
                     className="min-h-19 border border-jp-admin-border bg-white p-3"
                   />
                 </Field>
@@ -297,7 +271,7 @@ export function PerfumeEditor({ perfume }: { perfume?: Perfume }) {
                   type="checkbox"
                   value="on"
                   checked={isFeatured}
-                  onChange={(event) => setIsFeatured(event.currentTarget.checked)}
+                  onChange={(event) => update("isFeatured", event.currentTarget.checked)}
                   className="peer sr-only"
                 />
                 <span>
@@ -316,7 +290,7 @@ export function PerfumeEditor({ perfume }: { perfume?: Perfume }) {
                   checked={status === "PUBLISHED"}
                   className="peer sr-only"
                   onChange={(event) =>
-                    setStatus(event.currentTarget.checked ? "PUBLISHED" : "DRAFT")
+                    update("status", event.currentTarget.checked ? "PUBLISHED" : "DRAFT")
                   }
                   type="checkbox"
                 />
@@ -341,11 +315,7 @@ export function PerfumeEditor({ perfume }: { perfume?: Perfume }) {
                   options={scentCharacters}
                   selected={scentCharacterValues}
                   resetKey={restoreVersion}
-                  onToggle={(value) =>
-                    setScentCharacterValues((values) =>
-                      toggle(values, value as (typeof values)[number]),
-                    )
-                  }
+                  onToggle={(value) => toggleChoice("scentCharacters", value)}
                   error={state.errors?.scentCharacters}
                 />
                 <ChoiceGroup
@@ -355,9 +325,7 @@ export function PerfumeEditor({ perfume }: { perfume?: Perfume }) {
                   options={occasions}
                   selected={occasionValues}
                   resetKey={restoreVersion}
-                  onToggle={(value) =>
-                    setOccasionValues((values) => toggle(values, value as (typeof values)[number]))
-                  }
+                  onToggle={(value) => toggleChoice("occasions", value)}
                   error={state.errors?.occasions}
                 />
                 <ChoiceGroup
@@ -367,9 +335,7 @@ export function PerfumeEditor({ perfume }: { perfume?: Perfume }) {
                   options={timesOfDay}
                   selected={timeOfDayValues}
                   resetKey={restoreVersion}
-                  onToggle={(value) =>
-                    setTimeOfDayValues((values) => toggle(values, value as (typeof values)[number]))
-                  }
+                  onToggle={(value) => toggleChoice("timesOfDay", value)}
                   error={state.errors?.timesOfDay}
                 />
               </section>
@@ -389,7 +355,7 @@ export function PerfumeEditor({ perfume }: { perfume?: Perfume }) {
                   preview={imagePreview}
                   onPreview={setImagePreview}
                   primaryImageAlt={primaryImageAlt}
-                  onPrimaryImageAltChange={setPrimaryImageAlt}
+                  onPrimaryImageAltChange={(value) => update("primaryImageAlt", value)}
                   error={state.errors?.primaryImage}
                 />
               )}
@@ -430,18 +396,9 @@ export function PerfumeEditor({ perfume }: { perfume?: Perfume }) {
       <ProductPreview
         open={previewOpen}
         onOpenChange={setPreviewOpen}
-        form={formRef}
+        perfume={{ name, scentCue, primaryImageAlt }}
         imageUrl={imagePreview ?? perfume?.images[0]?.signedUrl}
-        variants={
-          perfume?.variants.map((variant) => ({
-            priceMinor: variant.priceMinor,
-            quantity: variant.quantity,
-          })) ??
-          stagedVariants.map((variant) => ({
-            priceMinor: parseNairaToMinor(variant.price) ?? 0,
-            quantity: Number(variant.quantity) || 0,
-          }))
-        }
+        variants={previewVariants}
       />
     </div>
   );

@@ -3,7 +3,9 @@ const fallbackSiteUrl = "http://localhost:3000";
 function resolveSiteUrl(value = process.env.NEXT_PUBLIC_SITE_URL): URL {
   try {
     const url = new URL(value?.trim() || fallbackSiteUrl);
-    if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error("Unsupported URL");
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      throw new Error("Unsupported URL");
+    }
     return url;
   } catch {
     return new URL(fallbackSiteUrl);

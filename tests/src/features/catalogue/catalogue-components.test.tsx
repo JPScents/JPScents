@@ -91,7 +91,7 @@ describe("catalogue editor interactions", () => {
       <VariantManager
         perfumeId="perfume-1"
         variants={[
-          { id: "variant-1", sizeValue: { toString: () => "50" }, priceMinor: 125000, quantity: 3 },
+          { id: "variant-1", sizeValue: "50", sizeUnit: "ML", priceMinor: 125000, quantity: 3 },
         ]}
       />,
     );
@@ -126,6 +126,24 @@ describe("catalogue editor interactions", () => {
     expect(screen.getByText("50 mL")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Remove" }));
     expect(screen.getByText(/No variants yet/)).toBeInTheDocument();
+  });
+
+  it("rejects equivalent staged sizes before the form is submitted", async () => {
+    render(<StagedFixture />);
+    const stage = (sizeValue: string) => {
+      fireEvent.click(screen.getByRole("button", { name: "Add variant" }));
+      const inputs = screen.getAllByRole("textbox");
+      fireEvent.change(inputs[0], { target: { value: sizeValue } });
+      fireEvent.change(inputs[1], { target: { value: "1250" } });
+      fireEvent.change(inputs[2], { target: { value: "2" } });
+      fireEvent.click(screen.getByRole("button", { name: "Stage variant" }));
+    };
+
+    stage("50");
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    stage("50.0");
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Each staged variant needs a unique size.");
   });
 });
 

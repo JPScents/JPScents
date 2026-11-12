@@ -99,6 +99,21 @@ describe("variant purchase controls", () => {
     expect(addItem).toHaveBeenCalledExactlyOnceWith("two", 2, 3);
   });
 
+  it("rechecks the selected size when current availability changes", () => {
+    const { rerender } = render(<VariantPurchaseControls variants={variants} />);
+    fireEvent.click(screen.getByRole("radio", { name: /50 mL/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Increase quantity" }));
+    rerender(<VariantPurchaseControls variants={[variants[0], { ...variants[1], quantity: 1 }]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Add to Cart" }));
+    expect(addItem).toHaveBeenCalledWith("two", 1, 1);
+    rerender(
+      <VariantPurchaseControls
+        variants={[variants[0], { ...variants[1], quantity: 0, isAvailable: false }]}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Add to Cart" })).toBeDisabled();
+  });
+
   it.each([
     { label: "no variants", variants: [] },
     {

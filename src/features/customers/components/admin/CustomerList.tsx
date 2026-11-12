@@ -8,7 +8,6 @@ type CustomerListItem = {
   name: string;
   whatsappNumber: string;
   email: string | null;
-  updatedAt: Date;
   _count: { orders: number };
 };
 
@@ -40,6 +39,7 @@ export function CustomerList({
         <input
           defaultValue={query}
           name="query"
+          aria-label="Search customers"
           placeholder="Search name, WhatsApp or email"
           className="h-11 min-w-64 border bg-jp-admin-surface px-3 text-sm"
         />

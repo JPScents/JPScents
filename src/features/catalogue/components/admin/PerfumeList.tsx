@@ -2,10 +2,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { siteConfig } from "@/config/site";
-import type { CatalogueFilters } from "../../catalogue";
+import type { AdminPerfumeListItem, CatalogueFilters } from "../../types";
 
 const control = "h-10 border border-jp-admin-border bg-white px-3 text-sm";
-type Perfumes = Awaited<ReturnType<typeof import("../../catalogue").listAdminPerfumes>>;
 
 function ImageCell({ url }: { url?: string }) {
   return (
@@ -30,7 +29,7 @@ export function PerfumeList({
   perfumes,
   filters,
 }: {
-  perfumes: Perfumes;
+  perfumes: AdminPerfumeListItem[];
   filters: CatalogueFilters;
 }) {
   const active = Boolean(

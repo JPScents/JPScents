@@ -3,14 +3,9 @@ import type { Metadata } from "next";
 
 import { EmptyState } from "@/components/shared/EmptyState";
 import { MotionReveal } from "@/components/shared/MotionReveal";
-import { ProductCard } from "@/components/shared/public/ProductCard";
-import {
-  hasPublishedPerfumes,
-  listPerfumes,
-  parseScent,
-  publicScentCharacters,
-  scentCharacterContent,
-} from "@/features/catalogue";
+import { ProductCard } from "@/features/catalogue/client";
+import { hasPublishedPerfumes, listPerfumes, parseScent } from "@/features/catalogue/server";
+import { scentCharacterContent, scentCharacters } from "@/features/catalogue";
 import { siteConfig } from "@/config/site";
 
 export const dynamic = "force-dynamic";
@@ -59,7 +54,7 @@ export default async function PerfumesPage({
               >
                 All
               </Link>
-              {publicScentCharacters.map((value) => (
+              {scentCharacters.map((value) => (
                 <Link
                   key={value}
                   href={`${siteConfig.routes.perfumes}?scent=${value}`}

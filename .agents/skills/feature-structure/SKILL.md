@@ -1,74 +1,156 @@
 ---
 name: feature-structure
-description: Implement or refactor Next.js features, route-local UI, and shared code using current domain ownership, clear runtime boundaries, and only justified layers.
+description: Refactor or implement repository features with enforced responsibility folders, semantic naming, minimal abstractions, and explicit simplification evidence.
 ---
 
 # Feature Structure
 
-Read the project's instructions and README for paths, framework versions, commands, and business constraints. These rules define decisions, not a folder template. Keep compliant code and unrelated architecture unchanged.
+Read the project's AGENTS.md and README, then apply this standard to the whole requested feature and its affected consumers. Existing names and folders are evidence to examine, not architectural authority. Current instructions supersede older structural choices in archived milestones; preserve their still-applicable business requirements.
 
-## Ownership and locality
+## What refactor means
 
-- Routes own framework concerns and page composition. Keep page-only components, hooks, and substantial contracts beside the route in `_components/`, `_hooks/`, and, when useful, `_types/`.
-- Features own domain behavior and domain UI, including code with one current consumer. Reuse across pages does not make domain code globally shared.
-- Start with the narrowest owner. Promote code only when actual independent consumers need the same behavior; first check for an existing equivalent.
-- Generic infrastructure, utilities, and UI primitives must not depend on features. Application shells may compose features through their public APIs.
-- Allow justified one-way feature dependencies through public APIs. Do not import another feature's repositories or other internals, create cycles, or disguise domain dependencies behind shared facades.
-- Keep infrastructure grouped by capability, pure generic functions in the project's shared utilities, and primitives in its UI folder. Preserve established `lib/`, `shared/`, and configuration distinctions when their responsibilities are clear.
+Understand behavior and data flow, question every existing responsibility and abstraction, remove unnecessary code, merge needless layers, and correct ownership and names without breaking behavior. A rename, split, or move is useful only when it resolves an identified problem. A few opportunistic fixes do not complete a feature-wide refactor.
 
-## Runtime and public boundaries
+For each module, determine what it actually does, who calls it, whether it needs to exist separately, and its permitted location below. First consider deletion or merging into a cohesive owner. Split mixed responsibilities only where their boundaries matter. Keep compliant code; do not manufacture churn, deletion quotas, or one file per function. Report unresolved in-scope violations instead of declaring the feature complete.
 
-- Fetch initial server data through server-only domain functions; avoid an internal HTTP round trip merely to call the same application's server code.
-- Use Client Components for actual interaction/browser state. They can also render on the server: keep browser access out of module initialization and server rendering.
-- Mark database and privileged infrastructure modules `server-only`. Validate runtime input and authorize protected actions and data operations; a hidden button or protected layout is insufficient authorization for an action.
-- Return minimal intentional projections to the browser. Narrow TypeScript annotations do not strip runtime fields. Convert unsupported database values at the boundary and distinguish public/Admin data when their contracts differ.
-- Export only actual external contracts. Use `index.ts` for a simple feature; use explicit `server.ts` and `client.ts` entry points when mixed runtime exports need separation. Keep shared types runtime-neutral and use type-only imports.
-- Feature internals import concrete modules. Do not remove an entry point that protects a runtime/public boundary merely because it re-exports code.
+## Feature layout and root allowlist
 
-## Responsibilities and extraction
+Use one responsibility-based pattern for all features. Folders are optional; locations are mandatory when the responsibility exists. A frontend feature may need components, hooks, and browser storage with no services or repositories. Do not scaffold empty folders or forwarding layers.
 
-| Responsibility     | Keep it simple                                                                                                                                                                                                                                      |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Component          | Own rendering, accessibility, styling, motion, and straightforward presentation handlers/state. Small local helper components may stay in the same file.                                                                                            |
-| Hook               | Extract a cohesive React interaction or synchronization lifecycle when it clarifies ownership or supports real reuse. One consumer can justify it; one state variable does not require it. Expose intent-based actions when rules must be enforced. |
-| Provider           | Share state only among consumers that actually need it. Place the context boundary at their nearest suitable common ancestor; keep it small. Do not add a provider for every feature.                                                               |
-| Action             | Own the server entry point, input handling, authorization, and framework effects. Keep a simple operation cohesive; delegate substantial business orchestration.                                                                                    |
-| Service            | Coordinate a meaningful business workflow or transaction. Avoid pass-through services and one service per function.                                                                                                                                 |
-| Repository         | Own substantial or reused database operations. Extend an existing cohesive data module first; do not wrap every Prisma call or introduce interfaces for hypothetical database replacement.                                                          |
-| Parser / validator | Decode, normalize, and validate external input. Keep the rules together unless substantial logic or real reuse warrants a separate pure validator.                                                                                                  |
-| Mapper             | Produce an intentional application projection. Extract substantial or reused transformations; keep a small single-use projection beside its query.                                                                                                  |
-| Utility            | A focused ordinary function, local to its owner by default. Extract for clarity or real reuse, without mandatory per-component utility files.                                                                                                       |
+```text
+src/features/<feature>/
+  index.ts                 # Public exports; runtime-neutral with server/client entries
+  server.ts                # Optional server-only public exports
+  client.ts                # Optional client public exports
+  actions/                 # Callable server entry points and framework effects
+  components/              # Domain UI; admin/ and public/ only when useful
+  hooks/                   # React state and interaction lifecycles
+  providers/               # Shared React context boundaries, when needed
+  repositories/            # All Prisma operations, transactions, query definitions
+  services/                # Non-persistence business rules and application orchestration
+  mappers/                 # Pure record/input/output transformations
+  parsers/                 # Decode and normalize external input
+  validators/              # Reusable imperative validation rules
+  schemas/                 # Actual declarative runtime validation contracts only
+  types/                   # Substantial/shared feature contracts
+  utils/                   # Focused pure helpers
+  constants/               # Named static domain values
+  storage/                 # Browser persistence and its payload format
+  server/                  # Request-context helpers, narrowly scoped below
+```
 
-- Calculate derived values directly; do not mirror them in state with Effects. Use handlers for user-triggered work and Effects for synchronization with external systems. Pure functions are not hooks.
-- Reuse pure validation rules across consumers when they must agree, while validating again at the server boundary. Do not require a parser → schema → validator chain.
-- Use the project's existing validation approach. Add a schema library only for concrete complexity or reuse that justifies the dependency; a typed parameter is not runtime validation.
-- A new layer must protect a real boundary, name a substantial current responsibility, or remove harmful duplication. Future scale, hypothetical reuse, symmetry, or satisfying an acronym is insufficient.
-- Keep ordinary functions and cohesive modules as the default. No generic managers, base repositories, registries, automatic retries, recovery frameworks, caching systems, or new dependencies without a current requirement.
-- Handle expected failures explicitly. Record unexpected failures once at the appropriate server boundary with sanitized operation/error metadata; do not log secrets or whole user payloads, silently swallow bugs, or claim cleanup succeeded without checking it.
-- Preserve safeguards required by current business operations. Atomic writes, stock checks, identity conflicts, and duplicate-submission handling are not speculative merely because they handle failures.
+The only allowed root files are `index.ts`, `server.ts`, `client.ts`, and optional maintained `README.md` / `AGENTS.md`. Entry points contain explicit re-exports and runtime markers only, not implementations, type definitions, wildcard exports, or renamed catch-all modules. Keep only entry points actual consumers need. Use `index.ts` for runtime-neutral exports rather than a parallel `shared.ts`.
 
-## Types, naming, and sizing
+Root implementations such as `orders.query.ts`, `orders.mutation.ts`, `orders.projection.ts`, `admin-catalogue.ts`, `cart-storage.ts`, `CartProvider.tsx`, and `types.ts` are noncompliant. Inspect and classify their contents; do not mechanically move them intact. No grandfathering during a full refactor of that feature. Unrelated features remain outside the task.
 
-- Use generated database models/query payload types internally. Define separate types for real input, serialized projection, or UI-state boundaries, not duplicate persisted models.
-- Keep small props types with their component and infer hook return types. Reuse existing shapes with type-only imports, indexed access, or `Pick` when accurate; for example, `PublicPerfumeDetail["variants"]`.
-- Use `types.ts` for substantial or reused feature contracts; use `types/` only when it improves navigation. Do not add empty/global type buckets or make fields optional to merge unrelated contracts.
-- Use PascalCase for meaningful component files, `useMeaningfulName.ts` for hooks, and descriptive kebab-case names for ordinary modules. Preserve framework filenames.
-- Keep established action names such as `save-perfume.admin.action.ts`. Group public/Admin UI under `components/` as needed; do not create a mixed-purpose Admin bucket.
-- Start flat. Add `actions/`, `components/`, `hooks/`, or data-layer grouping folders only for actual contents. Cohesive data modules may use `<domain>.repository.ts` or `<domain>.service.ts`; split substantial query/mutation responsibilities only when useful, without keeping a duplicate catch-all.
-- Keep query definitions beside their consumer unless reused. Avoid arbitrary line-count limits: split by understandable responsibilities, and use early returns and named steps to reduce difficult nesting.
+Do not invent buckets such as `helpers`, `managers`, `data`, `queries`, or `mutations` to evade these responsibilities. A genuinely uncovered responsibility needs an explicit standards decision, not an ad hoc folder. Do not add nesting solely to shorten files. Tests remain in the project's root `tests/` tree, mirroring source ownership.
 
-## Database and Prisma
+## Responsibilities and names
 
-- Database access belongs to the owning domain on the server. Use the existing application client; never construct clients, adapters, or pools in feature code or per request.
-- Reuse one client per runtime instance, including development reloads. A singleton is not one connection for the entire deployment. Preserve documented lazy initialization and deployment-specific pool settings.
-- Do not disconnect the shared application client after requests. Standalone scripts and isolated integration tests may own a client and close it when finished.
-- Let one business operation own its transaction. Pass the transaction client to every participating helper, including cross-feature calls. Do not use the global client inside that transaction or introduce nested transactions; with a small pool this can wait on the connection already held.
-- Keep network operations outside database transactions. Use database constraints and conditional writes to protect actual concurrent business invariants.
-- Select/filter/limit data for the consumer rather than fetching everything and adding speculative caching infrastructure.
-- Preserve the project's migration authority and history. Inspect SQL constraints, policies, and triggers as well as the ORM schema before changing persisted behavior.
+### Repositories
 
-## Applying the standard
+Use `repositories/<entity>.repository.ts`, for example `repositories/order.repository.ts`. Reads and writes are functions in a cohesive repository: `findOrderByReference`, `listOrderRecords`, `createOrderRecord`, `updateOrderStatus`. A query reads persisted data; a mutation writes it. These are operation descriptions, not separate architectural layers or `.query.ts` / `.mutation.ts` file categories.
 
-Inspect the whole target and its consumers before reorganizing it. Follow the project's delivery workflow through verification and commit; update routes, imports, exports, tests, and documentation affected by the change. Do not treat existing behavior bugs as folder cleanup or silently make product/schema decisions.
+Repositories own every Prisma database operation: model reads/writes, `$transaction` (both forms), raw SQL, `where` / `select` / `include` definitions, ordering, limits, and persistence-level conditional writes. Keep transaction clients and query payload types here. Return intentional database shapes or application outcomes, never a live Prisma client/delegate, deferred Prisma query, or transaction handle. Narrow selects are data access; converting records to public/admin contracts is mapping.
 
-The guidance draws on [Next.js colocation](https://nextjs.org/docs/app/getting-started/project-structure), [server data boundaries](https://nextjs.org/docs/app/guides/data-security), [React hooks](https://react.dev/learn/reusing-logic-with-custom-hooks), and [Prisma connection management](https://www.prisma.io/docs/orm/prisma-client/setup-and-configuration/databases-connections/connection-management). Check the installed framework guidance when implementation depends on version-specific behavior.
+Expose meaningful atomic operations such as `createOrderWithStockDeduction` and `cancelOrderAndRestoreStock`. Their repository implementation opens and completes the transaction, including all checks that must remain atomic with the writes: identity conflicts, stock availability, duplicate submissions, and claiming a cancellation before restocking. Do not move those checks into a service that reads first and writes later. Repositories may use pure decision functions with ordinary values; do not call services from inside a transaction.
+
+Do not put React, cookies, redirects, route revalidation, image signing, external communication, or HTTP/FormData parsing here. Translate expected Prisma errors to explicit application outcomes/errors here so callers do not need Prisma error classes. Unexpected failures remain observable; do not swallow them.
+
+Pass an existing transaction client only between participating repository operations. When multiple features must participate atomically, expose the necessary repository-owned operation through the owning feature's intentional server-only public API; another repository may call it with the same transaction. Do not import feature internals or route the client through a service. Keep this dependency one-way. Do not invent a generic unit-of-work, `withTransaction` callback, or proxy that lets service code control Prisma indirectly.
+
+Actual database access justifies a concrete repository module, even for one operation; it does not justify a generic CRUD wrapper, base class, interface for hypothetical replacements, or a forwarding service. Keep reads and writes together unless a substantial independent responsibility warrants another descriptively named repository. Do not create a read/write split by default.
+
+### Services
+
+Use `services/<entity-or-workflow>.service.ts`, for example `services/order.service.ts`. Services own meaningful non-persistence business policy or orchestration: choosing an application operation, calling an atomic repository operation, or loading records and signed image URLs before mapping an application result.
+
+Services never import the application Prisma client, Prisma namespace/client APIs, or transaction-client types; never start, receive, pass, or control a transaction; and never execute model operations or raw SQL. They call repository operations with ordinary inputs and consume completed results. There is no transaction-setup exception. Generated model types and enum values are data contracts, not database access, and may still be used where appropriate. Repository-specific payload types may be exported as types without exposing client handles.
+
+Do not add services for simple forwarding, renaming a repository function, type annotations, or symmetry. Authorization that protects a callable operation is meaningful behavior, not a pass-through; preserve such guards when collapsing layers. Keep framework effects and request-context access in actions or the narrowly defined server helpers. Pure transformations belong in mappers; extracted validation belongs in parsers/validators.
+
+### Actions
+
+Use `actions/<verb-subject>.action.ts`, retaining `.admin.action.ts` for protected Admin operations, for example `actions/cancel-order.admin.action.ts`.
+
+Actions are actual callable server entry points. Own runtime input handling, authorization, service/repository invocation, expected error responses, and framework effects such as cookie writes, redirects, and revalidation. A simple authorized write can call a repository directly; do not require a service in between. Keep substantial business workflows out of actions.
+
+Do not label every server function an action or add `"use server"` to make an ordinary helper importable. Initial server reads should call an authorized server function directly without an internal HTTP round trip. Authorize protected public operations before data access; a layout or hidden button is insufficient. Do not expose unguarded protected repositories as public feature APIs.
+
+### Mappers
+
+Use `mappers/<subject>.mapper.ts`, for example `mappers/order.mapper.ts`, with functions such as `toPublicOrder` and `toAdminOrder`. Produce explicit domain, serialized, or presentation shapes; exclude private/unneeded fields and convert unsupported database values deliberately.
+
+Mappers are pure: no database reads, signed-URL requests, cookies, React state, or service orchestration. Pass already-resolved external values into them. Prisma query definitions belong in repositories, not mappers. Do not introduce a parallel `.projection.ts` category. Small, obvious single-use object construction may stay at the consuming boundary; substantial/reused mapping belongs here, without a one-file-per-output rule.
+
+### Parsers, validators, and schemas
+
+- `parsers/<input>.parser.ts`: decode and normalize external input, such as FormData or an unknown payload, into a usable input or actionable errors. Keep directly related validation with its parser when cohesive.
+- `validators/<rule>.validator.ts`: extracted pure imperative checks with actual reuse or substantial independent rules. Return validation results; do not query the database or orchestrate saves.
+- `schemas/<subject>.schema.ts`: an actual declarative runtime validation contract interpreted by an established validator. An ordinary function that trims fields, checks conditions, or returns errors is a parser/validator, not a schema. TypeScript types alone are not runtime schemas.
+
+The current project uses imperative parsers/validators and has no schema-library convention. Do not add Zod or another library, or wrap a function in a schema object, merely to keep `schemas/`. Reclassify the behavior; merge single-use validation into its parser when appropriate. Reuse rules that consumers must agree on while validating again at the server boundary. Do not enforce a parser → schema → validator chain.
+
+### Types, utilities, and constants
+
+- `types/index.ts` holds a small cohesive set of substantial/shared contracts. Split genuinely distinct groups into `types/<subject>.types.ts` only when useful. No root `types.ts`, runtime functions, or constants in types modules. Keep small component props and inferable hook returns local. Use generated database/query types internally and reuse existing contracts with indexed access or `Pick`, such as `PublicPerfumeDetail["variants"]`; do not duplicate persisted models or combine unrelated shapes with optional fields.
+- `utils/<purpose>.ts` contains focused pure helpers, such as `format-price.ts` or `normalize-size.ts`. Name by behavior, not `helpers.ts`, `common.ts`, or `utils.ts`. Keep tiny single-use helpers with their owner unless extraction materially clarifies them. Do not hide parsing, mapping, persistence, business workflows, or side effects here.
+- `constants/<subject>.ts` contains static domain values such as order statuses. Keep small constants local; extract only for shared use or a substantial named dataset. No mutable state, credentials, environment loading, or computed workflows.
+
+### Components, hooks, and providers
+
+- `components/<MeaningfulName>.tsx` owns rendering, accessibility, styling, and motion. Name the visible responsibility, such as `CartItem`, `CartButton`, or `CartCheckoutSummary`. Small presentation handlers/state and local helper components may remain together. Do not split markup into forwarding components or wrappers merely to shorten a file.
+- `hooks/use<MeaningfulName>.ts` owns a cohesive stateful interaction or synchronization lifecycle. One consumer can justify a hook; one state variable does not require one. Expose intent-based actions when enforcing rules. Pure functions are not hooks. Calculate derived values directly, use handlers for user-triggered work, and reserve Effects for synchronization with external systems.
+- `providers/<Feature>Provider.tsx` owns a genuinely shared context boundary at the nearest suitable common ancestor. Keep its consumer hook alongside it when cohesive; extract substantial state behavior into `hooks/`. Do not add a provider for every feature.
+
+### Browser storage and request-context helpers
+
+- `storage/<purpose>-storage.ts`, such as `storage/cart-storage.ts`, owns browser persistence, payload versioning, decoding, and expected unavailable-storage behavior. It does not own UI state or become a database repository/service. Keep browser access out of module initialization and server rendering.
+- `server/<purpose>.ts`, such as `server/confirmation-cookie.ts`, is reserved for server-only request-context helpers shared by actual feature consumers: cookie/header access and their options. It is not a general server-code bucket; database operations, workflows, and mappers retain their own locations. Keep single-use request handling directly in its action or route instead of extracting this folder.
+
+Use descriptive kebab-case ordinary filenames and the responsibility suffixes above. Local helpers need not become exported modules. No wildcard barrels or per-folder forwarding `index.ts` files; `types/index.ts` is the defined contract module exception.
+
+## Locality, public APIs, and the Customers reference
+
+Routes own framework concerns, page composition, and page-only presentation/adapters. Use the route's `_components/`, `_hooks/`, `_types/`, `_utils/`, `_actions/`, or `_server/` only for actual contents, with the same semantic rules and names. Domain rules, domain UI, and persistence belong to the feature even with one consumer. Consumer count alone does not decide ownership.
+
+For example, a perfume-detail purchase control connecting Catalogue variants to Cart is route-owned. Order creation and reusable checkout behavior remain Orders-owned; the checkout page's Cart-to-Orders adapter is route-local. Promote code only when actual independent consumers need the same behavior.
+
+Use `src/features/customers` as the structural reference: actions, parsers, repositories, services, components and types occupy named responsibility folders. It is a reference, not a scaffold or exemption. Its read services retain authorization; its repository owns identity-conflict resolution, persistence errors, and transaction participation. Do not add these layers to a frontend feature merely to match its tree.
+
+Fixture data belongs beside meaningful tests and contains only fields needed for the behavior under test. Use a small explicit Customer-shaped value with deterministic identity/contact/delivery fields as the reference. Add a fixture factory only when several tests need the same variations; no copied production modules, fixture service/repository layers, catch-all optional models, or global fixture framework. Demo catalogue data stays with its seed repository; the seed entry owns lifecycle only.
+
+Generic shared infrastructure/utilities/UI primitives must not depend on features. Features may depend one-way on another feature's intentional public API, never its repositories or other internals. Application shells and routes may compose features. Database access belongs to its owning domain: published variant lookup is Catalogue-owned even when Cart requests it.
+
+Mark privileged data/infrastructure modules `server-only`. Use explicit server/client entry points only when runtime separation is needed. Runtime-neutral types use type-only imports. Internals import concrete modules rather than their own public barrel. Narrow TypeScript annotations do not remove runtime fields; deliberately map what crosses the browser boundary.
+
+## Apply the rules to mixed files
+
+- `orders.query.ts`: database queries/selects move into `repositories/order.repository.ts`; authorization and any loading/signing/mapping orchestration belong at the appropriate authorized action/service boundary. Do not move that orchestration into a repository.
+- `orders.mutation.ts`: the atomic order/stock/customer operation, its checks, and transaction ownership belong in `repositories/order.repository.ts`; parsing belongs in parsers. A service remains only for meaningful non-persistence orchestration. Small reference-generation helpers can stay with their owner. Do not copy the transaction callback into a service or break it into separately committed repository calls.
+- `orders.projection.ts`: pure public/admin transformations belong in `mappers/order.mapper.ts`; Prisma includes remain with repositories, and image signing belongs in the calling orchestration outside transactions. Renaming the entire mixed file to `.mapper.ts` fails this standard.
+- A Catalogue `*.schema.ts` function that decodes input belongs in a parser, or merges into its existing parser. A reusable pure rule may belong in validators. Moving it unchanged into a new folder without evaluating that distinction is incomplete.
+
+## Database and behavioral safeguards
+
+- Only repository implementations execute Prisma database operations. Actions, services, routes, hooks, mappers, validators, utilities, and request-context helpers must not import or re-export a database client or execute its operations. Client factories/proxies do not create an exception. Review affected consumers outside the feature too.
+- Keep client construction and lazy singleton/pool configuration in the existing database infrastructure module; it contains no application queries or transactions. Never create feature/request clients or pools or disconnect the shared client after requests. Standalone tools may own client lifecycle, but their hand-written queries and transactions also belong in repository modules (local to the tool when strictly operational). Do not rewrite generated Prisma code or migrations to imitate application layers.
+- A repository owns the transaction and supplies its client to every participating repository operation, including cross-feature calls. No global-client queries inside that transaction or nested transactions; a small pool can deadlock waiting for its held connection. Network calls remain outside transactions.
+- Preserve atomic writes, stock checks, identity conflicts, idempotency, and single stock restoration. Use conditional writes and constraints for real concurrent invariants; do not replace them with read-then-write assumptions.
+- Select/filter/limit records for the consumer. Do not compensate for oversized reads with speculative caching.
+- Inspect relevant SQL constraints/triggers and policies before changing persisted behavior. Preserve migration authority/history and product rules.
+- Handle expected failures explicitly. Record unexpected failures once with sanitized operation/error metadata; no secret/payload logging, silent error swallowing, or unverified cleanup claims.
+
+## Structural enforcement and completion
+
+From the repository root, run the bundled check for each refactored feature:
+
+```bash
+npm run architecture:check
+```
+
+The default command discovers every feature and runs automatically in `npm run check`. It checks the root allowlist, folder/file names, empty folders, export-only entry points, and recognizable Prisma imports/API access outside repositories. It also scans application source and operational scripts/seeds for database boundary violations and enforces public feature imports and generic shared independence. Use an explicit feature-directory argument for a scoped development check.
+
+The checker reads only source files, never environment files. It does not perform whole-program data-flow analysis or prove that a correctly named module contains the right responsibility: review indirect client leaks, mixed responsibilities, transaction clients passed through other layers, oversized projections, dead exports, and unnecessary layers. Client initialization is allowed only in the established infrastructure module and standalone seed entry; review those files to ensure they remain lifecycle-only. Do not silence violations with aliases, re-exported clients, catch-all folders, new exceptions, or weakened checks.
+
+Use the delivery skill's readability and verification requirements. Completion requires a passing structure check for the full target, a resolved responsibility review, meaningful behavioral verification, and a concise report of simplification and any retained justified abstractions. For a focused change rather than a whole-feature refactor, report existing out-of-scope structural violations without expanding the assignment. A standards-only change reports current violations without migrating application code.

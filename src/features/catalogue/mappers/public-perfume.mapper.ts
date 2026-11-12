@@ -1,13 +1,10 @@
-import type { Perfume, PerfumeImage, PerfumeVariant } from "@/db/generated/client";
+import type { PerfumeRecord } from "../repositories/perfume.repository";
 
-import { getPerfumeImageUrl } from "@/lib/supabase/storage";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 
-import type { PublicPerfumeCard } from "../types";
+import type { PublicPerfumeCard, PublicPerfumeDetail } from "../types";
 
-type PerfumeRow = Perfume & { images: PerfumeImage[]; variants: PerfumeVariant[] };
-
-export async function mapPublicPerfumeCard(perfume: PerfumeRow): Promise<PublicPerfumeCard> {
+export function mapPublicPerfumeCard(perfume: PerfumeRecord, imageUrl?: string): PublicPerfumeCard {
   const availableVariants = perfume.variants.filter((variant) => variant.quantity > 0);
   const startingPriceMinor = availableVariants.length
     ? Math.min(...availableVariants.map((variant) => variant.priceMinor))
@@ -19,7 +16,7 @@ export async function mapPublicPerfumeCard(perfume: PerfumeRow): Promise<PublicP
     name: perfume.name,
     scentCue: perfume.scentCue,
     scentCharacters: perfume.scentCharacters,
-    primaryImageUrl: await getPerfumeImageUrl(primaryImage?.path),
+    primaryImageUrl: imageUrl,
     primaryImageAlt: primaryImage?.altText || "",
     startingPriceMinor,
     startingPrice:
@@ -28,5 +25,25 @@ export async function mapPublicPerfumeCard(perfume: PerfumeRow): Promise<PublicP
         : `From ${formatNairaFromMinor(startingPriceMinor)}`,
     isAvailable: availableVariants.length > 0,
     label: perfume.isBestseller ? "Bestseller" : perfume.isFeatured ? "Featured" : undefined,
+  };
+}
+
+export function mapPublicPerfumeDetail(
+  perfume: PerfumeRecord,
+  imageUrl?: string,
+): PublicPerfumeDetail {
+  return {
+    ...mapPublicPerfumeCard(perfume, imageUrl),
+    description: perfume.description,
+    occasions: perfume.occasions,
+    timesOfDay: perfume.timesOfDay,
+    variants: perfume.variants.map((variant) => ({
+      id: variant.id,
+      sizeLabel: `${variant.sizeValue.toString()} mL`,
+      priceMinor: variant.priceMinor,
+      price: formatNairaFromMinor(variant.priceMinor),
+      quantity: variant.quantity,
+      isAvailable: variant.quantity > 0,
+    })),
   };
 }

@@ -1,0 +1,108 @@
+name: Quality
+
+on:
+  pull_request:
+    branches: [main]
+  merge_group:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: JPScents quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Prepare evidence
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/quality-evidence"
+          printf 'commit=%s\ncommand=npm run verify\n' "$GITHUB_SHA" > "$RUNNER_TEMP/quality-evidence/context.txt"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Generate Prisma client with an empty env file
+        shell: bash
+        run: |
+          env_file=$(mktemp "$RUNNER_TEMP/prisma-env.XXXXXX")
+          trap 'rm -f "$env_file"' EXIT
+          env -u DATABASE_URL -u DIRECT_URL APP_ENV_FILE="$env_file" npm run db:generate
+
+      - name: Locate PostgreSQL 16 tools
+        shell: bash
+        run: |
+          postgres_bin=/usr/lib/postgresql/16/bin
+          for binary in initdb pg_ctl psql; do
+            if [[ ! -x "$postgres_bin/$binary" ]]; then
+              printf 'Missing PostgreSQL 16 tool: %s\n' "$binary" >&2
+              exit 1
+            fi
+          done
+          printf '%s\n' "$postgres_bin" >> "$GITHUB_PATH"
+
+      - name: Run canonical quality verification
+        shell: bash
+        run: |
+          set -o pipefail
+          evidence_dir="$RUNNER_TEMP/quality-evidence"
+          verification_log=$(mktemp "$RUNNER_TEMP/quality-log.XXXXXX")
+          trap 'rm -f "$verification_log"' EXIT
+          for mode in quality acceptance; do
+            script=verify
+            report=verification
+            if [[ "$mode" == acceptance ]]; then
+              script=verify:acceptance
+              report=acceptance
+            fi
+            if npm run "$script" | tee "$verification_log"; then
+              verify_exit=0
+              capture_exit=0
+            else
+              pipeline_status=("${PIPESTATUS[@]}")
+              verify_exit=${pipeline_status[0]}
+              capture_exit=${pipeline_status[1]}
+            fi
+            printf '%s_exit=%s\n' "$report" "$verify_exit" >> "$evidence_dir/context.txt"
+            if [[ "$verify_exit" -ne 0 ]]; then
+              exit "$verify_exit"
+            fi
+            if [[ "$capture_exit" -ne 0 ]]; then
+              printf 'Could not capture %s verification output.\n' "$mode" >&2
+              exit "$capture_exit"
+            fi
+            node scripts/milestone-evidence.mjs validate-ci \
+              "$verification_log" "$GITHUB_SHA" "$evidence_dir/$report.json" "$mode"
+          done
+
+      - name: Install Chromium for end-to-end tests
+        run: npx --no-install playwright install --with-deps chromium
+
+      - name: Run browser end-to-end tests
+        shell: bash
+        run: |
+          report="$RUNNER_TEMP/quality-evidence/e2e.json"
+          JP_E2E_EVIDENCE_PATH="$report" npm run test:e2e
+          node scripts/milestone-evidence.mjs validate-e2e "$report" "$GITHUB_SHA"
+
+      - name: Retain quality evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: quality-evidence
+          path: ${{ runner.temp }}/quality-evidence/
+          if-no-files-found: error
+          retention-days: 14

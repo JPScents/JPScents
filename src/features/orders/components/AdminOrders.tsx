@@ -6,21 +6,15 @@ import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 import { formatEnumLabel } from "@/shared/utils/format-enum-label";
 import type { OrderStatus } from "@/db/generated/client";
 
-import type { OrderRow } from "../types";
-
-const orderStatuses = [
-  "AWAITING_PAYMENT",
-  "PAID",
-  "DELIVERED",
-  "CANCELLED",
-] as const satisfies readonly OrderStatus[];
+import { orderStatuses } from "../constants/order-statuses";
+import type { AdminOrderRow } from "../types";
 
 export function AdminOrders({
   orders,
   query,
   status,
 }: {
-  orders: OrderRow[];
+  orders: AdminOrderRow[];
   query?: string;
   status?: OrderStatus;
 }) {

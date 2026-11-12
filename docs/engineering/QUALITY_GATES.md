@@ -1,0 +1,79 @@
+# Quality gates
+
+GitHub requires the `JPScents quality` check on the merge candidate. The job runs unit, database integration and acceptance, and browser tests. Release rehearsal evidence also follows VER-01–03 and ADR-0004. [Verification contract](VERIFICATION_CONTRACT.md) · [ADR-0004](../architecture/adr/0004-merge-and-release-verification.md)
+
+| Mechanism                 | Trigger                                                      | Activation and evidence                                                                                                               | Remaining action                                                            |
+| ------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Git pre-commit            | `git commit`                                                 | Active in this clone. Fresh activation and real compliant and violating events verified.                                              | Activate per additional clone.                                              |
+| GitHub Actions quality    | PRs and merge groups targeting `main`, plus pushes to `main` | The pre-fix hosted run failed required acceptance. Final candidate evidence belongs on PR #1.                                         | Verify the complete result on the current eligible revision.                |
+| GitHub merge protection   | Merge or direct update to `main`                             | [Active ruleset 27132499](https://github.com/JPScents/JPScents/rules/27132499) requires a PR and the up-to-date GitHub Actions check. | Verify the required status on the merge candidate.                          |
+| Approved acceptance       | Required CI and local `npm run verify:acceptance`            | D2–D4 migrated PostgreSQL scenarios.                                                                                                  | Verify the complete result on the current eligible revision.                |
+| Production promotion      | Merge to `main`                                              | Vercel tracks `main` and auto-assigns production domains.                                                                             | Complete the release checks and required migration before merge.            |
+| Optional Codex safeguards | Future post-edit or task-completion events                   | Deferred to agent-workflow integration.                                                                                               | Decide separately whether to enable scoped feedback or evidence collection. |
+
+## Local pre-commit
+
+Install project dependencies with Node 24 and activate the tracked Git hook in each clone. If `core.hooksPath` already points to a hook manager, integrate the formatter command there instead of replacing its configuration.
+
+```sh
+git config --show-origin --get core.hooksPath
+git config --local core.hooksPath .githooks
+git hook run pre-commit
+```
+
+The hook checks Prettier formatting on staged regular-file blobs. It uses the checkout's formatter settings and ignore files, including the exclusions for configured environment and key files. Diagnostics show file paths. Fix and restage the intended changes if it fails. No database setup is needed. A missing formatter fails the hook when there are staged candidates. A developer can bypass a local hook with Git's `--no-verify` option or by changing local configuration. Use `npm run verify` for full local quality evidence. [Hook](../../.githooks/pre-commit) · [Staged formatter](../../scripts/check-staged-format.mjs)
+
+The installed hook path was verified with `git config --show-origin --get core.hooksPath`, which reported `.githooks` from this clone's `.git/config`.
+
+## GitHub Actions
+
+| Item                  | Configuration                                                                                                                                                                                                                                                        |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Workflow and check    | Workflow **Quality** and job **JPScents quality**, with job ID `quality`. Confirm the emitted check name and app before requiring it.                                                                                                                                |
+| Triggers              | Pull requests and merge groups targeting `main`, and pushes to `main`. Every path is eligible.                                                                                                                                                                       |
+| Toolchain             | GitHub-hosted `ubuntu-24.04`, Node 24 from `.nvmrc`, and `npm ci` from the committed lockfile. Official actions are pinned to full commit SHAs.                                                                                                                      |
+| Prisma and PostgreSQL | Generate the client with an empty temporary Prisma environment file. Add the image's PostgreSQL 16 binaries to `PATH` and fail if any are missing. The existing harness starts its own socket-only database and replays the committed migrations.                    |
+| Permissions           | Read-only repository contents, checkout without persisted credentials, and no configured application secrets. Pull requests run on a hosted runner with the ordinary `pull_request` event.                                                                           |
+| Result and artifact   | The required `JPScents quality` job runs `npm run verify`, `npm run verify:acceptance` and `npm run test:e2e` on the same candidate. Missing, invalid or incomplete evidence fails the job. The `quality-evidence` artifact retains validated summaries for 14 days. |
+
+The runner uses the PostgreSQL binaries provided by the Ubuntu 24.04 image. The job uses the existing disposable cluster rather than the image's system service. Missing tooling, migration errors, and any mandatory verification failure leave the job failed. The setup and failure diagnostics are visible in the Actions job log. [Workflow](../../.github/workflows/quality.yml) · [GitHub runner image](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md#postgresql) · [Database isolation](INTEGRATION_VERIFICATION.md#isolation-and-realism) · [GitHub Actions security](https://docs.github.com/en/actions/reference/security/secure-use)
+
+## Hosted merge protection
+
+On 12 November 2026, GitHub repository metadata confirmed `JPScents/JPScents` uses `main` as its default branch. The public branch endpoint returned `protected: false`, with no effective branch rules and no listed repository rulesets. The public runs endpoint returned zero runs. The classic protection detail endpoint returned HTTP 401, and the available GitHub connector had no administrative access. **Merge protection is not configured on the inspected branch. The new hosted check is unverified.** The observed PR list was empty. [Branch API](https://api.github.com/repos/JPScents/JPScents/branches/main) · [Effective rules API](https://api.github.com/repos/JPScents/JPScents/rules/branches/main) · [Actions](https://github.com/JPScents/JPScents/actions)
+
+After the owner authorises the remote change:
+
+1. Publish the workflow through the repository's approved Git process. Open a PR targeting `main` and confirm the workflow ran on the candidate. Check the emitted name and GitHub App using `gh api repos/JPScents/JPScents/commits/<candidate-sha>/check-runs --jq '.check_runs[] | {name, app: .app.slug, conclusion}'`.
+2. In repository **Settings → Rules → Rulesets**, create or update an **Active** branch ruleset that targets `main`. Enable **Require a pull request before merging** and **Require status checks to pass**. Add the emitted `JPScents quality` check from GitHub Actions. Require the branch to be up to date and keep the bypass list empty for ordinary merges. Review existing rules together before activation.
+3. Inspect `gh api repos/JPScents/JPScents/rules/branches/main` and the PR merge box. Verify that an approved test PR with a missing or deliberately failing check cannot merge, and that a passing check on the eligible revision clears the quality requirement. Capture the run URL, candidate SHA and rule evidence before reporting merge enforcement as active. [GitHub ruleset setup](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/creating-rulesets-for-a-repository) · [Required check behavior](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets#require-status-checks-to-pass-before-merging)
+
+## Acceptance and release promotion
+
+GitHub runs database acceptance and Chromium E2E as part of the same required job. Verify that required checks clear on the current candidate and finish the migration and recovery rehearsal before the owner decides to merge. With automatic Vercel promotion enabled, finish any required backward-compatible production migration before the merge. [Verification contract](VERIFICATION_CONTRACT.md#release-decision)
+
+For the order snapshots migration, confirm the production recovery point and apply the authorised forward migration while the old app is still live. Verify migration status, then merge the reviewed candidate. Record the Vercel deployment SHA and smoke checkout, confirmation and Admin access. If the new app needs rollback, the rehearsal verifies the old app can use the expanded schema, so the additive migration can stay in place.
+
+## Optional agent safeguards
+
+A later Codex workflow can use a post-edit hook for scoped checks or a task-completion hook to collect verification evidence. These safeguards are optional and carry no merge or promotion authority.
+
+## Executed evidence
+
+Assessment date 12 November 2026. Local evidence uses the working tree based on `cda1783b792fa392ff0f0563d948d9eaa6e07837`, including prior uncommitted engineering changes.
+
+| Command or fixture                                                                                                    | Exit     | Result                                                                                                                                                                                                                                  |
+| --------------------------------------------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sh -n .githooks/pre-commit`                                                                                          | 0        | Hook parses.                                                                                                                                                                                                                            |
+| `git hook run pre-commit` in a fresh isolated checkout before and after `git config --local core.hooksPath .githooks` | 1 then 0 | Confirmed the hook was inactive initially and ran after fresh setup.                                                                                                                                                                    |
+| Real `git commit --no-gpg-sign` with a formatted staged file and unformatted working copy                             | 1        | The pre-commit event passed and reached a controlled editor that aborted the attempt. The file name included a space.                                                                                                                   |
+| Real `git commit --no-gpg-sign` with an unformatted staged file and formatted working copy                            | 1        | The pre-commit event rejected the staged blob, named the file, and stopped before the editor. The checkout still had no commit.                                                                                                         |
+| `actionlint .github/workflows/quality.yml`                                                                            | 0        | Version 1.7.12 validated the workflow. Its downloaded binary archive matched the published SHA-256.                                                                                                                                     |
+| `npm ci` and the workflow's `npm run db:generate` step                                                                | 0 each   | Installed the lockfile and generated Prisma Client 7.9.1 in a clean copy with an empty temporary environment file. The install reported 35 package advisories, including 2 critical. Advisory triage was outside this verification run. |
+| Workflow quality shell step with `npm run verify`                                                                     | 0        | All stages passed, including 148 unit and architecture tests and 5 migrated-database cases. The context and JSON evidence files were created.                                                                                           |
+| Same shell step with an intentionally unformatted TypeScript fixture                                                  | 1        | Formatting exited 1, independent stages including PostgreSQL passed, and the step retained the FAIL evidence.                                                                                                                           |
+| Same shell step with a controlled zero-exit verifier that emits no evidence                                           | 1        | The step explicitly rejected missing verification evidence.                                                                                                                                                                             |
+| `npm run verify:acceptance` in the isolated copy                                                                      | 1        | Three D2–D4 cases failed after PostgreSQL setup and migrations succeeded.                                                                                                                                                               |
+| `npm run verify` in the edited local checkout                                                                         | 0        | All required stages passed with disposable PostgreSQL access.                                                                                                                                                                           |
+
+The CI-equivalent tests ran the workflow's shell steps in a copy excluding secret files, with Node 24.14.1 and PostgreSQL 14.17 on macOS. PostgreSQL used private sockets and disposable clusters. The workflow's Ubuntu image, PostgreSQL 16 provisioning, hosted check registration, and artifact upload remain unverified by a hosted run. The isolated copy had no Git metadata, so its verifier JSON reported unknown Git context. The workflow context file carried the supplied source SHA. [Actionlint release](https://github.com/rhysd/actionlint/releases/tag/v1.7.12)

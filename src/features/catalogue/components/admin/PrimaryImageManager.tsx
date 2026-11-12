@@ -1,17 +1,12 @@
 "use client";
+import type { ImageActionState } from "../../types";
 
 import Image from "next/image";
 import { useActionState } from "react";
-import {
-  removePrimaryImage,
-  type RemovePrimaryImageState,
-} from "../../actions/remove-primary-image.admin.action";
-import {
-  savePrimaryImage,
-  type SavePrimaryImageState,
-} from "../../actions/save-primary-image.admin.action";
+import { removePrimaryImage } from "../../actions/remove-primary-image.admin.action";
+import { savePrimaryImage } from "../../actions/save-primary-image.admin.action";
 
-const initial: SavePrimaryImageState & RemovePrimaryImageState = {};
+const initial: ImageActionState & ImageActionState = {};
 
 export function PrimaryImageManager({
   perfumeId,

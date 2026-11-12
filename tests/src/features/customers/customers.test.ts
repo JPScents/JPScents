@@ -20,8 +20,11 @@ vi.mock("@/db/prisma", () => ({
   },
 }));
 
-import { CustomerIdentityConflict, resolveCustomerForOrder } from "@/features/customers";
-import { removeCustomer, saveCustomer } from "@/features/customers/services/customer.service";
+import { CustomerIdentityConflict, resolveCustomerForOrder } from "@/features/customers/server";
+import {
+  removeCustomer,
+  saveCustomer,
+} from "@/features/customers/repositories/customer.repository";
 
 const input = {
   name: "Ada Okafor",

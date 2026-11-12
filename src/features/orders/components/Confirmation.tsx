@@ -8,12 +8,15 @@ import { siteConfig } from "@/config/site";
 import type { PublicOrder } from "../types";
 import { OrderSummary } from "./OrderSummary";
 
-function whatsappUrl(number: string | undefined, reference: string, items: PublicOrder["items"]) {
-  if (!number || !/^\d{7,15}$/.test(number)) return undefined;
-  const context = items
-    .map((item) => `${item.name} ${item.sizeLabel} ×${item.quantity}`)
-    .join(", ");
-  return `https://wa.me/${number}?text=${encodeURIComponent(`Hello JPScents, I’m following up on order ${reference} (${context}).`)}`;
+function whatsappUrl(number: string | undefined, order: PublicOrder) {
+  if (!number || !/^\d{7,15}$/.test(number)) {
+    return undefined;
+  }
+  const context = order.usesCurrentCatalogueDetails
+    ? ""
+    : order.items.map((item) => `${item.name} ${item.sizeLabel} ×${item.quantity}`).join(", ");
+  const orderDetails = context ? `${order.reference} (${context})` : order.reference;
+  return `https://wa.me/${number}?text=${encodeURIComponent(`Hello JPScents, I’m following up on order ${orderDetails}.`)}`;
 }
 
 export function Confirmation({
@@ -46,7 +49,7 @@ export function Confirmation({
       </section>
     );
   }
-  const url = whatsappUrl(businessNumber, order.reference, order.items);
+  const url = whatsappUrl(businessNumber, order);
   return (
     <section className="mx-auto max-w-public-container px-public-gutter-mobile py-12 lg:px-public-gutter-desktop lg:py-16">
       <div className="grid gap-12 lg:grid-cols-[1fr_29rem]">
@@ -111,7 +114,15 @@ export function Confirmation({
         </aside>
       </div>
       <div className="mt-12 grid gap-8 lg:grid-cols-2">
-        <OrderSummary order={order} />
+        <div>
+          {order.usesCurrentCatalogueDetails ? (
+            <p className="mb-4 text-sm text-jp-text-secondary">
+              Some original item names or sizes are unavailable. The summary shows current catalogue
+              details where needed.
+            </p>
+          ) : null}
+          <OrderSummary order={order} />
+        </div>
         <section className="border bg-jp-surface p-6">
           <h2 className="font-display text-4xl">What happens next</h2>
           <ol className="mt-6 space-y-5 text-sm leading-6 text-jp-text-secondary">

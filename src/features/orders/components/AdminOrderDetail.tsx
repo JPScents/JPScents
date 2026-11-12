@@ -11,43 +11,24 @@ import { formatEnumLabel } from "@/shared/utils/format-enum-label";
 
 import { changeOrderStatus } from "../actions/change-order-status.admin.action";
 import { cancelOrderAdmin } from "../actions/cancel-order.admin.action";
-import type { PublicOrder } from "../types";
+import { orderStatuses } from "../constants/order-statuses";
+import type { AdminOrder, PublicOrder } from "../types";
 import { OrderSummary } from "./OrderSummary";
 
-const orderStatuses = [
-  "AWAITING_PAYMENT",
-  "PAID",
-  "DELIVERED",
-  "CANCELLED",
-] as const satisfies readonly OrderStatus[];
 function whatsappUrl(
   number: string | undefined,
   customerName: string | undefined,
   reference: string,
   items: PublicOrder["items"],
 ) {
-  if (!number || !/^\d{7,15}$/.test(number)) return undefined;
+  if (!number || !/^\d{7,15}$/.test(number)) {
+    return undefined;
+  }
   const context = items
     .map((item) => `${item.name} ${item.sizeLabel} ×${item.quantity}`)
     .join(", ");
   return `https://wa.me/${number}?text=${encodeURIComponent(`Hello ${customerName || "there"}, this is JPScents following up on your order ${reference} (${context}). How can we help?`)}`;
 }
-
-type AdminOrder = PublicOrder & {
-  customerName?: string;
-  whatsappNumber?: string;
-  email?: string | null;
-  deliveryState?: string;
-  deliveryCity?: string;
-  deliveryAddress?: string;
-  orderNote?: string | null;
-  events?: {
-    id: string;
-    fromStatus: OrderStatus | null;
-    toStatus: OrderStatus;
-    createdAt: Date;
-  }[];
-};
 
 export function AdminOrderDetail({ order }: { order: AdminOrder | null }) {
   const router = useRouter();
@@ -91,7 +72,7 @@ export function AdminOrderDetail({ order }: { order: AdminOrder | null }) {
           <section className="border bg-jp-admin-surface p-6">
             <h2 className="font-display text-3xl">Activity</h2>
             <ol className="mt-5 space-y-4">
-              {(order.events ?? []).map((event) => (
+              {order.events.map((event) => (
                 <li key={event.id} className="border-l pl-4 text-sm">
                   <strong>{formatEnumLabel(event.toStatus)}</strong>
                   <p className="mt-1 text-jp-text-secondary">
@@ -111,6 +92,12 @@ export function AdminOrderDetail({ order }: { order: AdminOrder | null }) {
         <aside className="space-y-6">
           <section className="border bg-jp-admin-surface p-5">
             <h2 className="font-display text-3xl">Customer</h2>
+            {order.legacy ? (
+              <p className="mt-2 text-sm text-jp-text-secondary">
+                This legacy order shows current customer and catalogue details where the original
+                details are unavailable.
+              </p>
+            ) : null}
             <dl className="mt-4 space-y-3 text-sm">
               <div>
                 <dt className="text-jp-text-secondary">Name</dt>
@@ -215,7 +202,9 @@ export function AdminOrderDetail({ order }: { order: AdminOrder | null }) {
       <ModalShell
         open={cancellationDialogOpen}
         onOpenChange={(nextOpen) => {
-          if (!pending) setCancellationDialogOpen(nextOpen);
+          if (!pending) {
+            setCancellationDialogOpen(nextOpen);
+          }
         }}
         title="Cancel this order?"
         description={`This keeps ${order.reference} in the order history and restores its item quantities to stock. This cannot be undone.`}

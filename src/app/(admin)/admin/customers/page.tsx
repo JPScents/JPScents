@@ -1,4 +1,5 @@
-import { CustomerList, listCustomers } from "@/features/customers";
+import { CustomerList } from "@/features/customers/client";
+import { listCustomers } from "@/features/customers/server";
 
 export default async function AdminCustomersPage({
   searchParams,
