@@ -6,7 +6,7 @@
 
 ## Approved exceptions
 
-Both exceptions apply to **STD-005**, solely for `@next/next/no-img-element`. **STD-025** and **GOV-01** govern the approval. **STD-012** remains applicable to decorative alt text and accessible control names. Catalogue public UI owns both. They cover only the existing Fresh, Warm, Sweet and Woody PNGs under `public/scent-characters/`, as mapped by `scentCharacterContent`. [Image map](../../src/features/catalogue/constants/catalogue.ts#L6) · [Governance](../architecture/ARCHITECTURE.md#4-verification-and-exceptions)
+The two image exceptions apply to **STD-005**, solely for `@next/next/no-img-element`. **STD-025** and **GOV-01** govern the approval. **STD-012** remains applicable to decorative alt text and accessible control names. Catalogue public UI owns both. They cover only the existing Fresh, Warm, Sweet and Woody PNGs under `public/scent-characters/`, as mapped by `scentCharacterContent`. [Image map](../../src/features/catalogue/constants/catalogue.ts#L6) · [Governance](../architecture/ARCHITECTURE.md#4-verification-and-exceptions)
 
 ### EXC-001 Scent browsing
 
@@ -21,6 +21,13 @@ Both exceptions apply to **STD-005**, solely for `@next/next/no-img-element`. **
 - **Exact scope** — The existing native `<img src={item.image} alt="">` inside the `ScentCharacterSelect` button. Approval applies to that element and those assets. [Button and image](../../src/features/catalogue/components/public/ScentCharacterSelect.tsx#L18) · [Visible label](../../src/features/catalogue/components/public/ScentCharacterSelect.tsx#L35)
 - **Justification and trade-off** — Retains native rendering of existing controlled decorative artwork. The visible scent label names the button and `aria-pressed` communicates selection independently. Using the Next image component is the documented alternative. [Approved rationale](CODING_STANDARDS.md#approved-decorative-image-exceptions)
 - **Verification and review** — Source inspection confirmed empty alt text, label and pressed state. Review eligibility on changes to the asset, image markup or image pipeline. Verify the button name, keyboard interaction and pressed state in the affected UI. Narrow the suppression to the element when editing the component. The approval specifies a review condition. [Existing directive](../../src/features/catalogue/components/public/ScentCharacterSelect.tsx#L6)
+
+### EXC-003 Dependency tooling for PR #1
+
+- **Status** — Approved by the repository owner on 12 November 2026 under milestone v3 AC3 and GOV-01. [Owner decision](https://github.com/JPScents/JPScents/pull/1#issuecomment-6832060892)
+- **Scope** — The residual, noncritical npm audit findings recorded in PR #1 for this release only, on `package-lock.json` SHA-256 `dc545fd026db4a7321e7ac101890fc309890b262ad369b302cc50269fe4dd321`. [Audit and exposure evidence](https://github.com/JPScents/JPScents/pull/1#issuecomment-6832032706)
+- **Compensating evidence** — Both critical fixes remain applied. The locked install and isolated CI remain required. None of the audit-listed packages appeared in the 33 inspected Next.js production dependency trace manifests. Install, build and developer tooling still carry exposure.
+- **Review condition** — The repository owner reassesses before the next release, or sooner if the lockfile changes, a relevant patch ships, or an affected package enters a deployed path.
 
 ## Suppressions outside the approval
 
