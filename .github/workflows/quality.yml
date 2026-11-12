@@ -61,24 +61,32 @@ jobs:
           evidence_dir="$RUNNER_TEMP/quality-evidence"
           verification_log=$(mktemp "$RUNNER_TEMP/quality-log.XXXXXX")
           trap 'rm -f "$verification_log"' EXIT
-          if npm run verify | tee "$verification_log"; then
-            verify_exit=0
-            capture_exit=0
-          else
-            pipeline_status=("${PIPESTATUS[@]}")
-            verify_exit=${pipeline_status[0]}
-            capture_exit=${pipeline_status[1]}
-          fi
-          printf 'verification_exit=%s\n' "$verify_exit" >> "$evidence_dir/context.txt"
-          if [[ "$verify_exit" -ne 0 ]]; then
-            exit "$verify_exit"
-          fi
-          if [[ "$capture_exit" -ne 0 ]]; then
-            printf 'Could not capture canonical verification output.\n' >&2
-            exit "$capture_exit"
-          fi
-          node scripts/milestone-evidence.mjs validate-ci \
-            "$verification_log" "$GITHUB_SHA" "$evidence_dir/verification.json"
+          for mode in quality acceptance; do
+            script=verify
+            report=verification
+            if [[ "$mode" == acceptance ]]; then
+              script=verify:acceptance
+              report=acceptance
+            fi
+            if npm run "$script" | tee "$verification_log"; then
+              verify_exit=0
+              capture_exit=0
+            else
+              pipeline_status=("${PIPESTATUS[@]}")
+              verify_exit=${pipeline_status[0]}
+              capture_exit=${pipeline_status[1]}
+            fi
+            printf '%s_exit=%s\n' "$report" "$verify_exit" >> "$evidence_dir/context.txt"
+            if [[ "$verify_exit" -ne 0 ]]; then
+              exit "$verify_exit"
+            fi
+            if [[ "$capture_exit" -ne 0 ]]; then
+              printf 'Could not capture %s verification output.\n' "$mode" >&2
+              exit "$capture_exit"
+            fi
+            node scripts/milestone-evidence.mjs validate-ci \
+              "$verification_log" "$GITHUB_SHA" "$evidence_dir/$report.json" "$mode"
+          done
 
       - name: Retain quality evidence
         if: ${{ !cancelled() }}

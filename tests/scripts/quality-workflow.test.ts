@@ -10,32 +10,44 @@ const root = fileURLToPath(new URL("../../", import.meta.url));
 const candidateSha = "a".repeat(40);
 const marker = "VERIFY_EVIDENCE ";
 
-function qualityReport() {
+type Mode = "quality" | "acceptance";
+
+function verificationReport(mode: Mode) {
+  const quality = mode === "quality";
+  const databaseStage = `npm run test:integration${quality ? "" : ":acceptance"} -- --no-cache --configLoader runner --reporter=json --outputFile=<temporary report>`;
+  const commands = [
+    "node --version",
+    ...(quality
+      ? [
+          "npm run architecture:check",
+          "npm run format:check",
+          "npm run lint",
+          "npm run typecheck -- --incremental false",
+          "npm run test -- --no-cache --configLoader runner",
+        ]
+      : []),
+    databaseStage,
+  ];
+  const count = quality ? 5 : 3;
   return {
-    mode: "quality",
+    mode,
     status: "PASS",
     exitCode: 0,
     node: "24.14.1",
     head: candidateSha,
     dirty: false,
-    stages: [
-      "node --version",
-      "npm run architecture:check",
-      "npm run format:check",
-      "npm run lint",
-      "npm run typecheck -- --incremental false",
-      "npm run test -- --no-cache --configLoader runner",
-      "npm run test:integration -- --no-cache --configLoader runner --reporter=json --outputFile=<temporary report>",
-    ].map((command, index) => ({
+    stages: commands.map((command) => ({
       command,
       status: "PASS",
       exitCode: 0,
-      ...(index === 6 ? { counts: { selected: 5, passed: 5, failed: 0 } } : {}),
+      ...(command === databaseStage
+        ? { counts: { selected: count, passed: count, failed: 0 } }
+        : {}),
     })),
   };
 }
 
-function runQualityStep(verifierOutput: string, verifierExit = 0) {
+function runQualityStep(mode: Mode, verifierOutput: string, verifierExit = 0) {
   const workflow = readFileSync(join(root, ".github/workflows/quality.yml"), "utf8");
   const step = workflow.match(
     /^      - name: Run canonical quality verification\n        shell: bash\n        run: \|\n((?:^ {10}.*\n|^\n)+)/m,
@@ -48,13 +60,17 @@ function runQualityStep(verifierOutput: string, verifierExit = 0) {
   try {
     const evidence = join(directory, "quality-evidence");
     const context = join(evidence, "context.txt");
-    const artifact = join(evidence, "verification.json");
+    const artifact = join(evidence, mode === "quality" ? "verification.json" : "acceptance.json");
     mkdirSync(evidence);
     writeFileSync(context, `commit=${candidateSha}\ncommand=npm run verify\n`);
-    writeFileSync(join(directory, "verifier-output.txt"), verifierOutput);
+    for (const reportMode of ["quality", "acceptance"] as const) {
+      const output =
+        mode === reportMode ? verifierOutput : outputFor(verificationReport(reportMode));
+      writeFileSync(join(directory, reportMode + ".txt"), output);
+    }
     writeFileSync(
       join(directory, "npm"),
-      `#!/bin/sh\n[ "$*" = 'run verify' ] || exit 99\ncat "$RUNNER_TEMP/verifier-output.txt"\nexit ${verifierExit}\n`,
+      `#!/bin/sh\ncase "$*" in\n  'run verify') mode=quality ;;\n  'run verify:acceptance') mode=acceptance ;;\n  *) exit 99 ;;\nesac\ncat "$RUNNER_TEMP/$mode.txt"\n[ "$mode" != '${mode}' ] || exit ${verifierExit}\n`,
       { mode: 0o700 },
     );
     const result = spawnSync(
@@ -86,17 +102,18 @@ function outputFor(report: unknown) {
   return `${marker}${JSON.stringify(report)}\n`;
 }
 
-describe("quality workflow evidence", () => {
+describe.each(["quality", "acceptance"] as const)("%s workflow evidence", (mode) => {
+  const artifactName = mode === "quality" ? "verification" : "acceptance";
   it("publishes one complete report for the candidate after a successful verifier exit", () => {
-    const report = qualityReport();
-    const result = runQualityStep(`Verification quality: PASS\n${outputFor(report)}`);
+    const report = verificationReport(mode);
+    const result = runQualityStep(mode, `Verification ${mode}: PASS\n${outputFor(report)}`);
 
     expect(result.exit).toBe(0);
-    expect(result.context).toContain("verification_exit=0\n");
+    expect(result.context).toContain(`${artifactName}_exit=0\n`);
     expect(JSON.parse(result.artifact ?? "")).toEqual(report);
   });
 
-  const valid = qualityReport();
+  const valid = verificationReport(mode);
   const schemaError =
     "Canonical evidence schema, observed exit or candidate identity did not match.";
   const incomplete = "Required quality checks were unavailable or incomplete.";
@@ -106,7 +123,11 @@ describe("quality workflow evidence", () => {
     ["duplicate marker", outputFor(valid).repeat(2), "Expected exactly one"],
     ["malformed JSON", `${marker}{\n`, "Verification JSON is malformed."],
     ["wrong schema", outputFor({ ...valid, node: null }), schemaError],
-    ["wrong mode", outputFor({ ...valid, mode: "acceptance" }), schemaError],
+    [
+      "wrong mode",
+      outputFor({ ...valid, mode: mode === "quality" ? "acceptance" : "quality" }),
+      schemaError,
+    ],
     ["wrong SHA", outputFor({ ...valid, head: "b".repeat(40) }), schemaError],
     ["dirty candidate", outputFor({ ...valid, dirty: true }), schemaError],
     ["partial stages", outputFor({ ...valid, stages: valid.stages.slice(0, -1) }), schemaError],
@@ -127,13 +148,13 @@ describe("quality workflow evidence", () => {
         ...valid,
         stages: [
           ...valid.stages.slice(0, -1),
-          { ...valid.stages[6], counts: { selected: 5, passed: 4, failed: 0 } },
+          { ...valid.stages.at(-1), counts: { selected: 5, passed: 4, failed: 0 } },
         ],
       }),
       "Required PostgreSQL results were incomplete.",
     ],
   ])("fails closed for %s", (_scenario, output, message) => {
-    const result = runQualityStep(output);
+    const result = runQualityStep(mode, output);
 
     expect(result.exit).toBe(1);
     expect(result.stderr).toContain(message);
@@ -141,10 +162,10 @@ describe("quality workflow evidence", () => {
   });
 
   it("preserves the verifier's non-zero exit even when it prints a passing report", () => {
-    const result = runQualityStep(outputFor(valid), 7);
+    const result = runQualityStep(mode, outputFor(valid), 7);
 
     expect(result.exit).toBe(7);
-    expect(result.context).toContain("verification_exit=7\n");
+    expect(result.context).toContain(`${artifactName}_exit=7\n`);
     expect(result.artifact).toBeNull();
   });
 });

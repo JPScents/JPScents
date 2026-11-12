@@ -13,6 +13,11 @@ const QUALITY_STAGES = [
   "npm run test:integration -- --no-cache --configLoader runner --reporter=json --outputFile=<temporary report>",
 ];
 
+const ACCEPTANCE_STAGES = [
+  "node --version",
+  "npm run test:integration:acceptance -- --no-cache --configLoader runner --reporter=json --outputFile=<temporary report>",
+];
+
 function git(...args) {
   return execFileSync("git", ["--no-optional-locks", "-c", "core.fsmonitor=false", ...args], {
     encoding: "utf8",
@@ -116,9 +121,11 @@ function readQualityReport(log) {
   return JSON.parse(lines[0].slice("VERIFY_EVIDENCE ".length));
 }
 
-function validateQualityReport(report, exitCode, candidate) {
+function validateVerificationReport(report, exitCode, candidate, mode = "quality") {
+  const commands = mode === "quality" ? QUALITY_STAGES : ACCEPTANCE_STAGES;
+  const minimumCases = mode === "quality" ? 5 : 3;
   if (
-    report?.mode !== "quality" ||
+    report?.mode !== mode ||
     !["PASS", "FAIL", "BLOCKED"].includes(report.status) ||
     typeof report.node !== "string" ||
     !/^24\.\d+\.\d+$/.test(report.node) ||
@@ -127,10 +134,10 @@ function validateQualityReport(report, exitCode, candidate) {
     report.head !== candidate.head ||
     report.dirty !== candidate.dirty ||
     !Array.isArray(report.stages) ||
-    report.stages.length !== QUALITY_STAGES.length ||
+    report.stages.length !== commands.length ||
     !report.stages.every(
       (stage, index) =>
-        stage?.command === QUALITY_STAGES[index] &&
+        stage?.command === commands[index] &&
         ["PASS", "FAIL", "BLOCKED", "NOT RUN"].includes(stage.status) &&
         (stage.exitCode === null || (Number.isInteger(stage.exitCode) && stage.exitCode >= 0)) &&
         (stage.status !== "PASS" || stage.exitCode === 0),
@@ -157,7 +164,7 @@ function validateQualityReport(report, exitCode, candidate) {
   const counts = report.stages.at(-1).counts;
   if (
     !Number.isInteger(counts?.selected) ||
-    counts.selected < 5 ||
+    counts.selected < minimumCases ||
     counts.passed !== counts.selected ||
     counts.failed !== 0
   ) {
@@ -166,12 +173,15 @@ function validateQualityReport(report, exitCode, candidate) {
   return { status: "PASS", snapshot: candidate.digest };
 }
 
-function validateCi(logPath, head, artifactPath) {
+function validateCi(logPath, head, artifactPath, mode = "quality") {
+  if (mode !== "quality" && mode !== "acceptance") {
+    throw new Error("Expected quality or acceptance evidence.");
+  }
   if (!/^[0-9a-f]{40}$/.test(head)) {
     throw new Error("Expected the full GitHub candidate SHA.");
   }
   const report = readQualityReport(readFileSync(logPath, "utf8"));
-  validateQualityReport(report, 0, { head, dirty: false });
+  validateVerificationReport(report, 0, { head, dirty: false }, mode);
   writeFileSync(artifactPath, JSON.stringify(report) + "\n", { flag: "wx", mode: 0o600 });
   return 0;
 }
@@ -192,7 +202,7 @@ function validateCapture(directory) {
   if (!sameSnapshot(before, after) || !sameSnapshot(after, snapshot(after.base))) {
     throw new Error("Candidate snapshot changed. Recapture evidence and request a new review.");
   }
-  const result = validateQualityReport(
+  const result = validateVerificationReport(
     readQualityReport(log.toString("utf8")),
     record.exitCode,
     after,
@@ -237,11 +247,11 @@ function main([mode, ...args]) {
   if (mode === "validate" && args.length === 1) {
     return validateCapture(args[0]);
   }
-  if (mode === "validate-ci" && args.length === 3) {
+  if (mode === "validate-ci" && (args.length === 3 || args.length === 4)) {
     return validateCi(...args);
   }
   throw new Error(
-    "Use snapshot <base>, capture <base> <evidence-dir>, validate <evidence-dir>, or validate-ci <log> <sha> <artifact>.",
+    "Use snapshot <base>, capture <base> <evidence-dir>, validate <evidence-dir>, or validate-ci <log> <sha> <artifact> [quality|acceptance].",
   );
 }
 
