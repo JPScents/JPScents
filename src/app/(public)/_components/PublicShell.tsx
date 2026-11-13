@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { BrandLogo } from "@/components/shared/BrandLogo";
-import { MotionPage } from "@/components/shared/MotionPage";
+import { BrandLogo } from "@/ui/BrandLogo";
+import { MotionPage } from "@/ui/MotionPage";
 import {
   Dialog,
   DialogClose,
@@ -14,10 +14,12 @@ import {
   DialogDescription,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@/ui/primitives/dialog";
 import { siteConfig } from "@/config/site";
-import { CartPreview, CartProvider, CartButton } from "@/features/cart";
-import { cn } from "@/lib/utils";
+import { CartPreview } from "@/app/(public)/_cart/components/CartPreview";
+import { CartProvider } from "@/app/(public)/_cart/providers/CartProvider";
+import { CartButton } from "@/app/(public)/_cart/components/CartButton";
+import { cn } from "@/shared/utils/class-names";
 
 import { Footer } from "./Footer";
 

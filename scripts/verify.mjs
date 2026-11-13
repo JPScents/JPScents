@@ -153,7 +153,9 @@ function runStage(stage, blocked) {
   }
   if (
     stage.needsClient &&
-    !["client.ts", "enums.ts"].every((file) => existsSync(join(root, "src/db/generated", file)))
+    !["client.ts", "enums.ts"].every((file) =>
+      existsSync(join(root, "src/infrastructure/database/generated", file)),
+    )
   ) {
     return {
       command: label,

@@ -1,9 +1,9 @@
-import { HelpMeChoose } from "@/features/catalogue/client";
+import { HelpMeChoose } from "./_components/HelpMeChoose";
 import {
   hasAvailablePerfumes,
   parsePreferences,
   recommendPerfumes,
-} from "@/features/catalogue/server";
+} from "@/modules/catalogue/server";
 
 export const dynamic = "force-dynamic";
 

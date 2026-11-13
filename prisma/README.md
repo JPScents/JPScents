@@ -1,6 +1,6 @@
 # Prisma, migrations, and data
 
-Prisma owns the JPScents application schema, generated client, and complete migration history. The SQL migrations also contain the Postgres constraints, RLS boundaries, trigger, Storage bucket, and Storage policies that Prisma Schema cannot express. Generated client files in `src/db/generated/` are intentionally ignored.
+Prisma owns the JPScents application schema and complete migration history. Generation writes the client to `src/infrastructure/database/generated`. The SQL migrations also contain the Postgres constraints, RLS boundaries, trigger, Storage bucket, and Storage policies that Prisma Schema cannot express. Generated client files are Git-ignored. When updating a checkout that generated Prisma before Stage A, move its obsolete `src/db/generated` directory out of the source tree and regenerate using the current schema.
 
 ## Application client and transactions
 

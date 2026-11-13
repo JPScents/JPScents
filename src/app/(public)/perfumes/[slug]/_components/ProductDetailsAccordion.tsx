@@ -3,8 +3,8 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
-import { preferenceLabel, type PublicPerfumeDetail } from "@/features/catalogue";
+} from "@/ui/primitives/accordion";
+import { preferenceLabel, type PublicPerfumeDetail } from "@/modules/catalogue";
 
 function Trigger({ title, summary }: { title: string; summary: string }) {
   return (

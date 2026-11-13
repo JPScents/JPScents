@@ -4,7 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { createClient } from "@supabase/supabase-js";
 
-import { PrismaClient } from "../../src/db/generated/client";
+import { PrismaClient } from "../../src/infrastructure/database/generated/client";
 
 const origin = "http://localhost:3000";
 const inbox = "http://127.0.0.1:56324";

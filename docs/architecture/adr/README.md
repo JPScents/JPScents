@@ -9,18 +9,18 @@ This index records the repository owner's approved decisions and links them to t
 | [ADR-0003 · Historical order facts](0003-historical-order-facts.md)                                             | Accepted | D3                                                                          | Price and quantity are stored with the order. Fulfilment and product labels still need snapshots and an explicit legacy fallback.                           |
 | [ADR-0004 · Merge and release verification](0004-merge-and-release-verification.md)                             | Accepted | D5                                                                          | Local checks exist. Required merge enforcement and release evidence remain open.                                                                            |
 
-## Proposed decisions for Milestone 7
+## Accepted decisions for Milestone 7
 
-These v1 proposals require owner approval under the existing change-control procedure. ADR-0001–0004 remain the approved baseline while the proposals are pending.
+The owner approved all six v1 decisions on 13 November 2026. The scoped successors retain the legacy guarantees and D1–D5 where applicable. Implementation and verification follow the assigned stages of [Milestone 7](https://github.com/JPScents/JPScents/pull/3). [Owner decision](https://github.com/JPScents/JPScents/pull/3#issuecomment-6848173613)
 
 | Decision                                                                                                         | Status   | Affected work                                                                |
 | ---------------------------------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------- |
-| [ADR-0005 · Commerce module and route boundaries](0005-commerce-module-and-route-boundaries.md)                  | Proposed | A · module layout, frontend placement, runtime imports and tooling           |
-| [ADR-0006 · Commerce orders, payments and stock lifecycle](0006-commerce-orders-payments-and-stock-lifecycle.md) | Proposed | B–D · pricing, inventory reservations, payment, refunds and returns          |
-| [ADR-0007 · Commerce order facts and guest capabilities](0007-commerce-order-facts-and-guest-capabilities.md)    | Proposed | B–E · snapshots, payable links and protected status access                   |
-| [ADR-0008 · Commerce provider trust boundaries](0008-commerce-provider-trust-boundaries.md)                      | Proposed | C–E · Paystack, Google Places and Resend                                     |
-| [ADR-0009 · Durable commerce reconciliation](0009-durable-commerce-reconciliation.md)                            | Proposed | C–F · database recovery, minute-level scheduling and operator visibility     |
-| [ADR-0010 · Commerce release and recovery evidence](0010-commerce-release-and-recovery-evidence.md)              | Proposed | F · merge evidence, deployment verification, payment activation and recovery |
+| [ADR-0005 · Commerce module and route boundaries](0005-commerce-module-and-route-boundaries.md)                  | Accepted | A · module layout, frontend placement, runtime imports and tooling           |
+| [ADR-0006 · Commerce orders, payments and stock lifecycle](0006-commerce-orders-payments-and-stock-lifecycle.md) | Accepted | B–D · pricing, inventory reservations, payment, refunds and returns          |
+| [ADR-0007 · Commerce order facts and guest capabilities](0007-commerce-order-facts-and-guest-capabilities.md)    | Accepted | B–E · snapshots, payable links and protected status access                   |
+| [ADR-0008 · Commerce provider trust boundaries](0008-commerce-provider-trust-boundaries.md)                      | Accepted | C–E · Paystack, Google Places and Resend                                     |
+| [ADR-0009 · Durable commerce reconciliation](0009-durable-commerce-reconciliation.md)                            | Accepted | C–F · database recovery, minute-level scheduling and operator visibility     |
+| [ADR-0010 · Commerce release and recovery evidence](0010-commerce-release-and-recovery-evidence.md)              | Accepted | F · merge evidence, deployment verification, payment activation and recovery |
 
 ## Naming and lifecycle
 
@@ -40,11 +40,8 @@ For each new proposal record its stable ID, version/digest, reason, recommendati
 
 Use the milestone/task/PR architecture-impact table for coordination, not a duplicate ADR register. No architectural change or an implementation wholly covered by an existing Accepted ADR requires a new record merely for uniformity.
 
-## Open Decisions
+## Earlier questions
 
-| Question                                                                                | Evidence needed before choosing                                                                                                                                                                                                                                                                                                       |
-| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Where should the D5 merge gate and release evidence be enforced in the hosted workflow? | Confirm actual branch protection, required check configuration, and deployment settings. D5 already defines the required outcomes. The hosted mechanism remains open. [ADR-0004](0004-merge-and-release-verification.md) · [Controls audit](../../engineering/CONTROLS_AUDIT.md#executed-verification)                                |
-| Should unpaid orders gain an expiry or stock-release policy?                            | The assessment identified this as a separate product question. Use evidence about unpaid order age, stock held, and operator handling before proposing any lifecycle change. [Codebase intelligence](../../CODEBASE_INTELLIGENCE.md#9-prioritised-recommendations) · [ADR-0002](0002-order-transactions-and-inventory-consistency.md) |
+The merge mechanism is now the required `JPScents quality` check. The automatic Vercel Production deployment remains in place. ADR-0010 adds milestone-specific release evidence. ADR-0006 defines expiry for new reservations and retains the existing treatment of legacy unpaid orders. [Quality gates](../../engineering/QUALITY_GATES.md) · [Commerce lifecycle](0006-commerce-orders-payments-and-stock-lifecycle.md) · [Release evidence](0010-commerce-release-and-recovery-evidence.md)
 
 The archived Orders milestone records an initial `NEW` status, manual restocking after cancellation, and display labels read from live catalogue data. The current lifecycle and D3 replace those historical choices. The archive remains evidence for its own milestone. [Archived Orders milestone](../../../.agents/milestones/archive/milestone-5-orders-and-completion.md#L29) · [Current order lifecycle](0002-order-transactions-and-inventory-consistency.md) · [Historical order facts](0003-historical-order-facts.md)

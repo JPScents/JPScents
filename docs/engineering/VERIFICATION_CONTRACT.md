@@ -51,6 +51,14 @@ Release readiness is a reviewer decision recorded against the exact candidate re
 3. For transaction, schema, constraint, or policy changes, include the applicable migrated-database evidence. The canonical suite covers a specific set of transaction and SQL policy invariants. Changes outside that scope require their own real-boundary cases.
 4. For affected Auth, Storage, or browser workflows, exercise the actual boundary with synthetic fixtures. Record applicable independent semantic architecture review and retain limitations in the release decision. [Architecture](../architecture/ARCHITECTURE.md#4-verification-and-exceptions) · [Integration gaps](INTEGRATION_VERIFICATION.md#evidence-still-needed)
 
+### Milestone 7 commerce evidence
+
+The Stage A exit applies T-02, T-04 and the structure-related parts of T-05. Update checker and fixtures alongside the path migration, regenerate and validate Prisma, and exercise the existing storefront, Admin, Auth, Storage and order history on an isolated production build. Stages B–E extend the existing unit, PostgreSQL and E2E entry points under `JPScents quality`. ADR-0006–0009 and T-01/03/04/06/07 specify changed invariants and actual provider evidence.
+
+For Stage F, ADR-0010 requires exact-candidate independent review, the existing required check, a populated rollout and recovery rehearsal, actual isolated provider and schedule evidence, and scoped security dispositions before the human merge. Automatic Vercel deployment follows the merge. Payment initiation and deployed readiness require separate authorised live verification. Use a compatible recovery build to pause new initiation while serving in-flight payments, refunds and reconciliation. [ADR-0010](../architecture/adr/0010-commerce-release-and-recovery-evidence.md) · [Milestone 7](https://github.com/JPScents/JPScents/pull/3)
+
+### Historical pre-fix result
+
 **Pre-fix release readiness was FAIL.** Acceptance reproduced three defects. The bestseller trigger blocks the valid final-unit purchase (D2), order views show edited fulfilment and product facts (D3), and a stale Admin price edit overwrites a checkout deduction (D4). Real browser and Supabase HTTP evidence remains unverified. The prior isolated build stopped at Google Fonts DNS resolution. This task records no new build result. [Executed acceptance and gaps](INTEGRATION_VERIFICATION.md#risk-and-evidence-matrix) · [Build audit](CONTROLS_AUDIT.md#executed-verification)
 
 The hosted workflow provisions Node, generated Prisma files, disposable PostgreSQL and a local browser stack. Verify hosted enforcement on the exact eligible candidate.

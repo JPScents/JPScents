@@ -1,11 +1,11 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { EmptyState } from "@/components/shared/EmptyState";
+import { EmptyState } from "@/ui/EmptyState";
 import { siteConfig } from "@/config/site";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 import { formatEnumLabel } from "@/shared/utils/format-enum-label";
-import type { AdminOrderRow } from "@/features/orders";
+import type { AdminOrderRow } from "@/modules/orders";
 
 export function AdminOverview({
   overview,

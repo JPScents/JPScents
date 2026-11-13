@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 
-import { refreshSupabaseSession } from "@/lib/supabase/proxy";
+import { refreshSupabaseSession } from "@/app/_server/supabase-proxy";
 
 export async function proxy(request: NextRequest) {
   return refreshSupabaseSession(request);

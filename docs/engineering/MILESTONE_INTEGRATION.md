@@ -45,7 +45,7 @@ Architecture gate: <satisfied for named tasks / BLOCKED; not merge approval>
 
 For a no-change or existing-decision task, explain why the work stays within the approved boundary. Do not demand a new ADR for routine implementation. Before review, add the actual change-to-ADR evidence mapping. Preserve the review budget, frozen contract history and candidate checks; an approval edit does not reset them.
 
-### Milestone 7 assessment without changing feature scope
+### Initial Milestone 7 assessment without changing feature scope
 
 At initial inspection the ignored contract was Milestone 7 v1, authored 13 November 2026. The owner subsequently authorised updating the authored milestone and confirmed execution had not started. Version 2 adds the architecture-impact table and approval/propagation checkpoints; feature scope and acceptance remain unchanged. ADR-0001–0004 are the only indexed Accepted decisions. The contract itself requires successor records before conflicting code. Its plan-approval quotation is context to examine for exact decision coverage, not a substitute for the missing records or permission to infer additional decisions. The latest owner instruction requires decision-specific approval; present any unresolved proposal using the brief rather than assume acceptance.
 
@@ -129,6 +129,12 @@ Report any contradictory instruction or missing route. Do not execute commerce o
 ```
 
 </details>
+
+### Milestone 7 adoption at activation
+
+The owner approved ADR-0005–0010 v1 on 13 November 2026. Milestone 7 v3 records this approval and the existing stage dependencies on [PR #3](https://github.com/JPScents/JPScents/pull/3). Stage A uses ADR-0005 and preserves D1. Stages B–D use ADR-0006/0007 for Orders, Catalogue, Payments, Delivery and guest access. Stages C–E apply ADR-0008/0009 for transport and durable recovery. Stage F uses ADR-0010 for exact candidate and deployed evidence. [Owner decision](https://github.com/JPScents/JPScents/pull/3#issuecomment-6848173613) · [Accepted ADRs](../architecture/adr/README.md#accepted-decisions-for-milestone-7)
+
+The Execution Agent in Codex chat `01a1cfa2-da3a-7140-ab11-405583c056aa` acknowledges those approved v1 versions, task mapping, isolation and verification requirements. Work proceeds in stage order. The required quality check and independent review still apply. The owner merges and separately authorises hosted changes and Production operations. The earlier deferred handoff above records the state before activation.
 
 ## Freeze the candidate and validate evidence
 

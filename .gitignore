@@ -21,7 +21,7 @@
 
 # production
 /build
-/src/db/generated/
+/src/infrastructure/database/generated/
 
 # misc
 .DS_Store

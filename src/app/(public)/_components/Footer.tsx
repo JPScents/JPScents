@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { BrandLogo } from "@/components/shared/BrandLogo";
+import { BrandLogo } from "@/ui/BrandLogo";
 import { siteConfig } from "@/config/site";
 
 export function Footer() {

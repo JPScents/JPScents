@@ -1,14 +1,14 @@
 # ADR-0005 · Commerce module and route boundaries
 
-- **Status** — PROPOSED — AWAITING APPROVAL
-- **Proposal** — v1, 13 November 2026
-- **Approval** — Pending owner decision
+- **Status** — Accepted
+- **Proposal** — [v1, 13 November 2026](https://github.com/JPScents/JPScents/blob/b02113b0c625fd538d41be42a74e50e6e7765f66/docs/architecture/adr/0005-commerce-module-and-route-boundaries.md)
+- **Approval** — 13 November 2026. The owner selected “Approve ADR-0005–0010 v1” in response to the exact v1 brief. [Decision brief](https://github.com/JPScents/JPScents/pull/3#issuecomment-6848070229) · [Owner decision record](https://github.com/JPScents/JPScents/pull/3#issuecomment-6848173613)
 
 ## Context
 
-The current `src/features` combines domain operations and frontend code. Cart has browser persistence and no database tables. Prisma Client is generated into `src/db/generated`, and Admin authentication combines Next.js request context, Supabase transport and identity policy under `src/lib`. Milestone 7 adds commerce domains and providers. The current feature discovery, import checks, generator exclusions and UI-generator aliases follow the existing layout. [Current architecture](../ARCHITECTURE.md#1-system-model-and-domain-boundaries) · [Prisma generator](../../../prisma/schema.prisma#L1)
+At the proposal baseline, `src/features` combined domain operations and frontend code. Cart has browser persistence and no database tables. Prisma Client is generated into `src/db/generated`, and Admin authentication combines Next.js request context, Supabase transport and identity policy under `src/lib`. Milestone 7 adds commerce domains and providers. The current feature discovery, import checks, generator exclusions and UI-generator aliases follow the existing layout. [Current architecture](../ARCHITECTURE.md#1-system-model-and-domain-boundaries) · [Prisma generator](../../../prisma/schema.prisma#L1)
 
-## Proposed decision
+## Decision
 
 Keep one Next.js app, database, manifest and deployment. Separate application and provider boundaries inside that app.
 
@@ -19,10 +19,10 @@ Keep one Next.js app, database, manifest and deployment. Separate application an
 
 ## Alternatives and trade-offs
 
-Keeping the current feature layout would avoid broad moves and is viable for a smaller change. The proposed layout makes the dependency boundaries explicit for the new domains. It requires a coordinated migration of consumers and tooling, so complete and verify the move before introducing payment behaviour. Independent packages would add package and deployment boundaries the contract excludes.
+Keeping the current feature layout would avoid broad moves and is viable for a smaller change. The approved layout makes the dependency boundaries explicit for the new domains. It requires a coordinated migration of consumers and tooling, so complete and verify the move before introducing payment behaviour. Independent packages would add package and deployment boundaries the contract excludes.
 
 ## Scope and verification
 
-Milestone 7 Stage A, AC-01/02/11, T-02/04/05. This is a scoped successor to ADR-0001 for placement and ownership. Preserve its D1 decision, browser isolation, directed APIs and single-app model. Reconcile ARC-01–03/07–09, the applicable STD-001/003/004/010/011/018/019/023 instructions and the architecture checker. Test allowed and disallowed imports, cycles, server/client boundaries and Prisma ownership. Build and exercise the existing storefront, Admin, Auth, Storage and order history against the moved source.
+Milestone 7 Stage A, AC-01/02/11, T-02/04/05. This is a scoped successor to [ADR-0001](0001-feature-boundaries-and-checkout-input.md) for placement and ownership. Preserve its D1 decision, browser isolation, directed APIs and single-app model. Reconcile ARC-01–03/07–09, the applicable STD-001/003/004/010/011/018/019/023 instructions and the architecture checker. Test allowed and disallowed imports, cycles, server/client boundaries and Prisma ownership. Build and exercise the existing storefront, Admin, Auth, Storage and order history against the moved source.
 
-**Blocked pending approval** — Folder, ownership, tooling and runtime-boundary migration, followed by its dependent stages. The existing ADR-0001 checkout validation change and baseline verification can proceed independently.
+**Adoption and verification** — Stage A implements the ownership and tooling changes before payment behaviour changes. Implementation and isolated regression evidence are pending at adoption.

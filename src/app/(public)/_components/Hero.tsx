@@ -1,10 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import { EmptyState } from "@/components/shared/EmptyState";
-import { MotionReveal } from "@/components/shared/MotionReveal";
-import { ProductBottlePlaceholder } from "@/components/shared/public/ProductBottlePlaceholder";
+import { EmptyState } from "@/ui/EmptyState";
+import { MotionReveal } from "@/ui/MotionReveal";
+import { ProductBottlePlaceholder } from "@/ui/ProductBottlePlaceholder";
 import { siteConfig } from "@/config/site";
-import type { PublicPerfumeCard } from "@/features/catalogue";
+import type { PublicPerfumeCard } from "@/modules/catalogue";
 
 function HeroImage({ perfume }: { perfume: PublicPerfumeCard }) {
   return perfume.primaryImageUrl ? (

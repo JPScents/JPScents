@@ -8,7 +8,7 @@ const { exchangeCodeForSession, getUser, signOut, verifyOtp } = vi.hoisted(() =>
   verifyOtp: vi.fn(),
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
+vi.mock("@/app/_server/supabase-session", () => ({
   createSupabaseServerClient: vi.fn(async () => ({
     auth: { exchangeCodeForSession, getUser, signOut, verifyOtp },
   })),

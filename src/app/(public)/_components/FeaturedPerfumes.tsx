@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { MotionReveal } from "@/components/shared/MotionReveal";
-import { ProductCard } from "@/features/catalogue/client";
+import { MotionReveal } from "@/ui/MotionReveal";
+import { ProductCard } from "./ProductCard";
 import { siteConfig } from "@/config/site";
-import type { PublicPerfumeCard } from "@/features/catalogue";
+import type { PublicPerfumeCard } from "@/modules/catalogue";
 
 export function FeaturedPerfumes({ products }: { products: PublicPerfumeCard[] }) {
   if (!products.length) {

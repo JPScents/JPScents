@@ -37,21 +37,16 @@ The application supports an empty production database. Public and Admin pages sh
 
 ## Project structure
 
-- `src/app` — public and protected route composition
-- `src/components` — shared UI, public and Admin components
-- `src/features/catalogue` — perfumes, variants, merchandising and recommendations
-- `src/features/cart` — cart state hook, browser persistence, preview, items and checkout summary; its server action resolves published variants through catalogue’s public API
-- `src/features/customers` — customer persistence and Admin operations
-- `src/features/orders` — checkout, order creation, status history and cancellation
-- `src/config` — typed, non-secret application configuration
-- `src/lib` — shared infrastructure utilities
-- `prisma` — schema, forward-only migrations and optional demo seed
-- `supabase` — reproducible local Supabase configuration and Auth template
-- `.agents/skills` — focused repository workflows and structural rules
+- `src/app` owns public and Admin routes, framework entry points, route-local UI and actions. `src/app/(public)/_cart` owns browser cart state and its published-variant resolver.
+- `src/modules` owns backend Catalogue, Customers, Orders and Access. Commerce adds Payments, Delivery and Notifications with their first operations.
+- `src/infrastructure` owns client lifetime, generated Prisma and concrete provider transport.
+- `src/ui` contains cross-group presentation and primitives. `src/shared` contains small runtime-neutral helpers.
+- `src/config` contains typed, non-secret application configuration.
+- `prisma` contains the schema, forward migrations and optional demo seed.
+- `supabase` contains the reproducible local Supabase configuration and Auth template.
+- `.agents/skills` contains focused repository workflows and the structural rules.
 
-Cart page composition lives in `src/app/(public)/cart/_components`; the checkout route owns its cart-to-orders integration in `_components`. Feature layers follow actual responsibilities: frontend features do not need services or repositories just for symmetry.
-
-Orders exposes interactive components through `client.ts`, protected Admin reads and confirmation access through `server.ts`, and shared row types through `index.ts`. Its checkout hook owns form updates and submission retries; the order repository owns atomic order/stock/customer operations, while the service resolves image URLs outside transactions and maps responses. Database operations live in the order repository, public/Admin transformations stay in pure mappers, and shared confirmation-cookie access stays server-only.
+Orders owns the atomic order operation. The checkout route owns its form, Cart integration, callable input boundary and confirmation cookie. Access evaluates Admin identity supplied by the app request adapter. [Approved structure](docs/architecture/adr/0005-commerce-module-and-route-boundaries.md)
 
 ## Local setup
 
@@ -180,6 +175,6 @@ Build or database verification requires an environment that complies with the ta
 
 The feature skill defines this repository's required folder semantics, filename conventions, and root-file allowlist. All Prisma database operations, including transactions and raw SQL, belong in repositories; services/actions must not import the client, receive transaction clients, or control transactions indirectly. Atomic database checks stay with their writes in meaningful repository operations. Client initialization remains in database infrastructure. Create only the responsibility folders a feature needs; do not preserve a root query/mutation/projection module or introduce pass-through layers for symmetry. Customers is the structural reference, with its existing abstractions still subject to review. These current rules supersede historical structural choices, not established product behavior.
 
-`npm run architecture:check` discovers every feature and enforces file/folder names, export-only root entry points, and recognizable Prisma imports/API access outside repositories. It also checks application, script, and seed boundaries, private cross-feature imports, feature-to-route dependencies, and feature-dependent generic shared code. It runs automatically as the first step of `npm run check`. The scoped command `node .agents/skills/feature-structure/scripts/check-structure.mjs src/features/<feature>` is useful during implementation; the full check is required before completion.
+`npm run architecture:check` checks business module structure and imports, browser reachability, Prisma ownership and the scoped image exceptions. It runs first in `npm run check`. For scoped development use `node .agents/skills/feature-structure/scripts/check-structure.mjs src/modules/<domain>`. Run the full check before completion.
 
 These checks cannot establish semantic responsibility or trace arbitrary indirect client access. Review contents, unnecessary abstractions, runtime projections, readability and behavior as well. A file named `*.schema.ts` still needs a real declarative contract; naming alone cannot prove that. Do not add exceptions or change rules to preserve an unjustified abstraction.

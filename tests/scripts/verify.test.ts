@@ -25,9 +25,9 @@ function verifyFixture(
     new URL("../../scripts/verify.mjs", import.meta.url),
     join(directory, "scripts/verify.mjs"),
   );
-  mkdirSync(join(directory, "src/db/generated"), { recursive: true });
+  mkdirSync(join(directory, "src/infrastructure/database/generated"), { recursive: true });
   for (const file of ["client.ts", "enums.ts"]) {
-    writeFileSync(join(directory, "src/db/generated", file), "");
+    writeFileSync(join(directory, "src/infrastructure/database/generated", file), "");
   }
   mkdirSync(join(directory, "node_modules/.bin"), { recursive: true });
   mkdirSync(join(directory, "node_modules/typescript"));

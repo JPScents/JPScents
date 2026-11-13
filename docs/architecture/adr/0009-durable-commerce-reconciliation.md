@@ -1,14 +1,14 @@
 # ADR-0009 · Durable commerce reconciliation
 
-- **Status** — PROPOSED — AWAITING APPROVAL
-- **Proposal** — v1, 13 November 2026
-- **Approval** — Pending owner decision
+- **Status** — Accepted
+- **Proposal** — [v1, 13 November 2026](https://github.com/JPScents/JPScents/blob/b02113b0c625fd538d41be42a74e50e6e7765f66/docs/architecture/adr/0009-durable-commerce-reconciliation.md)
+- **Approval** — 13 November 2026. The owner selected “Approve ADR-0005–0010 v1” in response to the exact v1 brief. [Decision brief](https://github.com/JPScents/JPScents/pull/3#issuecomment-6848070229) · [Owner decision record](https://github.com/JPScents/JPScents/pull/3#issuecomment-6848173613)
 
 ## Context
 
 Provider timeouts, webhook redelivery, refund status changes and lost browser callbacks can outlive a request. Reservation expiry has a server deadline even when the scheduler runs late. The required hosted cadence and Preview evidence matter when choosing Vercel's scheduling mechanism. Legacy Cron Jobs run on Production only. Vercel Schedules supports a scoped Preview branch and a one-minute cadence on Pro or Enterprise. [Vercel scheduling comparison](https://vercel.com/docs/schedules) · [Plan limits](https://vercel.com/docs/schedules/limits)
 
-## Proposed decision
+## Decision
 
 Use one protected minute-level Vercel Schedules path target in the existing project. Keep durable work on the domain records that represent outstanding attempts, reservations, refunds, receipts and notification requests. Keep a small persisted run record for operator visibility. Use a deployment-scoped bearer secret for the HTTP target. Verify the actual target, secret injection, invocation and environment isolation in an authorised Preview and in Production. Enable the Preview schedule only on the isolated branch as a separately authorised hosted setup. Confirm account capability and cost before configuring a one-minute schedule. Vercel Schedules is currently documented as beta. [Target configuration](https://vercel.com/docs/schedules/configuration) · [Environment behaviour](https://vercel.com/docs/schedules/concepts)
 
@@ -22,4 +22,4 @@ Legacy Cron Jobs can meet the interval on a paid plan but cannot supply an isola
 
 Milestone 7 C–F, AC-06/07/09/10/11/12, T-03/06/07. Reconcile ARC-05/08/10/11, INV-03–05/07, VER-02 and STD-015/016/020. Verify wrong-secret denial, idle and concurrent runs, expired claims, unknown provider outcomes, and actual hosted invocation and recovery. Keep real invocation evidence pending until the account, cadence and isolated target are confirmed.
 
-**Blocked pending approval** — Durable reconciliation design, hosted scheduled endpoint and dependent release evidence. Account and official capability checks may proceed without changing settings.
+**Adoption and verification** — Stages C–F implement and verify durable work. Hosted configuration and any required billing change need separate authorisation. Actual invocation evidence is pending.

@@ -2,18 +2,18 @@ import { randomUUID } from "node:crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { PrismaClient } from "@/db/generated/client";
-import type { CheckoutInput } from "@/features/orders/types";
+import { PrismaClient } from "@/infrastructure/database/generated/client";
+import type { CheckoutInput } from "@/modules/orders/types";
 
 import { APPLICATION_NAME, startDisposablePostgres } from "./disposable-postgres";
 
 let cluster: ReturnType<typeof startDisposablePostgres> | undefined;
 let db: PrismaClient;
 let applicationClient: PrismaClient | undefined;
-let orders: typeof import("@/features/orders/repositories/order.repository");
-let orderMapper: typeof import("@/features/orders/mappers/order.mapper");
-let variants: typeof import("@/features/catalogue/repositories/variant.repository");
-let catalogue: typeof import("@/features/catalogue/server");
+let orders: typeof import("@/modules/orders/repositories/order.repository");
+let orderMapper: typeof import("@/modules/orders/mappers/order.mapper");
+let variants: typeof import("@/modules/catalogue/repositories/variant.repository");
+let catalogue: typeof import("@/modules/catalogue/server");
 let fixtureNumber = 0;
 
 beforeAll(async () => {
@@ -25,7 +25,7 @@ beforeAll(async () => {
     adapter: new PrismaPg({ connectionString: observerUrl.toString(), max: 3 }),
   });
   // Load application modules only after setting the private connection URL.
-  const { prisma } = await import("@/db/prisma");
+  const { prisma } = await import("@/infrastructure/database/prisma");
   applicationClient = prisma;
   expect(
     await prisma.$queryRaw`
@@ -34,10 +34,10 @@ beforeAll(async () => {
     `,
   ).toEqual([{ onSocket: true, directory: cluster.directory }]);
   [orders, orderMapper, variants, catalogue] = await Promise.all([
-    import("@/features/orders/repositories/order.repository"),
-    import("@/features/orders/mappers/order.mapper"),
-    import("@/features/catalogue/repositories/variant.repository"),
-    import("@/features/catalogue/server"),
+    import("@/modules/orders/repositories/order.repository"),
+    import("@/modules/orders/mappers/order.mapper"),
+    import("@/modules/catalogue/repositories/variant.repository"),
+    import("@/modules/catalogue/server"),
   ]);
 });
 
