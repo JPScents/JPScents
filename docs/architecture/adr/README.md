@@ -9,6 +9,19 @@ This index records the repository owner's approved decisions and links them to t
 | [ADR-0003 · Historical order facts](0003-historical-order-facts.md)                                             | Accepted | D3                                                                          | Price and quantity are stored with the order. Fulfilment and product labels still need snapshots and an explicit legacy fallback.                           |
 | [ADR-0004 · Merge and release verification](0004-merge-and-release-verification.md)                             | Accepted | D5                                                                          | Local checks exist. Required merge enforcement and release evidence remain open.                                                                            |
 
+## Proposed decisions for Milestone 7
+
+These v1 proposals require owner approval under the existing change-control procedure. ADR-0001–0004 remain the approved baseline while the proposals are pending.
+
+| Decision                                                                                                         | Status   | Affected work                                                                |
+| ---------------------------------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------- |
+| [ADR-0005 · Commerce module and route boundaries](0005-commerce-module-and-route-boundaries.md)                  | Proposed | A · module layout, frontend placement, runtime imports and tooling           |
+| [ADR-0006 · Commerce orders, payments and stock lifecycle](0006-commerce-orders-payments-and-stock-lifecycle.md) | Proposed | B–D · pricing, inventory reservations, payment, refunds and returns          |
+| [ADR-0007 · Commerce order facts and guest capabilities](0007-commerce-order-facts-and-guest-capabilities.md)    | Proposed | B–E · snapshots, payable links and protected status access                   |
+| [ADR-0008 · Commerce provider trust boundaries](0008-commerce-provider-trust-boundaries.md)                      | Proposed | C–E · Paystack, Google Places and Resend                                     |
+| [ADR-0009 · Durable commerce reconciliation](0009-durable-commerce-reconciliation.md)                            | Proposed | C–F · database recovery, minute-level scheduling and operator visibility     |
+| [ADR-0010 · Commerce release and recovery evidence](0010-commerce-release-and-recovery-evidence.md)              | Proposed | F · merge evidence, deployment verification, payment activation and recovery |
+
 ## Naming and lifecycle
 
 1. Use the next sequential four-digit ID and a descriptive kebab-case filename, such as `0005-subject.md`. Keep the ID stable and reserve retired IDs. Add a row to this index and link related records from the ADR.
