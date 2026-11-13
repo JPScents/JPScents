@@ -23,6 +23,18 @@ import { cancelOrderAdmin } from "@/features/orders/actions/cancel-order.admin.a
 import { submitOrder } from "@/features/orders/actions/submit-order.action";
 import { readConfirmationCookie } from "@/features/orders/server/confirmation-cookie";
 
+const variantId = "11111111-1111-4111-8111-111111111111";
+const submissionKey = "22222222-2222-4222-8222-222222222222";
+const cart = [{ perfumeVariantId: variantId, quantity: 1 }];
+const checkout = {
+  customerName: " Ada ",
+  whatsappNumber: "0803 123 4567",
+  email: "ADA@EXAMPLE.COM",
+  deliveryState: "Lagos",
+  deliveryCity: "Ikeja",
+  deliveryAddress: "1 Example Street",
+};
+
 describe("order server actions", () => {
   beforeEach(() => vi.clearAllMocks());
   it("rejects unauthorised status writes", async () => {
@@ -74,19 +86,60 @@ describe("order server actions", () => {
     expect(mocks.updateOrderStatus).toHaveBeenCalledWith("JP-1", "PAID");
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin/orders/JP-1");
   });
-  it("sets secure 24-hour confirmation access without returning its token", async () => {
+  it("rejects invalid carts, including quantities that exceed the limit after merging", async () => {
+    for (const lines of [
+      null,
+      [],
+      [
+        { perfumeVariantId: variantId, quantity: 60 },
+        { perfumeVariantId: variantId, quantity: 60 },
+      ],
+    ]) {
+      await expect(submitOrder(lines, checkout, submissionKey)).resolves.toMatchObject({
+        error: expect.stringContaining("cart"),
+      });
+    }
+    expect(mocks.createOrder).not.toHaveBeenCalled();
+    expect(mocks.cookies.set).not.toHaveBeenCalled();
+  });
+
+  it.each([null, 42, "invalid"])("rejects invalid submission identity %j", async (key) => {
+    await expect(submitOrder(cart, checkout, key)).resolves.toMatchObject({
+      error: expect.stringContaining("refresh"),
+    });
+    expect(mocks.createOrder).not.toHaveBeenCalled();
+    expect(mocks.cookies.set).not.toHaveBeenCalled();
+  });
+
+  it("returns field errors and accepts a corrected retry with the same key", async () => {
+    await expect(
+      submitOrder(cart, { ...checkout, deliveryAddress: "" }, submissionKey),
+    ).resolves.toEqual({ errors: { deliveryAddress: "Enter your delivery address." } });
+    expect(mocks.createOrder).not.toHaveBeenCalled();
+    expect(mocks.cookies.set).not.toHaveBeenCalled();
+
     mocks.createOrder.mockResolvedValue({
       order: { reference: "JP-1" },
-      confirmationToken: "secret",
+      confirmationToken: "confirmation-fixture",
       duplicate: false,
     });
-    await expect(submitOrder([], {}, "key")).resolves.toEqual({
+    await expect(submitOrder([...cart, ...cart], checkout, submissionKey)).resolves.toEqual({
       order: { reference: "JP-1" },
       duplicate: false,
     });
+    expect(mocks.createOrder).toHaveBeenCalledExactlyOnceWith(
+      [{ perfumeVariantId: variantId, quantity: 2 }],
+      {
+        ...checkout,
+        customerName: "Ada",
+        whatsappNumber: "2348031234567",
+        email: "ada@example.com",
+      },
+      submissionKey,
+    );
     expect(mocks.cookies.set).toHaveBeenCalledWith(
       "jpscents.order-confirmation",
-      "secret",
+      "confirmation-fixture",
       expect.objectContaining({
         httpOnly: true,
         sameSite: "lax",
@@ -101,7 +154,9 @@ describe("order server actions", () => {
     expect(mocks.cookies.get).toHaveBeenCalledWith("jpscents.order-confirmation");
 
     mocks.createOrder.mockResolvedValue({ error: "Invalid cart." });
-    await expect(submitOrder([], {}, "key")).resolves.toEqual({ error: "Invalid cart." });
+    await expect(submitOrder(cart, checkout, submissionKey)).resolves.toEqual({
+      error: "Invalid cart.",
+    });
     expect(mocks.cookies.set).not.toHaveBeenCalled();
   });
 });

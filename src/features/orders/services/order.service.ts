@@ -4,7 +4,6 @@ import { getCurrentAdmin } from "@/lib/auth/admin";
 import { getPerfumeImageUrl } from "@/lib/supabase/storage";
 
 import { toPublicOrder, toAdminOrder, toAdminOrderRow } from "../mappers/order.mapper";
-import { parseOrderSubmission } from "../parsers/order-submission.parser";
 import {
   findOrderConfirmation,
   findAdminOrder,
@@ -14,7 +13,7 @@ import {
   createOrderWithStockDeduction,
   type PublicOrderRecord,
 } from "../repositories/order.repository";
-import type { OrderFilters } from "../types";
+import type { CheckoutInput, OrderCartLine, OrderFilters } from "../types";
 
 function logOrderFailure(operation: string, error: unknown) {
   const failure = error as {
@@ -88,20 +87,13 @@ export async function getOrdersAdminOverview() {
   return { awaitingAction, ordersThisWeek, recentOrders: recentOrders.map(toAdminOrderRow) };
 }
 
-export async function createOrder(linesRaw: unknown, checkoutRaw: unknown, submissionKey: unknown) {
-  const parsed = parseOrderSubmission(linesRaw, checkoutRaw, submissionKey);
-  if (parsed.error !== undefined) {
-    return { error: parsed.error } as const;
-  }
-  if (parsed.errors !== undefined) {
-    return { errors: parsed.errors } as const;
-  }
+export async function createOrder(
+  lines: OrderCartLine[],
+  input: CheckoutInput,
+  submissionKey: string,
+) {
   try {
-    const result = await createOrderWithStockDeduction(
-      parsed.lines,
-      parsed.input,
-      parsed.submissionKey,
-    );
+    const result = await createOrderWithStockDeduction(lines, input, submissionKey);
     if ("error" in result) {
       return result;
     }

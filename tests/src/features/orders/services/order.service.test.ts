@@ -79,7 +79,7 @@ import {
 const id = "11111111-1111-4111-8111-111111111111";
 const checkout = {
   customerName: "Ada",
-  whatsappNumber: "0803 123 4567",
+  whatsappNumber: "2348031234567",
   deliveryState: "Lagos",
   deliveryCity: "Ikeja",
   deliveryAddress: "1 Example Street",
@@ -165,20 +165,6 @@ describe("orders", () => {
     );
     expect(result).toMatchObject({ duplicate: true, order: { reference: order.reference } });
     expect(mocks.orderCreate).not.toHaveBeenCalled();
-  });
-
-  it("rejects malformed and merged cart quantities before writes", async () => {
-    await expect(
-      createOrder(
-        [
-          { perfumeVariantId: id, quantity: 60 },
-          { perfumeVariantId: id, quantity: 60 },
-        ],
-        checkout,
-        "22222222-2222-4222-8222-222222222222",
-      ),
-    ).resolves.toMatchObject({ error: expect.stringContaining("cart") });
-    expect(mocks.variantFindMany).not.toHaveBeenCalled();
   });
 
   it("creates a customer, conditionally decrements stock, and projects no storage path", async () => {

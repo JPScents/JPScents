@@ -1,10 +1,19 @@
 "use server";
 
-import { createOrder } from "../services/order.service";
+import { parseOrderSubmission } from "../parsers/order-submission.parser";
 import { writeConfirmationCookie } from "../server/confirmation-cookie";
+import { createOrder } from "../services/order.service";
 
-export async function submitOrder(lines: unknown, checkout: unknown, submissionKey: string) {
-  const result = await createOrder(lines, checkout, submissionKey);
+export async function submitOrder(lines: unknown, checkout: unknown, submissionKey: unknown) {
+  const parsed = parseOrderSubmission(lines, checkout, submissionKey);
+  if (parsed.error !== undefined) {
+    return { error: parsed.error } as const;
+  }
+  if (parsed.errors !== undefined) {
+    return { errors: parsed.errors } as const;
+  }
+
+  const result = await createOrder(parsed.lines, parsed.input, parsed.submissionKey);
   if ("confirmationToken" in result && result.confirmationToken) {
     await writeConfirmationCookie(result.confirmationToken);
   }
