@@ -17,6 +17,10 @@ Use the project's instructions for commands, paths, and authorization. An implem
 - Make routine implementation choices and continue. Ask only when an unresolved product decision, destructive action, or material ambiguity changes the outcome. Flag discovered bugs; fix small directly related issues with clear intended behavior, but do not bundle speculative behavior, schema, or unrelated feature changes.
 - Preserve UI, responsiveness, motion, accessibility, authorization, persisted contracts, and current business invariants unless the task changes them. Internal paths/exports may change with their consumers.
 
+## Architectural decision checkpoint
+
+Apply [change control](../../../docs/engineering/CHANGE_CONTROL.md#mandatory-architecture-approval-contract) before affected edits and whenever a new decision appears. The Execution Agent independently checks the task's architecture-impact classification and Accepted ADR/owner evidence. Stop affected work immediately and notify the Orchestrator when new or modified architecture is needed; mark dependents BLOCKED while independent authorised work continues. Do not implement a proposed choice or infer approval from the milestone, tests or review. Resume only after the Orchestrator records approval, aligns contracts/tasks/verification and receives acknowledgement of the revised ADR/version. Routine work inside existing decisions needs no new ADR. Merge authority remains separate.
+
 ## Verify the actual boundary
 
 For an authorised JPScents milestone, apply the [milestone completion checkpoints](../../../docs/engineering/MILESTONE_INTEGRATION.md) within the existing milestone workflow. Run and validate the required canonical and scope-specific evidence before independent review. Use the same frozen candidate for the READY decision. Ordinary delivery keeps the change-specific requirements below.
