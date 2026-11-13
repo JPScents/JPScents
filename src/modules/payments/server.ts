@@ -22,3 +22,4 @@ export {
   finishPaymentCheck,
   finishReceipt,
 } from "./repositories/payment-reconciliation.repository";
+export { hasRefundRequest, refundableBalance } from "./repositories/refund.repository";

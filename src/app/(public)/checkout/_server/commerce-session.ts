@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 
 const CHECKOUT_COOKIE = "jp_commerce_checkout";
 const STATUS_COOKIE = "jp_commerce_status";
+const QUOTE_COOKIE = "jp_commerce_quote";
 const cookieOptions = {
   path: "/checkout",
   httpOnly: true,
@@ -37,4 +38,12 @@ export async function setCommerceStatusCookie(token: string, expires?: Date) {
 
 export async function readCommerceStatusCookie() {
   return (await cookies()).get(STATUS_COOKIE)?.value;
+}
+
+export async function readCommerceQuoteCookie() {
+  return (await cookies()).get(QUOTE_COOKIE)?.value;
+}
+
+export async function setCommerceQuoteCookie(token: string, expires: Date) {
+  (await cookies()).set(QUOTE_COOKIE, token, { ...cookieOptions, expires });
 }

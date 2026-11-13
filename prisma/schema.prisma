@@ -100,6 +100,13 @@ enum StockMovementKind {
   RETURN
 }
 
+enum CheckoutDraftStatus {
+  DRAFT
+  ISSUED
+  REVOKED
+  CHECKED_OUT
+}
+
 model Perfume {
   id              String           @id @default(uuid()) @db.Uuid
   name            String
@@ -136,17 +143,18 @@ model PerfumeImage {
 }
 
 model PerfumeVariant {
-  id             String          @id @default(uuid()) @db.Uuid
-  perfumeId      String          @db.Uuid
-  sizeValue      Decimal         @db.Decimal(8, 2)
+  id             String              @id @default(uuid()) @db.Uuid
+  perfumeId      String              @db.Uuid
+  sizeValue      Decimal             @db.Decimal(8, 2)
   sizeUnit       String
   priceMinor     Int
   quantity       Int
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  perfume        Perfume         @relation(fields: [perfumeId], references: [id], onDelete: Restrict)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  perfume        Perfume             @relation(fields: [perfumeId], references: [id], onDelete: Restrict)
   orderItems     OrderItem[]
   stockMovements StockMovement[]
+  draftLines     CheckoutDraftLine[]
 
   @@unique([perfumeId, sizeValue, sizeUnit])
   @@index([perfumeId])
@@ -207,6 +215,8 @@ model Order {
   capabilities            OrderCapability[]
   reservations            StockReservation[]
   stockMovements          StockMovement[]
+  checkoutDraft           CheckoutDraft?
+  commerceEvents          CommerceOrderEvent[]
 
   @@unique([id, paidAttemptId])
   @@index([status, createdAt])
@@ -364,11 +374,56 @@ model StockMovement {
   perfumeVariantId String            @db.Uuid
   kind             StockMovementKind
   quantity         Int
+  returnKey        String?
+  returnedBy       String?           @db.Uuid
+  returnReason     String?
   createdAt        DateTime          @default(now())
   order            Order             @relation(fields: [orderId], references: [id], onDelete: Restrict)
   reservation      StockReservation? @relation(fields: [orderId, reservationId], references: [orderId, id], onDelete: Restrict)
   perfumeVariant   PerfumeVariant    @relation(fields: [perfumeVariantId], references: [id], onDelete: Restrict)
 
-  @@unique([reservationId, perfumeVariantId, kind])
+  @@unique([orderId, perfumeVariantId, returnKey])
   @@index([orderId, kind])
+}
+
+model CheckoutDraft {
+  id             String              @id @default(uuid()) @db.Uuid
+  status         CheckoutDraftStatus @default(DRAFT)
+  version        Int                 @default(0)
+  capabilityHash String?             @unique @db.Char(64)
+  expiresAt      DateTime?
+  orderId        String?             @unique @db.Uuid
+  contactName    String?
+  contactEmail   String?
+  createdBy      String              @db.Uuid
+  updatedBy      String              @db.Uuid
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  order          Order?              @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  lines          CheckoutDraftLine[]
+
+  @@index([updatedAt])
+}
+
+model CheckoutDraftLine {
+  draftId          String         @db.Uuid
+  perfumeVariantId String         @db.Uuid
+  quantity         Int
+  quotedPriceMinor Int?
+  draft            CheckoutDraft  @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  variant          PerfumeVariant @relation(fields: [perfumeVariantId], references: [id], onDelete: Restrict)
+
+  @@id([draftId, perfumeVariantId])
+}
+
+model CommerceOrderEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  orderId   String   @db.Uuid
+  action    String
+  actorId   String?  @db.Uuid
+  reason    String?
+  createdAt DateTime @default(now())
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@index([orderId, createdAt])
 }

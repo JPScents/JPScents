@@ -34,6 +34,7 @@ export type CommerceCheckoutCommand = {
   submissionKey: string;
   sessionToken: string;
   environment: "TEST" | "LIVE";
+  issuedQuote?: { token: string; version: number };
 };
 
 export type OrderLine = {

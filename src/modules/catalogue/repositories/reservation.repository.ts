@@ -153,3 +153,95 @@ export async function listDueReservationOrders(now: Date, take: number) {
   });
   return due.map(({ orderId }) => orderId);
 }
+
+export async function restorePaidAllocation(
+  tx: Prisma.TransactionClient,
+  orderId: string,
+  paymentAttemptId: string,
+) {
+  const reservation = await tx.stockReservation.findUnique({
+    where: { orderId_paymentAttemptId: { orderId, paymentAttemptId } },
+    select: {
+      id: true,
+      movements: {
+        where: { kind: "ALLOCATE" },
+        select: { perfumeVariantId: true, quantity: true },
+      },
+    },
+  });
+  if (!reservation?.movements.length || !(await restoreStockForOrder(tx, reservation.movements))) {
+    throw new Error("The paid allocation could not be restored.");
+  }
+  await tx.stockMovement.createMany({
+    data: reservation.movements.map((line) => ({
+      ...line,
+      orderId,
+      reservationId: reservation.id,
+      kind: "RELEASE",
+    })),
+  });
+}
+
+export async function creditSaleableReturn(
+  tx: Prisma.TransactionClient,
+  input: {
+    orderId: string;
+    paymentAttemptId: string;
+    perfumeVariantId: string;
+    quantity: number;
+    requestKey: string;
+    actorId: string;
+    reason: string;
+  },
+) {
+  const duplicate = await tx.stockMovement.findUnique({
+    where: {
+      orderId_perfumeVariantId_returnKey: {
+        orderId: input.orderId,
+        perfumeVariantId: input.perfumeVariantId,
+        returnKey: input.requestKey,
+      },
+    },
+    select: { id: true },
+  });
+  if (duplicate) {
+    return { unchanged: true } as const;
+  }
+  const allocated = await tx.stockMovement.aggregate({
+    where: {
+      orderId: input.orderId,
+      perfumeVariantId: input.perfumeVariantId,
+      kind: "ALLOCATE",
+      reservation: { paymentAttemptId: input.paymentAttemptId },
+    },
+    _sum: { quantity: true },
+  });
+  const returned = await tx.stockMovement.aggregate({
+    where: { orderId: input.orderId, perfumeVariantId: input.perfumeVariantId, kind: "RETURN" },
+    _sum: { quantity: true },
+  });
+  if (
+    !Number.isSafeInteger(input.quantity) ||
+    input.quantity < 1 ||
+    input.quantity > (allocated._sum.quantity ?? 0) - (returned._sum.quantity ?? 0)
+  ) {
+    return {
+      error: "Return quantity exceeds the remaining saleable units for this line.",
+    } as const;
+  }
+  if (!(await restoreStockForOrder(tx, [input]))) {
+    throw new Error("Returned stock could not be credited.");
+  }
+  await tx.stockMovement.create({
+    data: {
+      orderId: input.orderId,
+      perfumeVariantId: input.perfumeVariantId,
+      quantity: input.quantity,
+      kind: "RETURN",
+      returnKey: input.requestKey,
+      returnedBy: input.actorId,
+      returnReason: input.reason,
+    },
+  });
+  return { ok: true } as const;
+}

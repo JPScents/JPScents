@@ -34,6 +34,7 @@ export async function deductStockForOrder(
   tx: Prisma.TransactionClient,
   lines: StockLine[],
   expectedPrices?: ReadonlyMap<string, number>,
+  useLockedQuote = false,
 ) {
   const ids = await lockStockLines(tx, lines);
   const variants = await tx.perfumeVariant.findMany({
@@ -55,6 +56,7 @@ export async function deductStockForOrder(
   const byId = new Map(variants.map((variant) => [variant.id, variant]));
   if (
     expectedPrices &&
+    !useLockedQuote &&
     variants.some((variant) => expectedPrices.get(variant.id) !== variant.priceMinor)
   ) {
     return {
@@ -120,4 +122,16 @@ export async function restoreStockForOrder(tx: Prisma.TransactionClient, lines: 
     }
   }
   return true;
+}
+
+export async function quotePublishedVariants(tx: Prisma.TransactionClient, lines: StockLine[]) {
+  const ids = await lockStockLines(tx, lines);
+  const variants = await tx.perfumeVariant.findMany({
+    where: { id: { in: ids }, perfume: { status: "PUBLISHED" } },
+    select: { id: true, priceMinor: true, quantity: true },
+  });
+  const byId = new Map(variants.map((variant) => [variant.id, variant]));
+  return lines.every((line) => (byId.get(line.perfumeVariantId)?.quantity ?? 0) >= line.quantity)
+    ? byId
+    : null;
 }

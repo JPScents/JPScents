@@ -42,3 +42,6 @@ export {
   hasPublishedPerfumes,
   listPublishedPerfumeSitemapEntries,
 } from "./repositories/perfume.repository";
+export { quotePublishedVariants } from "./repositories/stock.repository";
+export { searchCheckoutVariants } from "./repositories/perfume.repository";
+export { creditSaleableReturn, restorePaidAllocation } from "./repositories/reservation.repository";

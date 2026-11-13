@@ -18,6 +18,8 @@ let legacy: typeof import("@/modules/orders/repositories/order.repository");
 let delivery: typeof import("@/modules/delivery/server");
 let payments: typeof import("@/modules/orders/repositories/commerce-payment.repository");
 let statusAccess: typeof import("@/modules/orders/repositories/order-status-access.repository");
+let adminOrders: typeof import("@/modules/orders/repositories/admin-commerce-order.repository");
+let drafts: typeof import("@/modules/orders/repositories/checkout-draft.repository");
 let receipts: typeof import("@/modules/payments/server");
 let preMigrationOrderId: string;
 let migratedDeliverySettings: Awaited<ReturnType<typeof delivery.listDeliverySettings>>;
@@ -47,14 +49,17 @@ beforeAll(async () => {
   vi.stubEnv("DATABASE_URL", cluster.connectionString);
   vi.stubEnv("COMMERCE_STATUS_SECRET", "synthetic-checkout-status-signing-secret");
   application = (await import("@/infrastructure/database/prisma")).prisma;
-  [orders, legacy, delivery, payments, statusAccess, receipts] = await Promise.all([
-    import("@/modules/orders/repositories/commerce-order.repository"),
-    import("@/modules/orders/repositories/order.repository"),
-    import("@/modules/delivery/server"),
-    import("@/modules/orders/repositories/commerce-payment.repository"),
-    import("@/modules/orders/repositories/order-status-access.repository"),
-    import("@/modules/payments/server"),
-  ]);
+  [orders, legacy, delivery, payments, statusAccess, receipts, adminOrders, drafts] =
+    await Promise.all([
+      import("@/modules/orders/repositories/commerce-order.repository"),
+      import("@/modules/orders/repositories/order.repository"),
+      import("@/modules/delivery/server"),
+      import("@/modules/orders/repositories/commerce-payment.repository"),
+      import("@/modules/orders/repositories/order-status-access.repository"),
+      import("@/modules/payments/server"),
+      import("@/modules/orders/repositories/admin-commerce-order.repository"),
+      import("@/modules/orders/repositories/checkout-draft.repository"),
+    ]);
   migratedDeliverySettings = await delivery.listDeliverySettings(admin);
 });
 
@@ -371,12 +376,10 @@ describe("PostgreSQL approved acceptance commerce inventory", () => {
     const when = new Date(placed.expiresAt.getTime() + 1);
     await Promise.all([
       orders.expireCommerceReservation(placed.order.id, when),
-      orders.cancelUnpaidCommerceOrder(
-        placed.order.id,
-        admin,
-        "Customer requested cancellation",
-        when,
-      ),
+      adminOrders.applyAdminCommerceOrderAction(admin, placed.order.id, {
+        action: "CANCEL",
+        reason: "Customer requested cancellation",
+      }),
     ]);
     expect(await available(purchase.perfume.id)).toEqual([1]);
     expect(await db.order.findUnique({ where: { id: placed.order.id } })).toMatchObject({
@@ -392,7 +395,10 @@ describe("PostgreSQL approved acceptance commerce inventory", () => {
     });
     expect(await orders.expireCommerceReservation(placed.order.id, when)).toBe(false);
     expect(
-      await orders.cancelUnpaidCommerceOrder(placed.order.id, admin, "Duplicate", when),
+      await adminOrders.applyAdminCommerceOrderAction(admin, placed.order.id, {
+        action: "CANCEL",
+        reason: "Duplicate",
+      }),
     ).toEqual({ unchanged: true });
   });
 });
@@ -551,5 +557,197 @@ describe("PostgreSQL approved acceptance commerce payment", () => {
       processedAt: expect.any(Date),
       leaseId: null,
     });
+  });
+});
+
+describe("PostgreSQL approved acceptance commerce administration", () => {
+  it("keeps drafts stock-neutral, revokes old versions and checks out at the locked item price", async () => {
+    const purchase = await basket([2]);
+    const input = {
+      lines: purchase.quote.lines.map(({ perfumeVariantId, quantity }) => ({
+        perfumeVariantId,
+        quantity,
+      })),
+      contactName: "Synthetic Draft",
+      contactEmail: "draft@example.test",
+    };
+    const saved = await drafts.saveCheckoutDraft(admin, input);
+    if (!("id" in saved) || !saved.id) {
+      throw new Error("Draft was not saved.");
+    }
+    const issued = await drafts.issueCheckoutDraft(admin, saved.id, 0);
+    if (!("token" in issued) || !issued.token) {
+      throw new Error("Draft was not issued.");
+    }
+    expect(issued.expiresAt.getTime() - Date.now()).toBeGreaterThan(24 * 60 * 60 * 1000 - 5000);
+    expect(await available(purchase.perfume.id)).toEqual([2]);
+    expect(await db.customer.findUnique({ where: { email: input.contactEmail } })).toBeNull();
+    expect(await drafts.getCheckoutQuote(issued.token)).toMatchObject({
+      version: 1,
+      lines: [{ unitPriceMinor: 200_000 }],
+    });
+    await db.perfumeVariant.updateMany({
+      where: { perfumeId: purchase.perfume.id },
+      data: { priceMinor: 220_000 },
+    });
+    const reissued = await drafts.issueCheckoutDraft(admin, saved.id, 1);
+    if (!("token" in reissued) || !reissued.token) {
+      throw new Error("Draft was not reissued.");
+    }
+    expect(await drafts.getCheckoutQuote(issued.token)).toBeNull();
+    expect(await drafts.getCheckoutQuote(reissued.token)).toMatchObject({
+      version: 2,
+      lines: [{ unitPriceMinor: 220_000 }],
+    });
+    expect(await available(purchase.perfume.id)).toEqual([2]);
+    await db.perfumeVariant.updateMany({
+      where: { perfumeId: purchase.perfume.id },
+      data: { priceMinor: 240_000 },
+    });
+    const opened = await drafts.getCheckoutQuote(reissued.token);
+    if (!opened) {
+      throw new Error("Quote was not readable.");
+    }
+    const command = {
+      ...purchase,
+      quote: { ...purchase.quote, lines: opened.lines },
+      issuedQuote: { token: reissued.token, version: 2 },
+    };
+    expect(
+      await orders.reserveCommerceOrder({
+        ...command,
+        issuedQuote: { token: issued.token, version: 1 },
+      }),
+    ).toHaveProperty("error");
+    expect(await orders.reserveCommerceOrder({ ...command, quote: purchase.quote })).toHaveProperty(
+      "error",
+    );
+    const order = created(await orders.reserveCommerceOrder(command));
+    expect(order.subtotalMinor).toBe(220_000);
+    expect(await available(purchase.perfume.id)).toEqual([1]);
+    expect(await drafts.getCheckoutQuote(reissued.token)).toBeNull();
+    expect(
+      await orders.reserveCommerceOrder({
+        ...command,
+        submissionKey: randomUUID(),
+        sessionToken: randomUUID(),
+      }),
+    ).toHaveProperty("error");
+  });
+
+  it("revokes an issued quote on edit, rejects stale edits and enforces expiry without holding stock", async () => {
+    const purchase = await basket([1]);
+    const input = {
+      lines: purchase.quote.lines.map(({ perfumeVariantId, quantity }) => ({
+        perfumeVariantId,
+        quantity,
+      })),
+      contactName: null,
+      contactEmail: null,
+    };
+    const saved = await drafts.saveCheckoutDraft(admin, input);
+    if (!("id" in saved) || !saved.id) {
+      throw new Error("Draft was not saved.");
+    }
+    const issued = await drafts.issueCheckoutDraft(admin, saved.id, 0);
+    if (!("token" in issued) || !issued.token) {
+      throw new Error("Draft was not issued.");
+    }
+    expect(
+      await drafts.saveCheckoutDraft(admin, input, { id: saved.id, version: 0 }),
+    ).toHaveProperty("error");
+    expect(
+      await drafts.saveCheckoutDraft(admin, input, { id: saved.id, version: 1 }),
+    ).toHaveProperty("id");
+    expect(await drafts.getCheckoutQuote(issued.token)).toBeNull();
+    const reissued = await drafts.issueCheckoutDraft(admin, saved.id, 2);
+    if (!("token" in reissued) || !reissued.token) {
+      throw new Error("Draft was not reissued.");
+    }
+    await db.checkoutDraft.update({
+      where: { id: saved.id },
+      data: { expiresAt: new Date(Date.now() - 1000) },
+    });
+    expect(await drafts.getCheckoutQuote(reissued.token)).toBeNull();
+    expect(await drafts.revokeCheckoutDraft(admin, saved.id, 3)).toHaveProperty("ok");
+    expect(await available(purchase.perfume.id)).toEqual([1]);
+  });
+
+  it("cancels a late-allocated paid order once with a full refund including delivery", async () => {
+    const purchase = await basket([2]);
+    const placed = created(await orders.reserveCommerceOrder(purchase));
+    const late = new Date(placed.expiresAt.getTime() + 1);
+    await orders.expireCommerceReservation(placed.order.id, late);
+    const fact = verified(placed);
+    expect(await payments.applyVerifiedCommercePayment(fact.reference, fact, late)).toBe("PAID");
+    const command = { action: "CANCEL" as const, reason: "Synthetic cancellation" };
+    const results = await Promise.all([
+      adminOrders.applyAdminCommerceOrderAction(admin, placed.order.id, command),
+      adminOrders.applyAdminCommerceOrderAction(admin, placed.order.id, command),
+    ]);
+    expect(results).toContainEqual({ ok: true });
+    expect(results).toContainEqual({ unchanged: true });
+    expect(await available(purchase.perfume.id)).toEqual([2]);
+    expect(
+      await db.refund.findMany({ where: { paymentAttemptId: placed.attempt.id } }),
+    ).toMatchObject([
+      { amountMinor: placed.totalMinor, status: "REQUESTED", requestedBy: admin.id },
+    ]);
+    expect(
+      await db.commerceOrderEvent.count({
+        where: { orderId: placed.order.id, action: "CANCELLED" },
+      }),
+    ).toBe(1);
+  });
+
+  it("guards dispatch and caps concurrent refunds and received returns independently", async () => {
+    const purchase = await basket([2]);
+    const placed = created(await orders.reserveCommerceOrder(purchase));
+    const orderId = placed.order.id;
+    const fulfil = (next: "PROCESSING" | "DISPATCHED") =>
+      adminOrders.applyAdminCommerceOrderAction(admin, orderId, { action: "FULFIL", next });
+    expect(await fulfil("DISPATCHED")).toHaveProperty("error");
+    const fact = verified(placed);
+    await payments.applyVerifiedCommercePayment(fact.reference, fact);
+    expect(await fulfil("PROCESSING")).toHaveProperty("ok");
+    expect(await fulfil("DISPATCHED")).toHaveProperty("ok");
+    const refund = {
+      action: "REFUND" as const,
+      reason: "Synthetic partial refund",
+      amountMinor: placed.totalMinor - 100,
+      requestKey: randomUUID(),
+    };
+    const refunds = await Promise.all([
+      adminOrders.applyAdminCommerceOrderAction(admin, orderId, refund),
+      adminOrders.applyAdminCommerceOrderAction(admin, orderId, {
+        ...refund,
+        requestKey: randomUUID(),
+      }),
+    ]);
+    expect(refunds.filter((result) => "ok" in result)).toHaveLength(1);
+    expect(refunds.filter((result) => "error" in result)).toHaveLength(1);
+    expect(await available(purchase.perfume.id)).toEqual([1]);
+    const line = purchase.perfume.variants[0];
+    const returned = {
+      action: "RETURN" as const,
+      reason: "Received unopened bottle",
+      quantity: 1,
+      perfumeVariantId: line.id,
+      requestKey: randomUUID(),
+    };
+    const returns = await Promise.all([
+      adminOrders.applyAdminCommerceOrderAction(admin, orderId, returned),
+      adminOrders.applyAdminCommerceOrderAction(admin, orderId, returned),
+    ]);
+    expect(returns).toContainEqual({ ok: true });
+    expect(returns).toContainEqual({ unchanged: true });
+    expect(
+      await adminOrders.applyAdminCommerceOrderAction(admin, orderId, {
+        ...returned,
+        requestKey: randomUUID(),
+      }),
+    ).toHaveProperty("error");
+    expect(await available(purchase.perfume.id)).toEqual([2]);
+    expect(await db.refund.count({ where: { paymentAttemptId: placed.attempt.id } })).toBe(1);
   });
 });

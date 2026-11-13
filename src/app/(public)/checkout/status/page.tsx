@@ -54,7 +54,10 @@ export default async function CommerceStatusPage() {
             </p>
           ) : null}
           {order.retryable ? (
-            <Link href="/checkout" className="mt-4 inline-block underline">
+            <Link
+              href={order.issuedQuote ? "/checkout/quote" : "/checkout"}
+              className="mt-4 inline-block underline"
+            >
               Return to Checkout
             </Link>
           ) : null}

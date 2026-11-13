@@ -5,6 +5,7 @@ import { beginCommerceCheckout, parseCommercePurchase } from "@/modules/orders/s
 
 import {
   ensureCheckoutSessionToken,
+  readCommerceQuoteCookie,
   readCheckoutSessionToken,
   setCommerceStatusCookie,
 } from "../_server/commerce-session";
@@ -15,7 +16,13 @@ export async function prepareCheckoutSession() {
   }
 }
 
-export async function startPayment(lines: unknown, details: unknown, quote: unknown, key: unknown) {
+export async function startPayment(
+  lines: unknown,
+  details: unknown,
+  quote: unknown,
+  key: unknown,
+  quoteVersion?: unknown,
+) {
   const environment = canStartPaystackPayment();
   if (!environment) {
     return { error: "Online payments are temporarily unavailable." } as const;
@@ -28,12 +35,26 @@ export async function startPayment(lines: unknown, details: unknown, quote: unkn
   if (!sessionToken) {
     return { error: "Reload Checkout to restore your browser session." } as const;
   }
+  let issuedQuote;
+  if (quoteVersion !== undefined) {
+    const token = await readCommerceQuoteCookie();
+    if (
+      !token ||
+      typeof quoteVersion !== "number" ||
+      !Number.isSafeInteger(quoteVersion) ||
+      quoteVersion < 1
+    ) {
+      return { error: "This checkout link is unavailable." } as const;
+    }
+    issuedQuote = { token, version: quoteVersion };
+  }
 
   try {
     const result = await beginCommerceCheckout({
       ...parsed,
       environment,
       sessionToken,
+      issuedQuote,
     });
     if (!("statusToken" in result)) {
       return result;

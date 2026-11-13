@@ -16,6 +16,7 @@ const statusSelect = {
   commerceStatus: true,
   fulfilmentStatus: true,
   paidAttemptId: true,
+  checkoutDraft: { select: { id: true } },
   subtotalMinor: true,
   deliveryFeeMinor: true,
   totalMinor: true,
@@ -100,6 +101,7 @@ export async function getCommerceStatus(token: string | undefined) {
         !order.paidAttemptId &&
         attempt?.status === "FAILED" &&
         order.commerceStatus === "RESERVATION_EXPIRED",
+      issuedQuote: order.checkoutDraft !== null,
       subtotalMinor: order.subtotalMinor,
       deliveryFeeMinor: order.deliveryFeeMinor,
       totalMinor: order.totalMinor,

@@ -239,3 +239,24 @@ export async function savePerfumeRecord(
     return { message: saveFailureMessage };
   }
 }
+
+export async function searchCheckoutVariants(query: string) {
+  const value = query.trim().slice(0, 80);
+  return prisma.perfumeVariant.findMany({
+    where: {
+      perfume: {
+        status: "PUBLISHED",
+        name: value ? { contains: value, mode: "insensitive" } : undefined,
+      },
+    },
+    select: {
+      id: true,
+      sizeValue: true,
+      priceMinor: true,
+      quantity: true,
+      perfume: { select: { name: true } },
+    },
+    orderBy: [{ perfume: { name: "asc" } }, { sizeValue: "asc" }, { id: "asc" }],
+    take: 25,
+  });
+}

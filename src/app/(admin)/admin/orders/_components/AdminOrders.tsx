@@ -24,7 +24,7 @@ export function AdminOrders({
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[.14em] text-jp-olive">Orders</p>
-          <h1 className="mt-2 font-display text-5xl">Orders</h1>
+          <h1 className="mt-2 font-display text-5xl">Legacy orders</h1>
         </div>
       </div>
       <form className="mt-7 flex flex-wrap gap-3" action="/admin/orders">

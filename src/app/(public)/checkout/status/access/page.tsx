@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { OpenStatusLink } from "./_components/OpenStatusLink";
+import { OpenCheckoutLink } from "../../_components/OpenCheckoutLink";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function StatusLinkPage() {
-  return <OpenStatusLink />;
+  return <OpenCheckoutLink />;
 }

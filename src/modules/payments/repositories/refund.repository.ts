@@ -77,3 +77,25 @@ export async function finishRefundCheck(
     },
   });
 }
+
+export async function refundableBalance(
+  tx: Prisma.TransactionClient,
+  attemptId: string,
+  chargedMinor: number,
+) {
+  const reserved = await tx.refund.aggregate({
+    where: { paymentAttemptId: attemptId, status: { not: "FAILED" } },
+    _sum: { amountMinor: true },
+  });
+  return chargedMinor - (reserved._sum.amountMinor ?? 0);
+}
+
+export async function hasRefundRequest(
+  tx: Prisma.TransactionClient,
+  requestKey: string,
+  paymentAttemptId: string,
+) {
+  return Boolean(
+    await tx.refund.findUnique({ where: { requestKey, paymentAttemptId }, select: { id: true } }),
+  );
+}

@@ -144,6 +144,7 @@ function main() {
       {
         ...appEnv,
         JP_E2E_REPORT_PATH: commerceReportPath,
+        JP_E2E_LOCAL_ADMIN_KEY: secretKey,
         COMMERCE_CHECKOUT_ACTIVE: "true",
         COMMERCE_PAYMENTS_ENABLED: "true",
         COMMERCE_STATUS_SECRET: "synthetic-checkout-status-signing-secret",
@@ -180,7 +181,7 @@ function main() {
       !browserFailed &&
       Number.isInteger(passed) &&
       legacyReport.passed >= 3 &&
-      commerceReport.passed >= 3 &&
+      commerceReport.passed >= 4 &&
       failed === 0 &&
       flaky === 0 &&
       skipped === 0

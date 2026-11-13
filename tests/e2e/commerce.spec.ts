@@ -219,3 +219,92 @@ test("signed delivery is durable and the protected scheduler verifies it without
     }),
   ).toBe(1);
 });
+
+test("Admin issues a locked quote, fulfils the payment and records refund and return separately", async ({
+  page,
+  browser,
+}) => {
+  const guest = await browser.newPage();
+  const adminPage = page;
+  try {
+    const { createClient } = await import("@supabase/supabase-js");
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.JP_E2E_LOCAL_ADMIN_KEY;
+    if (!url || !key || !["127.0.0.1", "localhost"].includes(new URL(url).hostname)) {
+      throw new Error("The isolated Admin provider is unavailable.");
+    }
+    const provider = createClient(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const link = await provider.auth.admin.generateLink({
+      type: "magiclink",
+      email: "admin@example.test",
+    });
+    const hash = link.data.properties?.hashed_token;
+    if (!hash) {
+      throw new Error("The isolated Admin sign-in link was unavailable.");
+    }
+    await adminPage.goto(`/auth/confirm?type=magiclink&token_hash=${hash}`);
+    await expect(adminPage).toHaveURL(/\/admin$/);
+
+    const variantId = await openCheckout(guest, "unused@example.test", "447700900460");
+    await adminPage.goto("/admin/orders/drafts/new");
+    await adminPage
+      .getByRole("textbox", { name: "Search products" })
+      .fill("Synthetic Commerce Amber");
+    await adminPage.getByRole("button", { name: "Search", exact: true }).click();
+    await adminPage.getByRole("combobox", { name: "Variant" }).selectOption(variantId);
+    await adminPage.getByRole("button", { name: "Add variant" }).click();
+    await adminPage.getByRole("textbox", { name: "Contact name" }).fill("Draft-only Contact");
+    await adminPage.getByRole("button", { name: "Save draft" }).click();
+    await expect(adminPage).toHaveURL(/\/admin\/orders\/drafts\/[0-9a-f-]+$/);
+    await adminPage.getByRole("button", { name: "Issue checkout link" }).click();
+    const linkField = adminPage.getByRole("textbox", { name: "Checkout link" });
+    await expect(linkField).toBeVisible();
+    const checkoutLink = await linkField.inputValue();
+    expect(await db.perfumeVariant.findUniqueOrThrow({ where: { id: variantId } })).toMatchObject({
+      quantity: 2,
+    });
+
+    await db.perfumeVariant.update({ where: { id: variantId }, data: { priceMinor: 190_000 } });
+    await guest.goto(checkoutLink);
+    await expect(guest).toHaveURL(/\/checkout\/quote$/);
+    await expect(guest.getByText("Draft-only Contact")).toHaveCount(0);
+    await expect(
+      guest.getByRole("region", { name: "Order summary" }).getByRole("listitem"),
+    ).toContainText("₦1,200");
+    await fillCheckout(guest, "quote@example.test", "447700900460");
+    await checkoutRedirect(guest, variantId);
+    await guest.getByRole("button", { name: "Pay with Paystack" }).click();
+    await expect(guest.getByRole("heading", { name: "Payment confirmed" })).toBeVisible();
+    const order = await db.order.findFirstOrThrow({
+      where: { items: { some: { perfumeVariantId: variantId } } },
+      select: { id: true, reference: true, subtotalMinor: true },
+    });
+    expect(order.subtotalMinor).toBe(120_000);
+
+    await adminPage.goto(`/admin/orders/${order.reference}`);
+    await adminPage.getByRole("button", { name: "Mark Processing" }).click();
+    await adminPage.getByRole("button", { name: "Mark Dispatched" }).click();
+    await expect(adminPage.getByRole("button", { name: "Mark Delivered" })).toBeVisible();
+    await adminPage.getByLabel("Refund amount (NGN)").fill("500");
+    await adminPage.getByLabel("Refund reason").fill("Synthetic partial refund");
+    await adminPage.getByRole("button", { name: "Request refund" }).click();
+    await expect(adminPage.getByText(/Refund jpscents-refund-/)).toBeVisible();
+    expect(await db.perfumeVariant.findUniqueOrThrow({ where: { id: variantId } })).toMatchObject({
+      quantity: 1,
+    });
+
+    await adminPage.getByLabel("Returned item").selectOption(variantId);
+    await adminPage.getByLabel("Received quantity").fill("1");
+    await adminPage.getByLabel("Return reason").fill("Received unopened bottle");
+    await adminPage.getByRole("button", { name: "Record received return" }).click();
+    await expect(adminPage.getByText(/Saleable return/i)).toBeVisible();
+    expect(await db.perfumeVariant.findUniqueOrThrow({ where: { id: variantId } })).toMatchObject({
+      quantity: 2,
+    });
+    expect(await db.refund.count({ where: { paymentAttempt: { orderId: order.id } } })).toBe(1);
+  } finally {
+    await guest.close();
+  }
+});

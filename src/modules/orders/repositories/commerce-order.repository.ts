@@ -6,7 +6,6 @@ import { Prisma } from "@/infrastructure/database/generated/client";
 import type { PaymentEnvironment } from "@/infrastructure/database/generated/enums";
 import { prisma } from "@/infrastructure/database/prisma";
 
-import type { AdminIdentity } from "@/modules/access/server";
 import {
   CatalogueStockConflict,
   deductStockForOrder,
@@ -20,6 +19,7 @@ import { createPaymentAttempt, latestPaymentAttempt } from "@/modules/payments/s
 import type { CommerceCheckoutCommand, CommerceCheckoutInput, CommerceQuoteInput } from "../types";
 import { calculateCommerceTotals } from "../utils/commerce-totals";
 import { createReference } from "./order.repository";
+import { completeCheckoutQuote, lockIssuedCheckoutQuote } from "./checkout-draft.repository";
 
 const orderForReplay = {
   id: true,
@@ -138,6 +138,7 @@ export async function reserveCommerceOrder({
   submissionKey,
   sessionToken,
   environment,
+  issuedQuote,
 }: CommerceCheckoutCommand) {
   const sessionHash = createHash("sha256").update(sessionToken).digest("hex");
   try {
@@ -150,6 +151,13 @@ export async function reserveCommerceOrder({
         });
         if (existing) {
           return resolveReplay(tx, existing, sessionHash);
+        }
+
+        const draft = issuedQuote
+          ? await lockIssuedCheckoutQuote(tx, issuedQuote.token, issuedQuote.version)
+          : null;
+        if (issuedQuote && (!draft || !matchesIssuedQuote(quote, draft.lines))) {
+          return { error: "This checkout link is expired, changed or unavailable." } as const;
         }
 
         const delivery = await lockDeliveryQuote(tx, input.deliveryState);
@@ -167,7 +175,7 @@ export async function reserveCommerceOrder({
         const expectedPrices = new Map(
           quote.lines.map((line) => [line.perfumeVariantId, line.unitPriceMinor]),
         );
-        const stock = await deductStockForOrder(tx, quote.lines, expectedPrices);
+        const stock = await deductStockForOrder(tx, quote.lines, expectedPrices, draft !== null);
         if ("error" in stock) {
           throw new CheckoutConflict(stock.error);
         }
@@ -177,7 +185,7 @@ export async function reserveCommerceOrder({
           } as const;
         }
 
-        return saveReservedOrder(
+        const result = await saveReservedOrder(
           tx,
           input,
           submissionKey,
@@ -187,6 +195,10 @@ export async function reserveCommerceOrder({
           totals,
           stock.variants,
         );
+        if (draft) {
+          await completeCheckoutQuote(tx, draft.id, result.order.id);
+        }
+        return result;
       },
       { maxWait: 10_000, timeout: 15_000 },
     );
@@ -209,6 +221,26 @@ export async function reserveCommerceOrder({
     }
     throw error;
   }
+}
+
+function matchesIssuedQuote(
+  quote: CommerceQuoteInput,
+  lines: Array<{
+    perfumeVariantId: string;
+    quantity: number;
+    quotedPriceMinor: number | null;
+  }>,
+) {
+  if (quote.lines.length !== lines.length) {
+    return false;
+  }
+  const expected = new Map(lines.map((line) => [line.perfumeVariantId, line]));
+  return quote.lines.every((line) => {
+    const accepted = expected.get(line.perfumeVariantId);
+    return (
+      accepted?.quantity === line.quantity && accepted.quotedPriceMinor === line.unitPriceMinor
+    );
+  });
 }
 
 export async function expireCommerceReservation(orderId: string, now = new Date()) {
@@ -234,49 +266,9 @@ export async function expireCommerceReservation(orderId: string, now = new Date(
   });
 }
 
-export async function cancelUnpaidCommerceOrder(
-  orderId: string,
-  admin: AdminIdentity,
-  reason: string,
-  now = new Date(),
-) {
-  return await prisma.$transaction(async (tx) => {
-    if (!(await lockCommerceOrder(tx, orderId))) {
-      return { error: "Order not found." } as const;
-    }
-    const order = await tx.order.findUnique({
-      where: { id: orderId },
-      select: { commerceStatus: true },
-    });
-    if (order?.commerceStatus === "CANCELLED") {
-      return { unchanged: true } as const;
-    }
-    if (
-      order?.commerceStatus !== "AWAITING_PAYMENT" &&
-      order?.commerceStatus !== "RESERVATION_EXPIRED"
-    ) {
-      return { error: "The order needs the paid cancellation workflow." } as const;
-    }
-    const released = await releaseHeldStock(tx, orderId, now, "CANCELLED");
-    if (order.commerceStatus === "AWAITING_PAYMENT" && !released) {
-      throw new Error("The unpaid order has no held reservation.");
-    }
-    await tx.order.update({
-      where: { id: orderId },
-      data: {
-        commerceStatus: "CANCELLED",
-        cancelledAt: now,
-        cancelledBy: admin.id,
-        cancellationReason: reason,
-      },
-    });
-    return { ok: true } as const;
-  });
-}
-
 export async function retryFailedCommerceOrder(
   orderId: string,
-  { input, quote, sessionToken, environment }: CommerceCheckoutCommand,
+  { input, quote, sessionToken, environment, issuedQuote }: CommerceCheckoutCommand,
 ) {
   try {
     return await prisma.$transaction(
@@ -288,6 +280,7 @@ export async function retryFailedCommerceOrder(
           where: { id: orderId },
           include: {
             items: { select: { perfumeVariantId: true, quantity: true, unitPriceMinor: true } },
+            checkoutDraft: { select: { capabilityHash: true, expiresAt: true, version: true } },
           },
         });
         const latest = await latestPaymentAttempt(tx, orderId);
@@ -301,6 +294,17 @@ export async function retryFailedCommerceOrder(
           return {
             error: "This payment is still being reconciled or can no longer be retried.",
           } as const;
+        }
+        if (
+          order.checkoutDraft &&
+          (!issuedQuote ||
+            order.checkoutDraft.version !== issuedQuote.version ||
+            !order.checkoutDraft.expiresAt ||
+            order.checkoutDraft.expiresAt <= new Date() ||
+            order.checkoutDraft.capabilityHash !==
+              createHash("sha256").update(issuedQuote.token).digest("hex"))
+        ) {
+          return { error: "The issued quote is no longer valid for a retry." } as const;
         }
         if (
           order.deliveryStateSnapshot !== input.deliveryState ||
@@ -341,6 +345,7 @@ export async function retryFailedCommerceOrder(
           tx,
           quote.lines,
           new Map(quote.lines.map((line) => [line.perfumeVariantId, line.unitPriceMinor])),
+          Boolean(order.checkoutDraft),
         );
         if ("error" in stock) {
           throw new CheckoutConflict(stock.error);

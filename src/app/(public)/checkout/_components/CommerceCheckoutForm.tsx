@@ -57,11 +57,19 @@ type StateFee = { state: string; deliveryFeeMinor: number };
 type UnitPrice = { perfumeVariantId: string; unitPriceMinor: number };
 const SUBMISSION_KEY = "jpscents-commerce-submission";
 
-function rememberSubmission(current: string | null, replace: boolean) {
+type CheckoutQuote = {
+  version: number;
+  storageId: string;
+  lines: Array<
+    UnitPrice & { quantity: number; name: string; sizeLabel: string; available: boolean }
+  >;
+};
+
+function rememberSubmission(current: string | null, replace: boolean, storageKey: string) {
   const next = current ?? crypto.randomUUID();
   try {
-    const saved = replace ? next : (current ?? sessionStorage.getItem(SUBMISSION_KEY) ?? next);
-    sessionStorage.setItem(SUBMISSION_KEY, saved);
+    const saved = replace ? next : (current ?? sessionStorage.getItem(storageKey) ?? next);
+    sessionStorage.setItem(storageKey, saved);
     return saved;
   } catch {
     return next;
@@ -91,7 +99,7 @@ function CheckoutField({ field, error }: { field: (typeof fields)[number]; error
   );
 }
 
-function useCommerceCheckout(destinations: DeliverySetting[]) {
+function useCommerceCheckout(destinations: DeliverySetting[], issuedQuote?: CheckoutQuote) {
   const cart = useCart();
   const key = useRef<string | null>(null);
   const replaceKey = useRef(false);
@@ -107,34 +115,36 @@ function useCommerceCheckout(destinations: DeliverySetting[]) {
     updatedFee?.state === state
       ? updatedFee.deliveryFeeMinor
       : destinations.find((destination) => destination.state === state)?.feeMinor;
-  const priced = cart.lines
-    .filter((line) => line.isValid)
-    .map((line) => ({
-      ...line,
-      unitPriceMinor:
-        updatedPrices.find((price) => price.perfumeVariantId === line.perfumeVariantId)
-          ?.unitPriceMinor ??
-        line.unitPriceMinor ??
-        0,
-    }));
+  const priced = issuedQuote
+    ? issuedQuote.lines.map((line) => ({ ...line, requestedQuantity: line.quantity }))
+    : cart.lines
+        .filter((line) => line.isValid)
+        .map((line) => ({
+          ...line,
+          unitPriceMinor:
+            updatedPrices.find((price) => price.perfumeVariantId === line.perfumeVariantId)
+              ?.unitPriceMinor ??
+            line.unitPriceMinor ??
+            0,
+        }));
   const subtotal = priced.reduce(
     (sum, line) => sum + line.unitPriceMinor * line.requestedQuantity,
     0,
   );
+  const unavailable = issuedQuote
+    ? issuedQuote.lines.some((line) => !line.available)
+    : cart.hasInvalidLines;
+  const awaitingCart = !issuedQuote && cart.resolutionState !== "idle";
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (
-      submitting.current ||
-      fee == null ||
-      cart.hasInvalidLines ||
-      cart.resolutionState !== "idle"
-    ) {
+    if (submitting.current || fee == null || unavailable || awaitingCart) {
       return;
     }
     const data = new FormData(event.currentTarget);
     const details = { ...Object.fromEntries(data), deliveryCountry: "NG", deliveryState: state };
-    key.current = rememberSubmission(key.current, replaceKey.current);
+    const storageKey = issuedQuote ? `${SUBMISSION_KEY}:${issuedQuote.storageId}` : SUBMISSION_KEY;
+    key.current = rememberSubmission(key.current, replaceKey.current, storageKey);
     replaceKey.current = false;
     const submissionKey = key.current;
     const quote = {
@@ -150,7 +160,18 @@ function useCommerceCheckout(destinations: DeliverySetting[]) {
     startTransition(async () => {
       try {
         await prepareCheckoutSession();
-        const result = await startPayment(cart.items, details, quote, submissionKey);
+        const lines =
+          issuedQuote?.lines.map(({ perfumeVariantId, quantity }) => ({
+            perfumeVariantId,
+            quantity,
+          })) ?? cart.items;
+        const result = await startPayment(
+          lines,
+          details,
+          quote,
+          submissionKey,
+          issuedQuote?.version,
+        );
         if ("errors" in result && result.errors) {
           setErrors(result.errors);
         } else if ("staleQuote" in result && result.staleQuote) {
@@ -195,13 +216,22 @@ function useCommerceCheckout(destinations: DeliverySetting[]) {
     message,
     processing,
     pending,
+    unavailable,
+    awaitingCart,
     submit,
   };
 }
 
-export function CommerceCheckoutForm({ destinations }: { destinations: DeliverySetting[] }) {
-  const checkout = useCommerceCheckout(destinations);
+export function CommerceCheckoutForm({
+  destinations,
+  issuedQuote,
+}: {
+  destinations: DeliverySetting[];
+  issuedQuote?: CheckoutQuote;
+}) {
+  const checkout = useCommerceCheckout(destinations, issuedQuote);
   if (
+    !issuedQuote &&
     checkout.cart.resolutionState === "idle" &&
     (!checkout.cart.items.length || checkout.cart.hasInvalidLines)
   ) {
@@ -216,7 +246,7 @@ export function CommerceCheckoutForm({ destinations }: { destinations: DeliveryS
     );
   }
 
-  if (checkout.cart.resolutionState === "error") {
+  if (!issuedQuote && checkout.cart.resolutionState === "error") {
     return (
       <section className="mx-auto max-w-3xl px-5 py-14">
         <h1 className="font-display text-5xl">Checkout</h1>
@@ -233,6 +263,11 @@ export function CommerceCheckoutForm({ destinations }: { destinations: DeliveryS
   return (
     <section className="mx-auto max-w-public-container px-public-gutter-mobile py-14 lg:px-public-gutter-desktop">
       <h1 className="font-display text-5xl">Checkout</h1>
+      {issuedQuote && checkout.unavailable ? (
+        <p role="alert" className="mt-4">
+          One or more quoted items are out of stock. Contact JPScents for an updated link.
+        </p>
+      ) : null}
       {!destinations.length ? (
         <p className="mt-4" role="status">
           Delivery destinations are currently unavailable.
@@ -316,7 +351,10 @@ export function CommerceCheckoutForm({ destinations }: { destinations: DeliveryS
           <button
             className="mt-5 w-full border bg-jp-olive p-3 font-semibold text-white disabled:opacity-50"
             disabled={
-              checkout.pending || checkout.fee == null || checkout.cart.resolutionState !== "idle"
+              checkout.pending ||
+              checkout.fee == null ||
+              checkout.awaitingCart ||
+              checkout.unavailable
             }
             type="submit"
           >

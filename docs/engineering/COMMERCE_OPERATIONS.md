@@ -1,6 +1,6 @@
 # Commerce deployment and recovery
 
-The commerce branch uses the required `JPScents quality` check. Merging `main` deploys automatically. The release rehearsal and live activation follow ADR-0010. [Release evidence](../architecture/adr/0010-commerce-release-and-recovery-evidence.md)
+The commerce branch uses the required `JPScents quality` check. Merging the PR into `main` deploys automatically. The release rehearsal and live activation follow ADR-0010. [Release evidence](../architecture/adr/0010-commerce-release-and-recovery-evidence.md)
 
 ## Isolated checkout
 
