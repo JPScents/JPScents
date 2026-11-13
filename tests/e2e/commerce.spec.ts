@@ -299,7 +299,8 @@ test("Admin issues a locked quote, fulfils the payment and records refund and re
     await adminPage.getByLabel("Received quantity").fill("1");
     await adminPage.getByLabel("Return reason").fill("Received unopened bottle");
     await adminPage.getByRole("button", { name: "Record received return" }).click();
-    await expect(adminPage.getByText(/Saleable return/i)).toBeVisible();
+    const activity = adminPage.getByRole("region", { name: "Order activity" });
+    await expect(activity.getByText(/^Saleable Return/)).toBeVisible();
     expect(await db.perfumeVariant.findUniqueOrThrow({ where: { id: variantId } })).toMatchObject({
       quantity: 2,
     });

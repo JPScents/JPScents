@@ -117,8 +117,10 @@ export function AdminCommerceOrder({ order }: { order: Order }) {
             </p>
           ))}
         </section>
-        <section className="space-y-2 border bg-jp-surface p-5">
-          <h2 className="font-display text-2xl">Order activity</h2>
+        <section aria-labelledby="order-activity" className="space-y-2 border bg-jp-surface p-5">
+          <h2 id="order-activity" className="font-display text-2xl">
+            Order activity
+          </h2>
           {order.commerceEvents.length ? (
             order.commerceEvents.map((event) => (
               <p key={event.id} className="text-sm">
