@@ -74,9 +74,7 @@ $$;
 REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA commerce_scheduler
 FROM PUBLIC, anon, authenticated, service_role;
 
--- pg_net queues the Authorization header until delivery. The job owner retains access.
-REVOKE ALL ON SCHEMA net FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON TABLE net.http_request_queue, net._http_response FROM PUBLIC, anon, authenticated;
+-- Supabase manages the pg_net grants. Keep net outside the Data API because queued requests contain the bearer.
 
 DO $$
 DECLARE
