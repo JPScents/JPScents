@@ -8,19 +8,21 @@ import { prisma } from "@/infrastructure/database/prisma";
 
 import type { AdminIdentity } from "@/modules/access/server";
 import {
+  CatalogueStockConflict,
   deductStockForOrder,
   recordStockReservation,
   releaseHeldStock,
 } from "@/modules/catalogue/server";
 import { CustomerIdentityConflict, resolveCustomerForOrder } from "@/modules/customers/server";
 import { lockDeliveryQuote } from "@/modules/delivery/server";
-import { createPaymentAttempt } from "@/modules/payments/server";
+import { createPaymentAttempt, latestPaymentAttempt } from "@/modules/payments/server";
 
-import type { CommerceCheckoutInput, CommerceQuoteInput } from "../types";
+import type { CommerceCheckoutCommand, CommerceCheckoutInput, CommerceQuoteInput } from "../types";
 import { calculateCommerceTotals } from "../utils/commerce-totals";
 import { createReference } from "./order.repository";
 
 const orderForReplay = {
+  id: true,
   reference: true,
   kind: true,
   checkoutSessionHash: true,
@@ -28,14 +30,16 @@ const orderForReplay = {
 
 class CheckoutConflict extends Error {}
 
-function resolveReplay(
+async function resolveReplay(
+  tx: Prisma.TransactionClient,
   order: Prisma.OrderGetPayload<{ select: typeof orderForReplay }>,
   sessionHash: string,
 ) {
   if (order.kind !== "COMMERCE" || order.checkoutSessionHash !== sessionHash) {
     return { error: "This submission cannot be used. Refresh Checkout and try again." } as const;
   }
-  return { order: { reference: order.reference }, duplicate: true } as const;
+  const attempt = await latestPaymentAttempt(tx, order.id);
+  return { order: { id: order.id, reference: order.reference }, attempt, duplicate: true } as const;
 }
 
 export async function lockCommerceOrder(tx: Prisma.TransactionClient, orderId: string) {
@@ -134,13 +138,7 @@ export async function reserveCommerceOrder({
   submissionKey,
   sessionToken,
   environment,
-}: {
-  input: CommerceCheckoutInput;
-  quote: CommerceQuoteInput;
-  submissionKey: string;
-  sessionToken: string;
-  environment: PaymentEnvironment;
-}) {
+}: CommerceCheckoutCommand) {
   const sessionHash = createHash("sha256").update(sessionToken).digest("hex");
   try {
     return await prisma.$transaction(
@@ -151,7 +149,7 @@ export async function reserveCommerceOrder({
           select: orderForReplay,
         });
         if (existing) {
-          return resolveReplay(existing, sessionHash);
+          return resolveReplay(tx, existing, sessionHash);
         }
 
         const delivery = await lockDeliveryQuote(tx, input.deliveryState);
@@ -193,7 +191,11 @@ export async function reserveCommerceOrder({
       { maxWait: 10_000, timeout: 15_000 },
     );
   } catch (error) {
-    if (error instanceof CheckoutConflict || error instanceof CustomerIdentityConflict) {
+    if (
+      error instanceof CheckoutConflict ||
+      error instanceof CatalogueStockConflict ||
+      error instanceof CustomerIdentityConflict
+    ) {
       return { error: error.message } as const;
     }
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
@@ -202,7 +204,7 @@ export async function reserveCommerceOrder({
         select: orderForReplay,
       });
       if (existing) {
-        return resolveReplay(existing, sessionHash);
+        return prisma.$transaction((tx) => resolveReplay(tx, existing, sessionHash));
       }
     }
     throw error;
@@ -270,4 +272,99 @@ export async function cancelUnpaidCommerceOrder(
     });
     return { ok: true } as const;
   });
+}
+
+export async function retryFailedCommerceOrder(
+  orderId: string,
+  { input, quote, sessionToken, environment }: CommerceCheckoutCommand,
+) {
+  try {
+    return await prisma.$transaction(
+      async (tx) => {
+        if (!(await lockCommerceOrder(tx, orderId))) {
+          return { error: "This order cannot be retried." } as const;
+        }
+        const order = await tx.order.findUniqueOrThrow({
+          where: { id: orderId },
+          include: {
+            items: { select: { perfumeVariantId: true, quantity: true, unitPriceMinor: true } },
+          },
+        });
+        const latest = await latestPaymentAttempt(tx, orderId);
+        if (
+          order.commerceStatus !== "RESERVATION_EXPIRED" ||
+          !latest ||
+          latest.status !== "FAILED" ||
+          latest.environment !== environment ||
+          order.checkoutSessionHash !== createHash("sha256").update(sessionToken).digest("hex")
+        ) {
+          return {
+            error: "This payment is still being reconciled or can no longer be retried.",
+          } as const;
+        }
+        if (
+          order.deliveryStateSnapshot !== input.deliveryState ||
+          order.deliveryCitySnapshot !== input.deliveryCity ||
+          order.deliveryAddressSnapshot !== input.deliveryAddress ||
+          order.emailSnapshot !== input.email ||
+          order.customerNameSnapshot !== input.customerName ||
+          order.whatsappNumberSnapshot !== input.whatsappNumber ||
+          order.deliveryApartment !== (input.deliveryApartment ?? null) ||
+          order.deliveryLandmark !== (input.deliveryLandmark ?? null) ||
+          order.deliveryPostcode !== (input.deliveryPostcode ?? null) ||
+          order.orderNote !== (input.orderNote ?? null)
+        ) {
+          return { restartCheckout: true } as const;
+        }
+        const delivery = await lockDeliveryQuote(tx, input.deliveryState);
+        if (!delivery) {
+          return { error: "Delivery is unavailable for the selected state." } as const;
+        }
+        const accepted = new Map(order.items.map((line) => [line.perfumeVariantId, line]));
+        const sameBasket =
+          quote.lines.length === accepted.size &&
+          quote.lines.every((line) => {
+            const previous = accepted.get(line.perfumeVariantId);
+            return (
+              previous?.quantity === line.quantity &&
+              previous.unitPriceMinor === line.unitPriceMinor
+            );
+          });
+        if (
+          !sameBasket ||
+          order.deliveryFeeMinor !== delivery.feeMinor ||
+          order.deliveryFeeMinor !== quote.deliveryFeeMinor
+        ) {
+          return { restartCheckout: true } as const;
+        }
+        const stock = await deductStockForOrder(
+          tx,
+          quote.lines,
+          new Map(quote.lines.map((line) => [line.perfumeVariantId, line.unitPriceMinor])),
+        );
+        if ("error" in stock) {
+          throw new CheckoutConflict(stock.error);
+        }
+        if ("stalePrices" in stock) {
+          return { restartCheckout: true } as const;
+        }
+        if (order.totalMinor === null) {
+          throw new Error("A commerce order must have an accepted total.");
+        }
+        const attempt = await createPaymentAttempt(tx, order.id, order.totalMinor, environment);
+        await recordStockReservation(tx, order.id, attempt.id, quote.lines, new Date());
+        await tx.order.update({
+          where: { id: order.id },
+          data: { commerceStatus: "AWAITING_PAYMENT" },
+        });
+        return { reference: order.reference, retry: true } as const;
+      },
+      { maxWait: 10_000, timeout: 15_000 },
+    );
+  } catch (error) {
+    if (error instanceof CheckoutConflict || error instanceof CatalogueStockConflict) {
+      return { error: error.message } as const;
+    }
+    throw error;
+  }
 }

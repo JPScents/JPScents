@@ -16,6 +16,9 @@ let application: PrismaClient | undefined;
 let orders: typeof import("@/modules/orders/repositories/commerce-order.repository");
 let legacy: typeof import("@/modules/orders/repositories/order.repository");
 let delivery: typeof import("@/modules/delivery/server");
+let payments: typeof import("@/modules/orders/repositories/commerce-payment.repository");
+let statusAccess: typeof import("@/modules/orders/repositories/order-status-access.repository");
+let receipts: typeof import("@/modules/payments/server");
 let preMigrationOrderId: string;
 let migratedDeliverySettings: Awaited<ReturnType<typeof delivery.listDeliverySettings>>;
 
@@ -42,11 +45,15 @@ beforeAll(async () => {
   preMigrationOrderId = await seedOldAppOrder(db, "2348001111111");
   cluster.deployMigrations();
   vi.stubEnv("DATABASE_URL", cluster.connectionString);
+  vi.stubEnv("COMMERCE_STATUS_SECRET", "synthetic-checkout-status-signing-secret");
   application = (await import("@/infrastructure/database/prisma")).prisma;
-  [orders, legacy, delivery] = await Promise.all([
+  [orders, legacy, delivery, payments, statusAccess, receipts] = await Promise.all([
     import("@/modules/orders/repositories/commerce-order.repository"),
     import("@/modules/orders/repositories/order.repository"),
     import("@/modules/delivery/server"),
+    import("@/modules/orders/repositories/commerce-payment.repository"),
+    import("@/modules/orders/repositories/order-status-access.repository"),
+    import("@/modules/payments/server"),
   ]);
   migratedDeliverySettings = await delivery.listDeliverySettings(admin);
 });
@@ -280,10 +287,13 @@ describe("PostgreSQL approved acceptance commerce inventory", () => {
       throw new Error("No commerce order was created.");
     }
     const placed = created(first);
-    expect(results).toContainEqual({
-      duplicate: true,
-      order: { reference: placed.order.reference },
-    });
+    expect(results).toContainEqual(
+      expect.objectContaining({
+        duplicate: true,
+        order: { id: placed.order.id, reference: placed.order.reference },
+        attempt: expect.objectContaining({ id: placed.attempt.id }),
+      }),
+    );
     expect(
       await orders.reserveCommerceOrder({ ...purchase, sessionToken: randomUUID() }),
     ).toMatchObject({
@@ -384,5 +394,162 @@ describe("PostgreSQL approved acceptance commerce inventory", () => {
     expect(
       await orders.cancelUnpaidCommerceOrder(placed.order.id, admin, "Duplicate", when),
     ).toEqual({ unchanged: true });
+  });
+});
+
+function verified(placed: ReturnType<typeof created>, status: "success" | "failed" = "success") {
+  return {
+    reference: placed.attempt.providerReference,
+    amountMinor: placed.totalMinor,
+    currency: "NGN",
+    environment: "TEST" as const,
+    providerId: randomUUID(),
+    status,
+  };
+}
+
+describe("PostgreSQL approved acceptance commerce payment", () => {
+  it("does not accept mismatched provider facts and consumes the matching hold exactly once", async () => {
+    const purchase = await basket([2, 2]);
+    const placed = created(await orders.reserveCommerceOrder(purchase));
+    const fact = verified(placed);
+    expect(
+      await payments.applyVerifiedCommercePayment(fact.reference, { ...fact, amountMinor: 1 }),
+    ).toBe("NEEDS_ATTENTION");
+    expect(await db.order.findUniqueOrThrow({ where: { id: placed.order.id } })).toMatchObject({
+      paidAttemptId: null,
+    });
+    expect(await available(purchase.perfume.id)).toEqual([1, 1]);
+    const firstAndReplay = await Promise.all([
+      payments.applyVerifiedCommercePayment(fact.reference, fact),
+      payments.applyVerifiedCommercePayment(fact.reference, fact),
+    ]);
+    expect(firstAndReplay.sort()).toEqual(["PAID", "UNCHANGED"]);
+    expect(await available(purchase.perfume.id)).toEqual([1, 1]);
+    expect(
+      await db.stockMovement.count({ where: { orderId: placed.order.id, kind: "ALLOCATE" } }),
+    ).toBe(2);
+    expect(await db.order.findUniqueOrThrow({ where: { id: placed.order.id } })).toMatchObject({
+      commerceStatus: "PAID",
+      paidAttemptId: placed.attempt.id,
+    });
+    const token = await statusAccess.issueCheckoutStatusToken(
+      placed.order.id,
+      purchase.sessionToken,
+    );
+    expect(token).toEqual(expect.stringMatching(/^[A-Za-z0-9_-]{43}$/));
+    const status = await statusAccess.getCommerceStatus(token ?? undefined);
+    expect(status).toMatchObject({
+      status: "PAID",
+      reference: placed.order.reference,
+      totalMinor: fact.amountMinor,
+    });
+    expect(status).not.toHaveProperty("emailSnapshot");
+    expect(status).not.toHaveProperty("providerReference");
+    expect(await statusAccess.findStatusOrderPayment(undefined, fact.reference)).toBeNull();
+    expect(await statusAccess.findStatusOrderPayment(token ?? undefined, randomUUID())).toBeNull();
+    expect(await statusAccess.issueCheckoutStatusToken(placed.order.id, randomUUID())).toBeNull();
+  });
+
+  it("reallocates a late success at the original total after all lines were released", async () => {
+    const purchase = await basket([2, 2]);
+    const placed = created(await orders.reserveCommerceOrder(purchase));
+    const late = new Date(placed.expiresAt.getTime() + 1);
+    expect(await orders.expireCommerceReservation(placed.order.id, late)).toBe(true);
+    expect(await available(purchase.perfume.id)).toEqual([2, 2]);
+    await db.perfumeVariant.updateMany({
+      where: { perfumeId: purchase.perfume.id },
+      data: { priceMinor: 299_999 },
+    });
+    const fact = verified(placed);
+    expect(await payments.applyVerifiedCommercePayment(fact.reference, fact, late)).toBe("PAID");
+    expect(await available(purchase.perfume.id)).toEqual([1, 1]);
+    expect(await db.order.findUniqueOrThrow({ where: { id: placed.order.id } })).toMatchObject({
+      totalMinor: fact.amountMinor,
+    });
+  });
+
+  it("records one full refund and allocates no line when a late order cannot be fulfilled", async () => {
+    const purchase = await basket([1, 1]);
+    const placed = created(await orders.reserveCommerceOrder(purchase));
+    const late = new Date(placed.expiresAt.getTime() + 1);
+    await orders.expireCommerceReservation(placed.order.id, late);
+    await db.perfumeVariant.update({
+      where: { id: purchase.perfume.variants[1].id },
+      data: { quantity: 0 },
+    });
+    const fact = verified(placed);
+    expect(await payments.applyVerifiedCommercePayment(fact.reference, fact, late)).toBe(
+      "REFUND_REQUIRED",
+    );
+    expect(await payments.applyVerifiedCommercePayment(fact.reference, fact, late)).toBe(
+      "UNCHANGED",
+    );
+    expect(await available(purchase.perfume.id)).toEqual([1, 0]);
+    expect(
+      await db.refund.findMany({ where: { paymentAttemptId: placed.attempt.id } }),
+    ).toMatchObject([{ amountMinor: fact.amountMinor, status: "REQUESTED" }]);
+  });
+
+  it("retries only a verified failed attempt and refunds a second success without extra stock debit", async () => {
+    const purchase = await basket([2]);
+    const placed = created(await orders.reserveCommerceOrder(purchase));
+    const first = verified(placed);
+    expect(await orders.retryFailedCommerceOrder(placed.order.id, purchase)).toHaveProperty(
+      "error",
+    );
+    expect(
+      await payments.applyVerifiedCommercePayment(first.reference, { ...first, status: "failed" }),
+    ).toBe("FAILED");
+    expect(await available(purchase.perfume.id)).toEqual([2]);
+    expect(await orders.retryFailedCommerceOrder(placed.order.id, purchase)).toHaveProperty(
+      "retry",
+      true,
+    );
+    const next = await db.paymentAttempt.findFirstOrThrow({
+      where: { orderId: placed.order.id, id: { not: placed.attempt.id } },
+    });
+    expect(await payments.applyVerifiedCommercePayment(first.reference, first)).toBe("PAID");
+    const extra = { ...first, reference: next.providerReference, providerId: randomUUID() };
+    expect(await payments.applyVerifiedCommercePayment(extra.reference, extra)).toBe(
+      "REFUND_REQUIRED",
+    );
+    expect(await available(purchase.perfume.id)).toEqual([1]);
+    expect(await db.refund.findMany({ where: { paymentAttemptId: next.id } })).toMatchObject([
+      { amountMinor: placed.totalMinor, status: "REQUESTED" },
+    ]);
+    expect(await db.order.findUniqueOrThrow({ where: { id: placed.order.id } })).toMatchObject({
+      commerceStatus: "PAID",
+      paidAttemptId: placed.attempt.id,
+    });
+  });
+
+  it("deduplicates receipts and reclaims abandoned leases without letting the old owner complete them", async () => {
+    const reference = `jpscents-${randomUUID()}`;
+    await Promise.all([
+      receipts.enqueuePaystackReceipt("charge.success", reference, "TEST"),
+      receipts.enqueuePaystackReceipt("charge.success", reference, "TEST"),
+    ]);
+    const time = new Date();
+    const claimed = await receipts.claimDuePaymentWork(time, 50);
+    const row = claimed.receipts.find((receipt) => receipt.providerReference === reference);
+    if (!row) {
+      throw new Error("Receipt was not available to claim.");
+    }
+    expect(await db.paystackReceipt.count({ where: { providerReference: reference } })).toBe(1);
+    const overlap = await receipts.claimDuePaymentWork(time, 50);
+    expect(overlap.receipts.some((receipt) => receipt.id === row.id)).toBe(false);
+    const recovered = await receipts.claimDuePaymentWork(new Date(time.getTime() + 61_000), 50);
+    expect(recovered.receipts.some((receipt) => receipt.id === row.id)).toBe(true);
+    await receipts.finishReceipt(row.id, claimed.leaseId, true);
+    expect(await db.paystackReceipt.findUniqueOrThrow({ where: { id: row.id } })).toMatchObject({
+      processedAt: null,
+      leaseId: recovered.leaseId,
+    });
+    await receipts.finishReceipt(row.id, recovered.leaseId, true);
+    expect(await db.paystackReceipt.findUniqueOrThrow({ where: { id: row.id } })).toMatchObject({
+      processedAt: expect.any(Date),
+      leaseId: null,
+    });
   });
 });

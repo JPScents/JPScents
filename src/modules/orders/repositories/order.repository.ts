@@ -6,7 +6,11 @@ import { Prisma, type OrderStatus } from "@/infrastructure/database/generated/cl
 import { prisma } from "@/infrastructure/database/prisma";
 
 import { commerceConfig } from "@/config/commerce";
-import { deductStockForOrder, restoreStockForOrder } from "@/modules/catalogue/server";
+import {
+  CatalogueStockConflict,
+  deductStockForOrder,
+  restoreStockForOrder,
+} from "@/modules/catalogue/server";
 import { CustomerIdentityConflict, resolveCustomerForOrder } from "@/modules/customers/server";
 
 import type { CheckoutInput, OrderCartLine, OrderFilters } from "../types";
@@ -191,6 +195,7 @@ export async function createOrderWithStockDeduction(
     // Resolve it after rollback, when the winning transaction's order is visible.
     if (
       error instanceof OrderConflict ||
+      error instanceof CatalogueStockConflict ||
       (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")
     ) {
       const duplicate = await prisma.order.findUnique({
@@ -201,7 +206,11 @@ export async function createOrderWithStockDeduction(
         return { order: duplicate, duplicate: true };
       }
     }
-    if (error instanceof OrderConflict || error instanceof CustomerIdentityConflict) {
+    if (
+      error instanceof OrderConflict ||
+      error instanceof CatalogueStockConflict ||
+      error instanceof CustomerIdentityConflict
+    ) {
       return { error: error.message } as const;
     }
     throw error;

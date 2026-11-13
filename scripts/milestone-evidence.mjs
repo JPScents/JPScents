@@ -123,7 +123,7 @@ function readQualityReport(log) {
 
 function validateVerificationReport(report, exitCode, candidate, mode = "quality") {
   const commands = mode === "quality" ? QUALITY_STAGES : ACCEPTANCE_STAGES;
-  const minimumCases = mode === "quality" ? 5 : 14;
+  const minimumCases = mode === "quality" ? 5 : 19;
   if (
     report?.mode !== mode ||
     !["PASS", "FAIL", "BLOCKED"].includes(report.status) ||
@@ -192,7 +192,7 @@ function validateBrowserEvidence(reportPath, head) {
     !/^[0-9a-f]{40}$/.test(head) ||
     report?.head !== head ||
     !Number.isInteger(report.passed) ||
-    report.passed < 3 ||
+    report.passed < 6 ||
     report.failed !== 0 ||
     report.flaky !== 0 ||
     report.skipped !== 0

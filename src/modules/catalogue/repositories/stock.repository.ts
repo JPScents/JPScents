@@ -3,6 +3,7 @@ import "server-only";
 import { Prisma } from "@/infrastructure/database/generated/client";
 
 type StockLine = { perfumeVariantId: string; quantity: number };
+export class CatalogueStockConflict extends Error {}
 
 export async function lockPerfumeStock(
   tx: Prisma.TransactionClient,
@@ -19,7 +20,7 @@ export async function lockPerfumeStock(
   `;
 }
 
-async function lockStockLines(tx: Prisma.TransactionClient, lines: StockLine[]) {
+export async function lockStockLines(tx: Prisma.TransactionClient, lines: StockLine[]) {
   const ids = lines.map(({ perfumeVariantId }) => perfumeVariantId);
   const variants = await tx.perfumeVariant.findMany({
     where: { id: { in: ids } },
@@ -74,7 +75,10 @@ export async function deductStockForOrder(
     } as const;
   }
   for (const { perfumeVariantId: id, quantity } of lines) {
-    const variant = byId.get(id)!;
+    const variant = byId.get(id);
+    if (!variant) {
+      throw new CatalogueStockConflict("One or more perfumes are no longer available.");
+    }
     // The eligibility trigger checks each variant write, so clear placement before the final debit.
     await tx.perfume.updateMany({
       where: {
@@ -96,9 +100,9 @@ export async function deductStockForOrder(
       data: { quantity: { decrement: quantity } },
     });
     if (updated.count !== 1) {
-      return {
-        error: "One or more perfumes are no longer available in the requested quantity.",
-      } as const;
+      throw new CatalogueStockConflict(
+        "One or more perfumes are no longer available in the requested quantity.",
+      );
     }
   }
   return { variants: byId };

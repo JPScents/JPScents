@@ -127,6 +127,8 @@ Production Supabase must have:
 
 ## Vercel deployment
 
+Milestone 7 commerce configuration, payment activation and recovery use the [commerce operations guide](docs/engineering/COMMERCE_OPERATIONS.md).
+
 1. Apply production Prisma migrations before deploying code that depends on them.
 2. Import the repository into the client-owned Vercel project.
 3. Use Vercel's standard Next.js settings and `npm run build`.

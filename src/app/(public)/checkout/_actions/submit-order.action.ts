@@ -4,6 +4,12 @@ import { parseOrderSubmission, createOrder } from "@/modules/orders/server";
 import { writeConfirmationCookie } from "../_server/confirmation-cookie";
 
 export async function submitOrder(lines: unknown, checkout: unknown, submissionKey: unknown) {
+  if (
+    process.env.COMMERCE_CHECKOUT_ACTIVE === "true" ||
+    process.env.COMMERCE_PAYMENTS_ENABLED === "true"
+  ) {
+    return { error: "Refresh Checkout to see the current payment options." } as const;
+  }
   const parsed = parseOrderSubmission(lines, checkout, submissionKey);
   if (parsed.error !== undefined) {
     return { error: parsed.error } as const;

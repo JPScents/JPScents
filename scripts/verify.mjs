@@ -19,7 +19,7 @@ const acceptanceDatabase = {
   args: testArgs,
   tool: ".bin/vitest",
   needsClient: true,
-  database: { group: "PostgreSQL approved acceptance", minimum: 14 },
+  database: { group: "PostgreSQL approved acceptance", minimum: 19 },
 };
 
 function run(file, args, options = {}) {

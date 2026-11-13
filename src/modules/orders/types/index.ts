@@ -28,6 +28,14 @@ export type CommerceQuoteInput = {
   deliveryFeeMinor: number;
 };
 
+export type CommerceCheckoutCommand = {
+  input: CommerceCheckoutInput;
+  quote: CommerceQuoteInput;
+  submissionKey: string;
+  sessionToken: string;
+  environment: "TEST" | "LIVE";
+};
+
 export type OrderLine = {
   name: string;
   sizeLabel: string;

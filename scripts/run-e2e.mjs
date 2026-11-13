@@ -125,7 +125,7 @@ function main() {
   try {
     run(
       "playwright",
-      ["test"],
+      ["test", "--project=legacy"],
       {
         ...appEnv,
         JP_E2E_LOCAL_ADMIN_KEY: secretKey,
@@ -136,9 +136,38 @@ function main() {
   } catch {
     browserFailed = true;
   }
+  const commerceReportPath = join(directory, "commerce-browser-report.json");
+  try {
+    run(
+      "playwright",
+      ["test", "--project=commerce"],
+      {
+        ...appEnv,
+        JP_E2E_REPORT_PATH: commerceReportPath,
+        COMMERCE_CHECKOUT_ACTIVE: "true",
+        COMMERCE_PAYMENTS_ENABLED: "true",
+        COMMERCE_STATUS_SECRET: "synthetic-checkout-status-signing-secret",
+        PAYSTACK_MODE: "TEST",
+        PAYSTACK_SECRET_KEY: "sk_test_browser_fixture",
+        PAYSTACK_WEBHOOK_SECRET: "whsec_browser_fixture",
+        PAYSTACK_RETURN_ORIGIN: "http://localhost:3000",
+        CRON_SECRET: "synthetic-scheduler-fixture",
+        NODE_OPTIONS: "--import=./tests/e2e/paystack-fixture.mjs",
+      },
+      "inherit",
+    );
+  } catch {
+    browserFailed = true;
+  }
   if (!browserFailed || existsSync(reportPath)) {
-    const report = JSON.parse(readFileSync(reportPath, "utf8"));
-    const { passed, failed, flaky, skipped } = report;
+    const legacyReport = JSON.parse(readFileSync(reportPath, "utf8"));
+    const commerceReport = existsSync(commerceReportPath)
+      ? JSON.parse(readFileSync(commerceReportPath, "utf8"))
+      : { passed: 0, failed: 1, flaky: 0, skipped: 0 };
+    const passed = legacyReport.passed + commerceReport.passed;
+    const failed = legacyReport.failed + commerceReport.failed;
+    const flaky = legacyReport.flaky + commerceReport.flaky;
+    const skipped = legacyReport.skipped + commerceReport.skipped;
     const head = run("git", ["rev-parse", "HEAD"]).trim();
     if (process.env.GITHUB_SHA && process.env.GITHUB_SHA !== head) {
       throw new Error("The browser report does not match the GitHub candidate.");
@@ -150,7 +179,8 @@ function main() {
     if (
       !browserFailed &&
       Number.isInteger(passed) &&
-      passed >= 3 &&
+      legacyReport.passed >= 3 &&
+      commerceReport.passed >= 3 &&
       failed === 0 &&
       flaky === 0 &&
       skipped === 0

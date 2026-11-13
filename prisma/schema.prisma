@@ -72,6 +72,21 @@ enum PaymentAttemptStatus {
   NEEDS_ATTENTION
 }
 
+enum RefundStatus {
+  REQUESTED
+  AMBIGUOUS
+  PENDING
+  PROCESSING
+  PROCESSED
+  FAILED
+  NEEDS_ATTENTION
+}
+
+enum OrderCapabilityPurpose {
+  STATUS
+  PAY_QUOTE
+}
+
 enum ReservationStatus {
   HELD
   CONSUMED
@@ -168,6 +183,7 @@ model Order {
   kind                    OrderKind            @default(LEGACY_MANUAL)
   commerceStatus          CommerceOrderStatus?
   checkoutSessionHash     String?              @db.Char(64)
+  statusTokenNonce        String?
   fulfilmentStatus        FulfilmentStatus?
   currency                String?              @db.Char(3)
   deliveryFeeMinor        Int?
@@ -179,16 +195,20 @@ model Order {
   cancelledAt             DateTime?
   cancelledBy             String?              @db.Uuid
   cancellationReason      String?
+  paidAttemptId           String?              @db.Uuid
   stockRestoredAt         DateTime?
   createdAt               DateTime             @default(now())
   updatedAt               DateTime             @updatedAt
   customer                Customer             @relation(fields: [customerId], references: [id], onDelete: Restrict)
   items                   OrderItem[]
   statusEvents            OrderStatusEvent[]
-  paymentAttempts         PaymentAttempt[]
+  paymentAttempts         PaymentAttempt[]     @relation("OrderPaymentAttempts")
+  paidAttempt             PaymentAttempt?      @relation("AllocatedPayment", fields: [id, paidAttemptId], references: [orderId, id], onDelete: Restrict, onUpdate: NoAction)
+  capabilities            OrderCapability[]
   reservations            StockReservation[]
   stockMovements          StockMovement[]
 
+  @@unique([id, paidAttemptId])
   @@index([status, createdAt])
   @@index([customerId, createdAt])
 }
@@ -230,20 +250,94 @@ model DeliveryDestination {
 }
 
 model PaymentAttempt {
-  id                String               @id @default(uuid()) @db.Uuid
-  orderId           String               @db.Uuid
-  providerReference String               @unique
-  amountMinor       Int
-  currency          String               @db.Char(3)
-  environment       PaymentEnvironment
-  status            PaymentAttemptStatus @default(INITIATING)
-  createdAt         DateTime             @default(now())
-  updatedAt         DateTime             @updatedAt
-  order             Order                @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  reservation       StockReservation?
+  id                  String               @id @default(uuid()) @db.Uuid
+  orderId             String               @db.Uuid
+  providerReference   String               @unique
+  amountMinor         Int
+  currency            String               @db.Char(3)
+  environment         PaymentEnvironment
+  status              PaymentAttemptStatus @default(INITIATING)
+  checkoutUrl         String?
+  initialiseStartedAt DateTime?
+  providerId          String?
+  verifiedAt          DateTime?
+  issue               String?
+  nextCheckAt         DateTime             @default(now())
+  leaseId             String?              @db.Uuid
+  leaseUntil          DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  order               Order                @relation("OrderPaymentAttempts", fields: [orderId], references: [id], onDelete: Restrict)
+  allocatedOrder      Order?               @relation("AllocatedPayment")
+  reservation         StockReservation?
+  refunds             Refund[]
 
   @@unique([orderId, id])
   @@index([orderId, createdAt])
+  @@index([status, nextCheckAt])
+}
+
+model Refund {
+  id                String         @id @default(uuid()) @db.Uuid
+  paymentAttemptId  String         @db.Uuid
+  providerReference String         @unique
+  requestKey        String         @unique
+  reason            String
+  requestedBy       String?        @db.Uuid
+  amountMinor       Int
+  status            RefundStatus   @default(REQUESTED)
+  issue             String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  nextCheckAt       DateTime       @default(now())
+  leaseId           String?        @db.Uuid
+  leaseUntil        DateTime?
+  paymentAttempt    PaymentAttempt @relation(fields: [paymentAttemptId], references: [id], onDelete: Restrict)
+
+  @@index([paymentAttemptId, status])
+  @@index([status, nextCheckAt])
+}
+
+model PaystackReceipt {
+  id                String             @id @default(uuid()) @db.Uuid
+  kind              String
+  providerReference String
+  environment       PaymentEnvironment
+  receivedAt        DateTime           @default(now())
+  processedAt       DateTime?
+  nextCheckAt       DateTime           @default(now())
+  leaseId           String?            @db.Uuid
+  leaseUntil        DateTime?
+
+  @@unique([kind, providerReference, environment])
+  @@index([processedAt, nextCheckAt])
+}
+
+model OrderCapability {
+  id           String                 @id @default(uuid()) @db.Uuid
+  orderId      String                 @db.Uuid
+  purpose      OrderCapabilityPurpose
+  hash         String                 @unique @db.Char(64)
+  quoteVersion Int?
+  createdAt    DateTime               @default(now())
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  order        Order                  @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@index([orderId, purpose])
+}
+
+model CommerceReconciliationRun {
+  id          String    @id @default(uuid()) @db.Uuid
+  trigger     String
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  expired     Int       @default(0)
+  payments    Int       @default(0)
+  refunds     Int       @default(0)
+  errors      Int       @default(0)
+
+  @@index([startedAt])
 }
 
 model StockReservation {
