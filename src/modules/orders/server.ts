@@ -17,9 +17,11 @@ export {
 export {
   findStatusOrderPayment,
   getCommerceStatus,
+  getCommerceCheckoutRecovery,
   findCommerceStatusExpiry,
 } from "./repositories/order-status-access.repository";
 export { reconcileCommerceWork } from "./services/commerce-reconciliation.service";
+export { getCommerceOperations } from "./repositories/reconciliation-run.repository";
 export {
   getAdminCheckoutDraft,
   getCheckoutQuote,
@@ -28,7 +30,11 @@ export {
   revokeCheckoutDraft,
   saveCheckoutDraft,
 } from "./repositories/checkout-draft.repository";
-export { parseCheckoutDraft, parseCheckoutDraftRevision } from "./parsers/checkout-draft.parser";
+export {
+  parseCheckoutDraft,
+  parseCheckoutDraftIssuance,
+  parseCheckoutDraftRevision,
+} from "./parsers/checkout-draft.parser";
 export {
   applyAdminCommerceOrderAction,
   getAdminCommerceOrder,

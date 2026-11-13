@@ -1,3 +1,5 @@
+import { isNairaMinor } from "@/shared/utils/naira-minor";
+
 import { isSubmissionKey, parseOrderLines } from "./order-submission.parser";
 
 export function parseCheckoutDraft(value: unknown) {
@@ -38,4 +40,25 @@ export function parseCheckoutDraftRevision(value: unknown) {
     version < 2_147_483_647
     ? { id, version }
     : null;
+}
+
+export function parseCheckoutDraftIssuance(value: unknown) {
+  const revision = parseCheckoutDraftRevision(value);
+  const prices = (value as { prices?: unknown } | null)?.prices;
+  if (!revision || !Array.isArray(prices) || !prices.length || prices.length > 50) {
+    return null;
+  }
+  const expectedPrices = new Map<string, number>();
+  for (const price of prices) {
+    if (
+      !price ||
+      !isSubmissionKey(price.id) ||
+      !isNairaMinor(price.priceMinor) ||
+      expectedPrices.has(price.id)
+    ) {
+      return null;
+    }
+    expectedPrices.set(price.id, price.priceMinor);
+  }
+  return { ...revision, expectedPrices };
 }

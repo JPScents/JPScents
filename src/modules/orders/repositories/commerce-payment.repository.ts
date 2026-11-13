@@ -24,6 +24,7 @@ import {
 } from "@/modules/payments/server";
 
 import { lockCommerceOrder } from "./commerce-order.repository";
+import { enqueueCommerceNotification } from "./order-notification.repository";
 
 export async function prepareCommerceInitialisation(orderId: string) {
   return prisma.$transaction(async (tx) => {
@@ -113,6 +114,8 @@ async function applySuccessfulPayment(
     where: { id: attempt.orderId },
     select: {
       id: true,
+      reference: true,
+      emailSnapshot: true,
       commerceStatus: true,
       paidAttemptId: true,
       items: { select: { perfumeVariantId: true, quantity: true } },
@@ -123,12 +126,18 @@ async function applySuccessfulPayment(
     order.commerceStatus === "REFUND_REQUIRED" ||
     order.paidAttemptId !== null;
   if (unavailable) {
-    await requestRefund(tx, {
+    const refund = await requestRefund(tx, {
       paymentAttemptId: attempt.id,
       requestKey: `automatic-full:${attempt.id}`,
       reason:
         order.commerceStatus === "CANCELLED" ? "Payment after cancellation" : "Additional payment",
       amountMinor: attempt.amountMinor,
+    });
+    await enqueueCommerceNotification(tx, order, {
+      kind: "REFUND_PROGRESS",
+      refundId: refund.id,
+      amountMinor: attempt.amountMinor,
+      progress: "REQUESTED",
     });
     return "REFUND_REQUIRED";
   }
@@ -150,15 +159,25 @@ async function applySuccessfulPayment(
       where: { id: order.id },
       data: { commerceStatus: "PAID", paidAttemptId: attempt.id },
     });
+    await enqueueCommerceNotification(tx, order, {
+      kind: "PAYMENT_CONFIRMED",
+      amountMinor: attempt.amountMinor,
+    });
     return "PAID";
   }
-  await requestRefund(tx, {
+  const refund = await requestRefund(tx, {
     paymentAttemptId: attempt.id,
     requestKey: `automatic-full:${attempt.id}`,
     reason: "Stock unavailable after reservation expired",
     amountMinor: attempt.amountMinor,
   });
   await tx.order.update({ where: { id: order.id }, data: { commerceStatus: "REFUND_REQUIRED" } });
+  await enqueueCommerceNotification(tx, order, {
+    kind: "REFUND_PROGRESS",
+    refundId: refund.id,
+    amountMinor: attempt.amountMinor,
+    progress: "REQUESTED",
+  });
   return "REFUND_REQUIRED";
 }
 

@@ -1,4 +1,11 @@
-export type { AdminOrder, AdminOrderRow, CheckoutInput, OrderCartLine, PublicOrder } from "./types";
+export type {
+  AdminOrder,
+  AdminOrderRow,
+  CheckoutInput,
+  CommerceCheckoutRecovery,
+  OrderCartLine,
+  PublicOrder,
+} from "./types";
 export { orderStatuses } from "./constants/order-statuses";
 export {
   CUSTOM_CITY_MAX_LENGTH,

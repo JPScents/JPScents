@@ -96,9 +96,16 @@ export function CheckoutDraftEditor({ draft }: { draft?: Draft }) {
     }
     start(async () => {
       setMessage(undefined);
-      const result = await issueDraftLink({ id: draft.id, version: draft.version });
+      const result = await issueDraftLink({
+        id: draft.id,
+        version: draft.version,
+        prices: draft.lines.map(({ id, priceMinor }) => ({ id, priceMinor })),
+      });
       if ("error" in result && result.error) {
         setMessage({ text: result.error, error: true });
+        if ("stalePrices" in result) {
+          router.refresh();
+        }
       } else if ("url" in result && result.url) {
         setLink({ url: result.url, expiresAt: result.expiresAt });
         setMessage({ text: "Checkout link issued for 24 hours." });
@@ -196,56 +203,53 @@ export function CheckoutDraftEditor({ draft }: { draft?: Draft }) {
             </button>
           </div>
           <ul className="divide-y border-y">
-            {lines.map((line) => (
-              <li key={line.id} className="flex flex-wrap items-center gap-3 py-3">
-                <span className="flex-1">
-                  {line.name} {line.size} mL
-                </span>
-                <span className="text-sm">Current {formatNairaFromMinor(line.priceMinor)}</span>
-                {(draft?.lines.find((saved) => saved.id === line.id)?.lockedPrice ??
-                  line.lockedPrice) != null ? (
-                  <span className="text-sm">
-                    Quoted{" "}
-                    {formatNairaFromMinor(
-                      draft?.lines.find((saved) => saved.id === line.id)?.lockedPrice ??
-                        line.lockedPrice ??
-                        0,
-                    )}
+            {lines.map((line) => {
+              const saved = draft?.lines.find((item) => item.id === line.id);
+              const priceMinor = saved?.priceMinor ?? line.priceMinor;
+              const lockedPrice = saved ? saved.lockedPrice : line.lockedPrice;
+              return (
+                <li key={line.id} className="flex flex-wrap items-center gap-3 py-3">
+                  <span className="flex-1">
+                    {line.name} {line.size} mL
                   </span>
-                ) : null}
-                <label className="text-sm">
-                  Quantity{" "}
-                  <input
-                    type="number"
-                    min={1}
-                    max={99}
-                    required
-                    className="h-9 w-16 border px-2"
-                    value={line.quantity || ""}
-                    onChange={(event) => {
-                      setLines(
-                        lines.map((item) =>
-                          item.id === line.id
-                            ? { ...item, quantity: Number(event.target.value) }
-                            : item,
-                        ),
-                      );
+                  <span className="text-sm">Current {formatNairaFromMinor(priceMinor)}</span>
+                  {lockedPrice != null ? (
+                    <span className="text-sm">Quoted {formatNairaFromMinor(lockedPrice)}</span>
+                  ) : null}
+                  <label className="text-sm">
+                    Quantity{" "}
+                    <input
+                      type="number"
+                      min={1}
+                      max={99}
+                      required
+                      className="h-9 w-16 border px-2"
+                      value={line.quantity || ""}
+                      onChange={(event) => {
+                        setLines(
+                          lines.map((item) =>
+                            item.id === line.id
+                              ? { ...item, quantity: Number(event.target.value) }
+                              : item,
+                          ),
+                        );
+                        setDirty(true);
+                      }}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="text-sm underline"
+                    onClick={() => {
+                      setLines(lines.filter((item) => item.id !== line.id));
                       setDirty(true);
                     }}
-                  />
-                </label>
-                <button
-                  type="button"
-                  className="text-sm underline"
-                  onClick={() => {
-                    setLines(lines.filter((item) => item.id !== line.id));
-                    setDirty(true);
-                  }}
-                >
-                  Remove
-                </button>
-              </li>
-            ))}
+                  >
+                    Remove
+                  </button>
+                </li>
+              );
+            })}
           </ul>
           <button className="border bg-jp-olive px-4 py-2 text-sm text-white" type="submit">
             Save draft

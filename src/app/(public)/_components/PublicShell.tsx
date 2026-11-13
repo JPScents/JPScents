@@ -28,7 +28,13 @@ const navigation = [
   { href: siteConfig.routes.helpMeChoose, label: "Help me choose" },
 ];
 
-export function PublicShell({ children }: { children: ReactNode }) {
+export function PublicShell({
+  children,
+  onlineCheckout,
+}: {
+  children: ReactNode;
+  onlineCheckout?: boolean;
+}) {
   const pathname = usePathname();
 
   return (
@@ -115,7 +121,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
             </nav>
           </DialogContent>
           <MotionPage routeKey={pathname}>{children}</MotionPage>
-          <Footer />
+          <Footer onlineCheckout={onlineCheckout} />
         </div>
       </Dialog>
       <CartPreview />

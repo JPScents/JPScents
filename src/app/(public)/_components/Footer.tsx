@@ -3,7 +3,7 @@ import Link from "next/link";
 import { BrandLogo } from "@/ui/BrandLogo";
 import { siteConfig } from "@/config/site";
 
-export function Footer() {
+export function Footer({ onlineCheckout }: { onlineCheckout?: boolean }) {
   return (
     <footer className="bg-[#1f211d] text-white">
       <div className="mx-auto flex h-44 max-w-[1440px] flex-col justify-between px-5 py-7 lg:hidden">
@@ -53,14 +53,22 @@ export function Footer() {
                 <Link href={`${siteConfig.routes.home}#how-ordering-works`}>
                   How ordering works
                 </Link>
-                <span>Continue on WhatsApp</span>
+                {onlineCheckout ? (
+                  <Link href="/checkout/status">Order status</Link>
+                ) : (
+                  <span>Continue on WhatsApp</span>
+                )}
               </div>
             </div>
           </div>
         </div>
         <div className="flex items-center justify-between border-t border-white/25 pt-[26px] text-[11px] leading-4 text-white/65">
           <span>© JPScents</span>
-          <span>Payment details are sent after your order is placed.</span>
+          <span>
+            {onlineCheckout
+              ? "Pay securely with Paystack at checkout."
+              : "Payment details are sent after your order is placed."}
+          </span>
         </div>
       </div>
     </footer>

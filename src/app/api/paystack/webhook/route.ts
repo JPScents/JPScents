@@ -1,38 +1,14 @@
+import { readLimitedBody } from "@/app/_server/read-limited-body";
 import { asRecord, isPaystackReference } from "@/infrastructure/paystack/client";
 import { verifyWebhookOrigin } from "@/infrastructure/paystack/webhook-signature";
 import { enqueuePaystackReceipt } from "@/modules/payments/server";
 
 const MAX_BODY_BYTES = 64 * 1024;
 
-async function readWebhookBody(request: Request) {
-  if (!request.body) {
-    return null;
-  }
-  const reader = request.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let size = 0;
-  try {
-    for (;;) {
-      const { value, done } = await reader.read();
-      if (done) {
-        return Buffer.concat(chunks, size);
-      }
-      size += value.byteLength;
-      if (size > MAX_BODY_BYTES) {
-        await reader.cancel();
-        return null;
-      }
-      chunks.push(value);
-    }
-  } finally {
-    reader.releaseLock();
-  }
-}
-
 export async function POST(request: Request) {
   let body: Buffer | null;
   try {
-    body = await readWebhookBody(request);
+    body = await readLimitedBody(request, MAX_BODY_BYTES);
   } catch {
     return new Response(null, { status: 400 });
   }

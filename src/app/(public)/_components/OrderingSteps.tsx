@@ -2,7 +2,7 @@ import Link from "next/link";
 import { MotionReveal } from "@/ui/MotionReveal";
 import { siteConfig } from "@/config/site";
 
-const steps = [
+const manualSteps = [
   "Choose your perfume and size",
   "Add one or more perfumes to Cart",
   "Checkout and Place Order",
@@ -10,7 +10,17 @@ const steps = [
   "Continue on WhatsApp with your reference",
   "Receive payment details and confirm delivery",
 ];
-export function OrderingSteps() {
+const onlineSteps = [
+  "Choose your perfume and size",
+  "Add one or more perfumes to Cart",
+  "Enter your Nigerian delivery address",
+  "Review your items, delivery fee and total",
+  "Pay securely with Paystack",
+  "Check your order status and dispatch updates",
+];
+
+export function OrderingSteps({ onlineCheckout }: { onlineCheckout: boolean }) {
+  const steps = onlineCheckout ? onlineSteps : manualSteps;
   return (
     <MotionReveal>
       <section

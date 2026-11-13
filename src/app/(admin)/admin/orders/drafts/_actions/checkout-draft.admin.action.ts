@@ -7,6 +7,7 @@ import { getPaystackReturnOrigin } from "@/infrastructure/paystack/client";
 import {
   issueCheckoutDraft,
   parseCheckoutDraft,
+  parseCheckoutDraftIssuance,
   parseCheckoutDraftRevision,
   revokeCheckoutDraft,
   saveCheckoutDraft,
@@ -32,13 +33,18 @@ export async function saveDraft(value: unknown) {
 
 export async function issueDraftLink(value: unknown) {
   const admin = await getCurrentAdmin();
-  const revision = parseCheckoutDraftRevision(value);
+  const revision = parseCheckoutDraftIssuance(value);
   const origin = getPaystackReturnOrigin();
   if (!admin || !revision || !origin) {
     return { error: "Checkout links are unavailable in this environment." } as const;
   }
   try {
-    const issued = await issueCheckoutDraft(admin, revision.id, revision.version);
+    const issued = await issueCheckoutDraft(
+      admin,
+      revision.id,
+      revision.version,
+      revision.expectedPrices,
+    );
     if ("error" in issued) {
       return issued;
     }

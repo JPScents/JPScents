@@ -63,6 +63,12 @@ export async function startPayment(
     if ("restartCheckout" in result) {
       return { restartCheckout: true, error: result.message } as const;
     }
+    if ("error" in result) {
+      return { error: result.error } as const;
+    }
+    if ("staleQuote" in result) {
+      return { staleQuote: result.staleQuote } as const;
+    }
     if ("checkoutUrl" in result && result.checkoutUrl) {
       return { checkoutUrl: result.checkoutUrl } as const;
     }

@@ -23,6 +23,11 @@ export type CommerceCheckoutInput = Omit<CheckoutInput, "email" | "deliveryState
   deliveryPostcode?: string;
 };
 
+export type CommerceCheckoutRecovery = {
+  submissionKey: string;
+  details: CommerceCheckoutInput;
+};
+
 export type CommerceQuoteInput = {
   lines: Array<OrderCartLine & { unitPriceMinor: number }>;
   deliveryFeeMinor: number;

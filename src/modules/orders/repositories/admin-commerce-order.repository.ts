@@ -19,6 +19,7 @@ import {
 import { isNairaMinor } from "@/shared/utils/naira-minor";
 
 import { lockCommerceOrder } from "./commerce-order.repository";
+import { enqueueCommerceNotification } from "./order-notification.repository";
 
 const allowedNext: Partial<Record<FulfilmentStatus, FulfilmentStatus>> = {
   UNFULFILLED: "PROCESSING",
@@ -28,6 +29,8 @@ const allowedNext: Partial<Record<FulfilmentStatus, FulfilmentStatus>> = {
 
 const actionOrderSelect = {
   id: true,
+  reference: true,
+  emailSnapshot: true,
   commerceStatus: true,
   fulfilmentStatus: true,
   paidAttemptId: true,
@@ -80,6 +83,9 @@ async function fulfil(
   }
   await tx.order.update({ where: { id: order.id }, data: { fulfilmentStatus: next } });
   await addOrderEvent(tx, order.id, next, admin.id);
+  if (next === "DISPATCHED") {
+    await enqueueCommerceNotification(tx, order, { kind: "DISPATCHED" });
+  }
   return { ok: true } as const;
 }
 
@@ -121,6 +127,10 @@ async function cancel(
     },
   });
   await addOrderEvent(tx, order.id, "CANCELLED", admin.id, reason);
+  await enqueueCommerceNotification(tx, order, {
+    kind: "CANCELLED",
+    paid: order.paidAttemptId !== null,
+  });
   return { ok: true } as const;
 }
 
@@ -149,7 +159,7 @@ async function partialRefund(
   ) {
     return { error: "The requested amount exceeds the refundable balance." } as const;
   }
-  await requestRefund(tx, {
+  const refund = await requestRefund(tx, {
     paymentAttemptId: attempt.id,
     requestKey,
     reason: command.reason,
@@ -157,6 +167,12 @@ async function partialRefund(
     requestedBy: admin.id,
   });
   await addOrderEvent(tx, order.id, "REFUND_REQUESTED", admin.id, command.reason);
+  await enqueueCommerceNotification(tx, order, {
+    kind: "REFUND_PROGRESS",
+    refundId: refund.id,
+    amountMinor: command.amountMinor,
+    progress: "REQUESTED",
+  });
   return { ok: true } as const;
 }
 
@@ -318,11 +334,7 @@ export async function getAdminCommerceOrder(admin: AdminIdentity | null, referen
     return null;
   }
   const paid = order.paymentAttempts.find((attempt) => attempt.id === order.paidAttemptId);
-  const committed =
-    paid?.refunds.reduce(
-      (sum, refund) => sum + (refund.status === "FAILED" ? 0 : refund.amountMinor),
-      0,
-    ) ?? 0;
+  const committed = paid?.refunds.reduce((sum, refund) => sum + refund.amountMinor, 0) ?? 0;
   return {
     ...order,
     refundableMinor: paid ? paid.amountMinor - committed : 0,

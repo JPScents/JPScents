@@ -71,6 +71,15 @@ export async function listEnabledDeliveryDestinations() {
   return destinations.map(toSetting);
 }
 
+export async function isEnabledDeliveryDestination(state: NigerianDestination) {
+  return Boolean(
+    await prisma.deliveryDestination.findUnique({
+      where: { state, enabled: true, feeMinor: { not: null } },
+      select: { state: true },
+    }),
+  );
+}
+
 export async function lockDeliveryQuote(tx: Prisma.TransactionClient, state: NigerianDestination) {
   const [quote] = await tx.$queryRaw<{ feeMinor: number; version: number }[]>`
     SELECT "feeMinor", "version" FROM "DeliveryDestination"

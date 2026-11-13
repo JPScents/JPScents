@@ -51,6 +51,12 @@ export async function beginCommerceCheckout(command: CommerceCheckoutCommand) {
           "Your previous attempt failed. Review the current checkout details to start again.",
       } as const;
     }
+    if ("error" in retry) {
+      return { statusToken, error: retry.error } as const;
+    }
+    if ("staleQuote" in retry) {
+      return { statusToken, staleQuote: retry.staleQuote } as const;
+    }
   }
 
   const initialisation = await prepareCommerceInitialisation(orderId);

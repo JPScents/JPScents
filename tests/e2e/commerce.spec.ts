@@ -73,6 +73,28 @@ async function checkoutRedirect(page: Page, variantId: string) {
   });
 }
 
+async function signInAdmin(page: Page) {
+  const { createClient } = await import("@supabase/supabase-js");
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.JP_E2E_LOCAL_ADMIN_KEY;
+  if (!url || !key || !["127.0.0.1", "localhost"].includes(new URL(url).hostname)) {
+    throw new Error("The isolated Admin provider is unavailable.");
+  }
+  const provider = createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const link = await provider.auth.admin.generateLink({
+    type: "magiclink",
+    email: "admin@example.test",
+  });
+  const hash = link.data.properties?.hashed_token;
+  if (!hash) {
+    throw new Error("The isolated Admin sign-in link was unavailable.");
+  }
+  await page.goto(`/auth/confirm?type=magiclink&token_hash=${hash}`);
+  await expect(page).toHaveURL(/\/admin$/);
+}
+
 test("commerce checkout acknowledges a changed fee, verifies payment and protects status", async ({
   page,
   browser,
@@ -108,6 +130,11 @@ test("commerce checkout acknowledges a changed fee, verifies payment and protect
     quantity: 1,
   });
   await expect(page.getByText("10 Synthetic Street")).toHaveCount(0);
+  await expect
+    .poll(() =>
+      page.evaluate(() => JSON.parse(localStorage.getItem("jpscents.cart") ?? "{}").items?.length),
+    )
+    .toBe(0);
   await page.reload();
   await expect(page.getByRole("heading", { name: "Payment confirmed" })).toBeVisible();
 
@@ -142,7 +169,10 @@ test("a verified failure can retry while an uncertain initialisation retains one
     )
     .toBe(2);
   await page.getByRole("link", { name: "Return to Checkout" }).click();
-  await fillCheckout(page, email, phone);
+  await expect(page.getByLabel("Email")).toHaveValue(email);
+  await expect(page.getByLabel("Street and building")).toHaveValue("10 Synthetic Street");
+  await expect(page.getByLabel("City or town")).toHaveValue("Ikeja");
+  await expect(page.getByLabel("State or FCT")).toHaveValue("Lagos");
   await page.getByRole("button", { name: "Pay with Paystack" }).click();
   await expect(page.getByRole("heading", { name: "Payment confirmed" })).toBeVisible();
   const attempts = await db.paymentAttempt.findMany({
@@ -227,25 +257,7 @@ test("Admin issues a locked quote, fulfils the payment and records refund and re
   const guest = await browser.newPage();
   const adminPage = page;
   try {
-    const { createClient } = await import("@supabase/supabase-js");
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.JP_E2E_LOCAL_ADMIN_KEY;
-    if (!url || !key || !["127.0.0.1", "localhost"].includes(new URL(url).hostname)) {
-      throw new Error("The isolated Admin provider is unavailable.");
-    }
-    const provider = createClient(url, key, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    const link = await provider.auth.admin.generateLink({
-      type: "magiclink",
-      email: "admin@example.test",
-    });
-    const hash = link.data.properties?.hashed_token;
-    if (!hash) {
-      throw new Error("The isolated Admin sign-in link was unavailable.");
-    }
-    await adminPage.goto(`/auth/confirm?type=magiclink&token_hash=${hash}`);
-    await expect(adminPage).toHaveURL(/\/admin$/);
+    await signInAdmin(adminPage);
 
     const variantId = await openCheckout(guest, "unused@example.test", "447700900460");
     await adminPage.goto("/admin/orders/drafts/new");
@@ -307,5 +319,111 @@ test("Admin issues a locked quote, fulfils the payment and records refund and re
     expect(await db.refund.count({ where: { paymentAttempt: { orderId: order.id } } })).toBe(1);
   } finally {
     await guest.close();
+  }
+});
+
+test("address suggestions are optional, editable, Nigeria restricted and recover after an outage", async ({
+  page,
+  request,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const variantId = await openCheckout(page, "address@example.test", "447700900461");
+  const address = page.getByLabel("Street and building");
+  const find = page.getByRole("button", { name: "Find address suggestions" });
+  const invalidState = await request.post("/api/commerce/address-suggestions", {
+    data: { query: "10 Synthetic", state: "Kano" },
+    headers: { Origin: "http://localhost:3000" },
+  });
+  expect(invalidState.status()).toBe(400);
+  await address.fill("Provider outage street");
+  await find.click();
+  await expect(
+    page.getByText("Address suggestions are unavailable.", { exact: false }),
+  ).toBeVisible();
+  await expect(address).toHaveValue("Provider outage street");
+  await address.fill("12 Synthetic");
+  await address.press("Tab");
+  await expect(find).toBeFocused();
+  await find.press("Enter");
+  await expect(page.getByText("Google Maps", { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await page.getByRole("button", { name: "12 Synthetic Street, Ikeja, Lagos, Nigeria" }).click();
+  await expect(address).toHaveValue("12 Synthetic Street");
+  await expect(address).toBeFocused();
+  await address.fill("12A Synthetic Street");
+  await checkoutRedirect(page, variantId);
+  await page.getByRole("button", { name: "Pay with Paystack" }).click();
+  await expect(page.getByRole("heading", { name: "Payment confirmed" })).toBeVisible();
+  expect(
+    await db.order.findFirstOrThrow({
+      where: { items: { some: { perfumeVariantId: variantId } } },
+    }),
+  ).toMatchObject({
+    deliveryAddressSnapshot: "12A Synthetic Street",
+    deliveryCitySnapshot: "Ikeja",
+  });
+});
+
+test("Admin can recover an ambiguous email without changing the confirmed payment", async ({
+  page,
+  browser,
+  request,
+}) => {
+  const buyer = await browser.newPage();
+  try {
+    await buyer.goto("http://localhost:3000/admin/operations");
+    await expect(buyer).toHaveURL(/\/admin\/login/);
+    const variantId = await openCheckout(buyer, "email-retry@example.test", "447700900462");
+    await checkoutRedirect(buyer, variantId);
+    await buyer.getByRole("button", { name: "Pay with Paystack" }).click();
+    await expect(buyer.getByRole("heading", { name: "Payment confirmed" })).toBeVisible();
+    const order = await db.order.findFirstOrThrow({
+      where: { items: { some: { perfumeVariantId: variantId } } },
+      select: { id: true, reference: true, paidAttemptId: true },
+    });
+    // Leave work from preceding scenarios out of this bounded recovery batch.
+    await db.orderNotification.updateMany({
+      where: { orderId: { not: order.id }, status: "PENDING" },
+      data: { nextAttemptAt: new Date("2037-01-01") },
+    });
+    const run = await request.post("/api/commerce/reconcile", {
+      headers: { Authorization: "Bearer synthetic-scheduler-fixture" },
+    });
+    expect(run.status()).toBe(503);
+    const notification = await db.orderNotification.findFirstOrThrow({
+      where: { orderId: order.id, kind: "PAYMENT_CONFIRMED" },
+      select: { id: true, status: true, issue: true, attempts: true },
+    });
+    expect(notification).toMatchObject({
+      status: "PENDING",
+      issue: "EMAIL_AMBIGUOUS",
+      attempts: 1,
+    });
+    await signInAdmin(page);
+    await page.getByRole("link", { name: "Operations", exact: true }).click();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.getByRole("heading", { name: "Commerce operations" })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      390,
+    );
+    const email = page.getByRole("listitem").filter({
+      has: page.getByRole("link", { name: order.reference, exact: true }),
+    });
+    await expect(email.getByText("email ambiguous", { exact: true })).toBeVisible();
+    await email.getByRole("button", { name: "Retry delivery" }).click();
+    await expect(email).toHaveCount(0);
+    expect(
+      await db.orderNotification.findUniqueOrThrow({ where: { id: notification.id } }),
+    ).toMatchObject({
+      status: "ACCEPTED",
+      attempts: 2,
+      issue: null,
+    });
+    expect(await db.order.findUniqueOrThrow({ where: { id: order.id } })).toMatchObject({
+      commerceStatus: "PAID",
+      paidAttemptId: order.paidAttemptId,
+    });
+  } finally {
+    await buyer.close();
   }
 });

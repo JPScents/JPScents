@@ -14,6 +14,9 @@ export {
 export {
   claimDueRefunds,
   finishRefundCheck,
+  listGuestRefundProgress,
+  listUnresolvedRefunds,
+  prioritiseRefundCheck,
   requestRefund,
 } from "./repositories/refund.repository";
 export { enqueuePaystackReceipt } from "./repositories/paystack-receipt.repository";
@@ -21,5 +24,7 @@ export {
   claimDuePaymentWork,
   finishPaymentCheck,
   finishReceipt,
+  listUnresolvedPayments,
+  prioritisePaymentCheck,
 } from "./repositories/payment-reconciliation.repository";
 export { hasRefundRequest, refundableBalance } from "./repositories/refund.repository";

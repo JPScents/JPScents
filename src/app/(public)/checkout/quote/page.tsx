@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
 
+import { isAddressAssistanceEnabled } from "@/infrastructure/google-places/places";
 import { canStartPaystackPayment } from "@/infrastructure/paystack/client";
 import { listEnabledDeliveryDestinations } from "@/modules/delivery/server";
-import { getCheckoutQuote } from "@/modules/orders/server";
+import { getCheckoutQuote, getCommerceCheckoutRecovery } from "@/modules/orders/server";
 
 import { CommerceCheckoutForm } from "../_components/CommerceCheckoutForm";
-import { readCommerceQuoteCookie } from "../_server/commerce-session";
+import {
+  readCheckoutSessionToken,
+  readCommerceQuoteCookie,
+  readCommerceStatusCookie,
+} from "../_server/commerce-session";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -13,8 +18,13 @@ export const metadata: Metadata = {
 };
 export const dynamic = "force-dynamic";
 
-export default async function CheckoutQuotePage() {
-  const quote = await getCheckoutQuote(await readCommerceQuoteCookie());
+export default async function CheckoutQuotePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ retry?: string }>;
+}) {
+  const checkoutSession = await readCheckoutSessionToken();
+  const quote = await getCheckoutQuote(await readCommerceQuoteCookie(), checkoutSession);
   if (!quote || !canStartPaystackPayment()) {
     return (
       <main className="mx-auto max-w-2xl px-5 py-14">
@@ -25,10 +35,20 @@ export default async function CheckoutQuotePage() {
       </main>
     );
   }
+  const recovery =
+    (await searchParams).retry === "1"
+      ? await getCommerceCheckoutRecovery(
+          await readCommerceStatusCookie(),
+          checkoutSession,
+          quote.storageId,
+        )
+      : null;
   return (
     <CommerceCheckoutForm
       issuedQuote={quote}
       destinations={await listEnabledDeliveryDestinations()}
+      addressAssistance={isAddressAssistanceEnabled()}
+      recovery={recovery}
     />
   );
 }

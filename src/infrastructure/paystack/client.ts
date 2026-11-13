@@ -25,6 +25,13 @@ export function getPaystackMode(): PaystackMode | null {
   return (mode === "TEST" || mode === "LIVE") && apiKey(mode) ? mode : null;
 }
 
+export function isCommerceCheckoutActive() {
+  return (
+    process.env.COMMERCE_CHECKOUT_ACTIVE === "true" ||
+    process.env.COMMERCE_PAYMENTS_ENABLED === "true"
+  );
+}
+
 export function canStartPaystackPayment() {
   const mode = getPaystackMode();
   const signed = Boolean(process.env.PAYSTACK_WEBHOOK_SECRET?.startsWith("whsec_"));

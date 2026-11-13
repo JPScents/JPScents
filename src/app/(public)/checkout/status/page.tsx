@@ -8,7 +8,8 @@ import {
 } from "@/modules/orders/server";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 
-import { readCommerceStatusCookie } from "../_server/commerce-session";
+import { SettlePaidCart } from "../_components/SettlePaidCart";
+import { readCheckoutSessionToken, readCommerceStatusCookie } from "../_server/commerce-session";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -23,6 +24,23 @@ const statusText = {
   CANCELLED: "Order cancelled",
 };
 
+const refundText = {
+  REQUESTED: "Requested",
+  AMBIGUOUS: "Awaiting verification",
+  PENDING: "Pending with Paystack",
+  PROCESSING: "Processing",
+  PROCESSED: "Processed by Paystack. Your bank may need more time.",
+  FAILED: "Needs follow-up",
+  NEEDS_ATTENTION: "Needs follow-up",
+};
+
+const fulfilmentText = {
+  UNFULFILLED: "Preparing your order",
+  PROCESSING: "Preparing your order",
+  DISPATCHED: "Your order has been dispatched",
+  DELIVERED: "Your order has been delivered",
+};
+
 export default async function CommerceStatusPage() {
   const token = await readCommerceStatusCookie();
   const attempt = await findStatusOrderPayment(token);
@@ -33,10 +51,17 @@ export default async function CommerceStatusPage() {
       console.error("[orders] Status refresh could not verify payment.");
     }
   }
-  const order = await getCommerceStatus(token);
+  const order = await getCommerceStatus(token, await readCheckoutSessionToken());
   const title = order?.retryable
     ? "Payment failed"
-    : (order?.status && statusText[order.status]) || "Order status is unavailable";
+    : order?.status === "AWAITING_PAYMENT" && order.payment === "PENDING"
+      ? "Payment pending"
+      : (order?.status && statusText[order.status]) || "Order status is unavailable";
+  const number = process.env.JP_SCENTS_WHATSAPP_NUMBER;
+  const support =
+    order && number && /^\d{7,15}$/.test(number)
+      ? `https://wa.me/${number}?text=${encodeURIComponent(`Hello JPScents, I need help with order ${order.reference}.`)}`
+      : undefined;
 
   return (
     <section className="mx-auto max-w-2xl px-5 py-14">
@@ -47,15 +72,27 @@ export default async function CommerceStatusPage() {
         </p>
       ) : (
         <>
+          {order.paidCart ? <SettlePaidCart {...order.paidCart} /> : null}
           <p className="mt-4">Order {order.reference}</p>
+          {order.status === "PAID" && order.fulfilment ? (
+            <p className="mt-3">{fulfilmentText[order.fulfilment]}</p>
+          ) : null}
           {order.status === "AWAITING_PAYMENT" ? (
             <p className="mt-3 text-jp-text-secondary">
-              We’re checking your payment. Refresh this page for the latest status.
+              {order.payment === "AMBIGUOUS" || order.payment === "NEEDS_ATTENTION"
+                ? "We’re recovering the payment status. Check this page before trying to pay again."
+                : "We’re checking your payment. Refresh this page for the latest status."}
+            </p>
+          ) : null}
+          {order.status === "RESERVATION_EXPIRED" && !order.retryable ? (
+            <p className="mt-3 text-jp-text-secondary">
+              We released the stock while we check your payment. Check here for updates before
+              trying to pay again.
             </p>
           ) : null}
           {order.retryable ? (
             <Link
-              href={order.issuedQuote ? "/checkout/quote" : "/checkout"}
+              href={order.issuedQuote ? "/checkout/quote?retry=1" : "/checkout?retry=1"}
               className="mt-4 inline-block underline"
             >
               Return to Checkout
@@ -73,6 +110,25 @@ export default async function CommerceStatusPage() {
           </ul>
           {order.totalMinor !== null ? (
             <p className="mt-4 font-semibold">Total {formatNairaFromMinor(order.totalMinor)}</p>
+          ) : null}
+          {order.refunds.length ? (
+            <section className="mt-6" aria-labelledby="refund-progress">
+              <h2 id="refund-progress" className="font-display text-3xl">
+                Refund progress
+              </h2>
+              <ul className="mt-3 space-y-2 text-sm">
+                {order.refunds.map((refund) => (
+                  <li key={refund.id}>
+                    {formatNairaFromMinor(refund.amountMinor)} · {refundText[refund.status]}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+          {support ? (
+            <a href={support} className="mt-5 inline-block underline" rel="noreferrer">
+              Contact JPScents on WhatsApp
+            </a>
           ) : null}
         </>
       )}

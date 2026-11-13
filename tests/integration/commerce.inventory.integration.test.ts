@@ -21,6 +21,9 @@ let statusAccess: typeof import("@/modules/orders/repositories/order-status-acce
 let adminOrders: typeof import("@/modules/orders/repositories/admin-commerce-order.repository");
 let drafts: typeof import("@/modules/orders/repositories/checkout-draft.repository");
 let receipts: typeof import("@/modules/payments/server");
+let notifications: typeof import("@/modules/notifications/server");
+let notificationWorker: typeof import("@/modules/orders/services/commerce-notification.service");
+let refunds: typeof import("@/modules/orders/repositories/commerce-refund.repository");
 let preMigrationOrderId: string;
 let migratedDeliverySettings: Awaited<ReturnType<typeof delivery.listDeliverySettings>>;
 
@@ -49,17 +52,31 @@ beforeAll(async () => {
   vi.stubEnv("DATABASE_URL", cluster.connectionString);
   vi.stubEnv("COMMERCE_STATUS_SECRET", "synthetic-checkout-status-signing-secret");
   application = (await import("@/infrastructure/database/prisma")).prisma;
-  [orders, legacy, delivery, payments, statusAccess, receipts, adminOrders, drafts] =
-    await Promise.all([
-      import("@/modules/orders/repositories/commerce-order.repository"),
-      import("@/modules/orders/repositories/order.repository"),
-      import("@/modules/delivery/server"),
-      import("@/modules/orders/repositories/commerce-payment.repository"),
-      import("@/modules/orders/repositories/order-status-access.repository"),
-      import("@/modules/payments/server"),
-      import("@/modules/orders/repositories/admin-commerce-order.repository"),
-      import("@/modules/orders/repositories/checkout-draft.repository"),
-    ]);
+  [
+    orders,
+    legacy,
+    delivery,
+    payments,
+    statusAccess,
+    receipts,
+    adminOrders,
+    drafts,
+    notifications,
+    notificationWorker,
+    refunds,
+  ] = await Promise.all([
+    import("@/modules/orders/repositories/commerce-order.repository"),
+    import("@/modules/orders/repositories/order.repository"),
+    import("@/modules/delivery/server"),
+    import("@/modules/orders/repositories/commerce-payment.repository"),
+    import("@/modules/orders/repositories/order-status-access.repository"),
+    import("@/modules/payments/server"),
+    import("@/modules/orders/repositories/admin-commerce-order.repository"),
+    import("@/modules/orders/repositories/checkout-draft.repository"),
+    import("@/modules/notifications/server"),
+    import("@/modules/orders/services/commerce-notification.service"),
+    import("@/modules/orders/repositories/commerce-refund.repository"),
+  ]);
   migratedDeliverySettings = await delivery.listDeliverySettings(admin);
 });
 
@@ -139,6 +156,15 @@ function created(result: Awaited<ReturnType<typeof orders.reserveCommerceOrder>>
   return result;
 }
 
+function expectedPrices(purchase: Awaited<ReturnType<typeof basket>>) {
+  return new Map(
+    purchase.quote.lines.map(({ perfumeVariantId, unitPriceMinor }) => [
+      perfumeVariantId,
+      unitPriceMinor,
+    ]),
+  );
+}
+
 async function available(perfumeId: string) {
   const rows = await db.perfumeVariant.findMany({
     where: { perfumeId },
@@ -190,9 +216,9 @@ describe("PostgreSQL approved acceptance commerce inventory", () => {
         c.relrowsecurity AND c.relforcerowsecurity AS rls
       FROM pg_class c
       CROSS JOIN (VALUES ('anon'), ('authenticated')) role(name)
-      WHERE c.relname IN ('DeliveryDestination', 'PaymentAttempt', 'StockReservation', 'StockMovement')
+      WHERE c.relname IN ('DeliveryDestination', 'PaymentAttempt', 'StockReservation', 'StockMovement', 'OrderNotification')
     `;
-    expect(privileges).toHaveLength(8);
+    expect(privileges).toHaveLength(10);
     expect(privileges.every((row) => !row.allowed && row.rls)).toBe(true);
   });
 
@@ -439,6 +465,11 @@ describe("PostgreSQL approved acceptance commerce payment", () => {
       commerceStatus: "PAID",
       paidAttemptId: placed.attempt.id,
     });
+    expect(
+      await db.orderNotification.findMany({ where: { orderId: placed.order.id } }),
+    ).toMatchObject([
+      { kind: "PAYMENT_CONFIRMED", recipient: purchase.input.email, status: "PENDING" },
+    ]);
     const token = await statusAccess.issueCheckoutStatusToken(
       placed.order.id,
       purchase.sessionToken,
@@ -502,12 +533,25 @@ describe("PostgreSQL approved acceptance commerce payment", () => {
     const placed = created(await orders.reserveCommerceOrder(purchase));
     const first = verified(placed);
     expect(await orders.retryFailedCommerceOrder(placed.order.id, purchase)).toHaveProperty(
-      "error",
+      "pending",
     );
     expect(
       await payments.applyVerifiedCommercePayment(first.reference, { ...first, status: "failed" }),
     ).toBe("FAILED");
     expect(await available(purchase.perfume.id)).toEqual([2]);
+    const token = await statusAccess.issueCheckoutStatusToken(
+      placed.order.id,
+      purchase.sessionToken,
+    );
+    expect(
+      await statusAccess.getCommerceCheckoutRecovery(token ?? undefined, randomUUID()),
+    ).toBeNull();
+    expect(
+      await statusAccess.getCommerceCheckoutRecovery(token ?? undefined, purchase.sessionToken),
+    ).toMatchObject({
+      submissionKey: purchase.submissionKey,
+      details: purchase.input,
+    });
     expect(await orders.retryFailedCommerceOrder(placed.order.id, purchase)).toHaveProperty(
       "retry",
       true,
@@ -575,7 +619,7 @@ describe("PostgreSQL approved acceptance commerce administration", () => {
     if (!("id" in saved) || !saved.id) {
       throw new Error("Draft was not saved.");
     }
-    const issued = await drafts.issueCheckoutDraft(admin, saved.id, 0);
+    const issued = await drafts.issueCheckoutDraft(admin, saved.id, 0, expectedPrices(purchase));
     if (!("token" in issued) || !issued.token) {
       throw new Error("Draft was not issued.");
     }
@@ -590,7 +634,16 @@ describe("PostgreSQL approved acceptance commerce administration", () => {
       where: { perfumeId: purchase.perfume.id },
       data: { priceMinor: 220_000 },
     });
-    const reissued = await drafts.issueCheckoutDraft(admin, saved.id, 1);
+    const oldPrices = expectedPrices(purchase);
+    expect(await drafts.issueCheckoutDraft(admin, saved.id, 1, oldPrices)).toMatchObject({
+      stalePrices: true,
+    });
+    const reissued = await drafts.issueCheckoutDraft(
+      admin,
+      saved.id,
+      1,
+      new Map([[purchase.perfume.variants[0].id, 220_000]]),
+    );
     if (!("token" in reissued) || !reissued.token) {
       throw new Error("Draft was not reissued.");
     }
@@ -649,7 +702,7 @@ describe("PostgreSQL approved acceptance commerce administration", () => {
     if (!("id" in saved) || !saved.id) {
       throw new Error("Draft was not saved.");
     }
-    const issued = await drafts.issueCheckoutDraft(admin, saved.id, 0);
+    const issued = await drafts.issueCheckoutDraft(admin, saved.id, 0, expectedPrices(purchase));
     if (!("token" in issued) || !issued.token) {
       throw new Error("Draft was not issued.");
     }
@@ -660,7 +713,7 @@ describe("PostgreSQL approved acceptance commerce administration", () => {
       await drafts.saveCheckoutDraft(admin, input, { id: saved.id, version: 1 }),
     ).toHaveProperty("id");
     expect(await drafts.getCheckoutQuote(issued.token)).toBeNull();
-    const reissued = await drafts.issueCheckoutDraft(admin, saved.id, 2);
+    const reissued = await drafts.issueCheckoutDraft(admin, saved.id, 2, expectedPrices(purchase));
     if (!("token" in reissued) || !reissued.token) {
       throw new Error("Draft was not reissued.");
     }
@@ -696,6 +749,11 @@ describe("PostgreSQL approved acceptance commerce administration", () => {
     expect(
       await db.commerceOrderEvent.count({
         where: { orderId: placed.order.id, action: "CANCELLED" },
+      }),
+    ).toBe(1);
+    expect(
+      await db.orderNotification.count({
+        where: { orderId: placed.order.id, kind: "CANCELLED" },
       }),
     ).toBe(1);
   });
@@ -749,5 +807,238 @@ describe("PostgreSQL approved acceptance commerce administration", () => {
     ).toHaveProperty("error");
     expect(await available(purchase.perfume.id)).toEqual([2]);
     expect(await db.refund.count({ where: { paymentAttemptId: placed.attempt.id } })).toBe(1);
+  });
+});
+
+describe("PostgreSQL approved acceptance commerce notifications and recovery", () => {
+  beforeAll(async () => {
+    // Earlier cases created their own intents. Isolate the due batch for the worker tests.
+    await db.orderNotification.updateMany({ data: { nextAttemptAt: new Date("2037-01-01") } });
+    await db.refund.updateMany({ data: { nextCheckAt: new Date("2037-01-01") } });
+  });
+
+  async function paidOrder() {
+    const purchase = await basket([2]);
+    const placed = created(await orders.reserveCommerceOrder(purchase));
+    const fact = verified(placed);
+    expect(await payments.applyVerifiedCommercePayment(fact.reference, fact)).toBe("PAID");
+    const email = await db.orderNotification.findFirstOrThrow({
+      where: { orderId: placed.order.id, kind: "PAYMENT_CONFIRMED" },
+    });
+    return { purchase, placed, email };
+  }
+
+  it("recovers an abandoned notification lease and ignores stale completion", async () => {
+    const { email } = await paidOrder();
+    const now = new Date();
+    const [first, second] = await Promise.all([
+      notifications.claimDueNotifications(now, 5),
+      notifications.claimDueNotifications(now, 5),
+    ]);
+    expect([...first.emails, ...second.emails].filter((item) => item.id === email.id)).toHaveLength(
+      1,
+    );
+    const owner = first.emails.length ? first : second;
+    const later = new Date(now.getTime() + 61_000);
+    const recovered = await notifications.claimDueNotifications(later, 5);
+    expect(recovered.emails.map(({ id }) => id)).toContain(email.id);
+    await notifications.finishNotification(
+      email.id,
+      owner.leaseId,
+      { issue: "EMAIL_REJECTED" },
+      later,
+    );
+    expect(await db.orderNotification.findUniqueOrThrow({ where: { id: email.id } })).toMatchObject(
+      {
+        status: "PENDING",
+        leaseId: recovered.leaseId,
+        firstAttemptAt: null,
+      },
+    );
+    await notifications.finishNotification(
+      email.id,
+      recovered.leaseId,
+      {
+        issue: "EMAIL_CONFIGURATION",
+        nextAttemptAt: new Date("2037-01-01"),
+      },
+      later,
+    );
+  });
+
+  it("replays the identical email after a lost provider response and links only to the paid order", async () => {
+    const { purchase, placed, email } = await paidOrder();
+    const captured: { key: string | null; body: string }[] = [];
+    const messageId = randomUUID();
+    const stub = vi.spyOn(globalThis, "fetch").mockImplementation(async (resource, init) => {
+      if (resource !== "https://api.resend.com/emails") {
+        throw new Error("Unexpected outbound service in the notification fixture.");
+      }
+      captured.push({
+        key: new Headers(init?.headers).get("Idempotency-Key"),
+        body: String(init?.body),
+      });
+      if (captured.length === 1) {
+        throw new Error("Synthetic response loss");
+      }
+      return Response.json({ id: messageId });
+    });
+    vi.stubEnv("RESEND_API_KEY", "re_synthetic_fixture");
+    vi.stubEnv("RESEND_FROM", "orders@example.test");
+    vi.stubEnv("PAYSTACK_RETURN_ORIGIN", "https://checkout.example.test");
+    vi.stubEnv("COMMERCE_STATUS_KEY_VERSION", "1");
+    try {
+      expect(await notificationWorker.reconcileCommerceNotifications(5)).toEqual([
+        "EMAIL_AMBIGUOUS",
+      ]);
+      expect(await db.order.findUniqueOrThrow({ where: { id: placed.order.id } })).toMatchObject({
+        commerceStatus: "PAID",
+      });
+      expect(
+        await db.orderNotification.findUniqueOrThrow({ where: { id: email.id } }),
+      ).toMatchObject({
+        status: "PENDING",
+        issue: "EMAIL_AMBIGUOUS",
+        attempts: 1,
+      });
+      vi.stubEnv("RESEND_FROM", "replacement@example.test");
+      vi.stubEnv("PAYSTACK_RETURN_ORIGIN", "https://changed.example.test");
+      vi.stubEnv("COMMERCE_STATUS_KEY_VERSION", "2");
+      vi.stubEnv("COMMERCE_PREVIOUS_STATUS_KEY_VERSION", "1");
+      vi.stubEnv("COMMERCE_PREVIOUS_STATUS_SECRET", "synthetic-checkout-status-signing-secret");
+      vi.stubEnv("COMMERCE_STATUS_SECRET", "synthetic-rotated-checkout-status-signing-secret");
+      expect(await notifications.requeueNotification(email.id, new Date())).toBe(true);
+      expect(await notificationWorker.reconcileCommerceNotifications(5)).toEqual([null]);
+      expect(captured).toHaveLength(2);
+      expect(captured[1]).toEqual(captured[0]);
+      const sent = JSON.parse(captured[0].body) as { to: string; text: string };
+      expect(sent.to).toBe(purchase.input.email);
+      const access = new URL(sent.text.split("\n").at(-1) ?? "");
+      expect(access.origin).toBe("https://checkout.example.test");
+      expect(access.pathname).toBe("/checkout/status/access");
+      expect(access.search).toBe("");
+      const status = await statusAccess.getCommerceStatus(access.hash.slice(1));
+      expect(status).toMatchObject({ reference: placed.order.reference, status: "PAID" });
+      expect(status).not.toHaveProperty("emailSnapshot");
+      expect(
+        await statusAccess.findStatusOrderPayment(access.hash.slice(1), randomUUID()),
+      ).toBeNull();
+      expect(
+        await db.orderNotification.findUniqueOrThrow({ where: { id: email.id } }),
+      ).toMatchObject({
+        status: "ACCEPTED",
+        attempts: 2,
+        providerMessageId: messageId,
+        statusKeyVersion: "1",
+        statusTokenHash: expect.stringMatching(/^[0-9a-f]{64}$/),
+      });
+    } finally {
+      stub.mockRestore();
+      vi.stubEnv("COMMERCE_STATUS_SECRET", "synthetic-checkout-status-signing-secret");
+      vi.stubEnv("COMMERCE_STATUS_KEY_VERSION", undefined);
+      vi.stubEnv("COMMERCE_PREVIOUS_STATUS_KEY_VERSION", undefined);
+      vi.stubEnv("COMMERCE_PREVIOUS_STATUS_SECRET", undefined);
+      vi.stubEnv("RESEND_API_KEY", undefined);
+      vi.stubEnv("RESEND_FROM", undefined);
+      vi.stubEnv("PAYSTACK_RETURN_ORIGIN", undefined);
+    }
+  });
+
+  it("quarantines an ambiguous send past the idempotency window", async () => {
+    const { email } = await paidOrder();
+    await db.orderNotification.update({
+      where: { id: email.id },
+      data: {
+        firstAttemptAt: new Date(Date.now() - notifications.EMAIL_REPLAY_MS - 1000),
+        statusKeyVersion: "1",
+        statusTokenHash: "0".repeat(64),
+        statusLinkBase: "https://checkout.example.test/checkout/status/access",
+        sender: "orders@example.test",
+        attempts: 1,
+        issue: "EMAIL_AMBIGUOUS",
+      },
+    });
+    const stub = vi.spyOn(globalThis, "fetch");
+    try {
+      expect(await notificationWorker.reconcileCommerceNotifications(5)).toEqual([
+        "EMAIL_REPLAY_EXPIRED",
+      ]);
+      expect(stub).not.toHaveBeenCalled();
+      expect(await notifications.requeueNotification(email.id, new Date())).toBe(false);
+      expect(
+        await db.orderNotification.findUniqueOrThrow({ where: { id: email.id } }),
+      ).toMatchObject({
+        status: "NEEDS_ATTENTION",
+        issue: "EMAIL_REPLAY_EXPIRED",
+        attempts: 1,
+      });
+    } finally {
+      stub.mockRestore();
+    }
+  });
+
+  it("preserves refund progress during outages and rechecks failures using the existing refund", async () => {
+    const { placed } = await paidOrder();
+    const orderId = placed.order.id;
+    for (const next of ["PROCESSING", "DISPATCHED"] as const) {
+      expect(
+        await adminOrders.applyAdminCommerceOrderAction(admin, orderId, { action: "FULFIL", next }),
+      ).toHaveProperty("ok");
+    }
+    const refundCommand = {
+      action: "REFUND" as const,
+      amountMinor: placed.totalMinor,
+      reason: "Synthetic refund",
+      requestKey: randomUUID(),
+    };
+    expect(
+      await adminOrders.applyAdminCommerceOrderAction(admin, orderId, refundCommand),
+    ).toHaveProperty("ok");
+    const initial = await db.refund.findFirstOrThrow({
+      where: { paymentAttemptId: placed.attempt.id },
+    });
+    async function check(status: Parameters<typeof refunds.finishCommerceRefund>[1]) {
+      expect(await receipts.prioritiseRefundCheck(initial.id, new Date())).toBe(true);
+      const claim = await receipts.claimDueRefunds(new Date(), 5);
+      expect(claim.refunds).toContainEqual(expect.objectContaining({ id: initial.id, orderId }));
+      expect(
+        await refunds.finishCommerceRefund(
+          { id: initial.id, orderId, leaseId: claim.leaseId },
+          status,
+        ),
+      ).toBe(true);
+    }
+    await check("PROCESSING");
+    await check("AMBIGUOUS");
+    await check("PENDING");
+    expect(await db.refund.findUniqueOrThrow({ where: { id: initial.id } })).toMatchObject({
+      status: "PROCESSING",
+    });
+    await check("FAILED");
+    expect(
+      await adminOrders.applyAdminCommerceOrderAction(admin, orderId, {
+        ...refundCommand,
+        requestKey: randomUUID(),
+      }),
+    ).toHaveProperty("error");
+    await check("PROCESSED");
+    expect(await db.refund.findUniqueOrThrow({ where: { id: initial.id } })).toMatchObject({
+      status: "PROCESSED",
+      providerReference: initial.providerReference,
+    });
+    expect(
+      await db.orderNotification.findMany({
+        where: { orderId },
+        select: { kind: true, eventKey: true },
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "DISPATCHED" }),
+        { kind: "REFUND_PROGRESS", eventKey: `refund:${initial.id}:REQUESTED` },
+        { kind: "REFUND_PROGRESS", eventKey: `refund:${initial.id}:PROCESSING` },
+        { kind: "REFUND_PROGRESS", eventKey: `refund:${initial.id}:FAILED` },
+        { kind: "REFUND_PROGRESS", eventKey: `refund:${initial.id}:PROCESSED` },
+      ]),
+    );
   });
 });

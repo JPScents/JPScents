@@ -6,9 +6,12 @@ import Link from "next/link";
 import { useCart } from "@/app/(public)/_cart/providers/CartProvider";
 import { siteConfig } from "@/config/site";
 import type { DeliverySetting } from "@/modules/delivery";
+import type { CommerceCheckoutRecovery } from "@/modules/orders";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 
 import { prepareCheckoutSession, startPayment } from "../_actions/start-payment.action";
+import { COMMERCE_SUBMISSION_STORAGE_KEY } from "../_lib/checkout-types";
+import { DeliveryAddressField } from "./DeliveryAddressField";
 
 const fields = [
   {
@@ -41,13 +44,6 @@ const fields = [
     autoComplete: "address-level2",
     maxLength: 80,
   },
-  {
-    name: "deliveryAddress",
-    label: "Street and building",
-    required: true,
-    autoComplete: "address-line1",
-    maxLength: 240,
-  },
   { name: "deliveryApartment", label: "Apartment", autoComplete: "address-line2", maxLength: 80 },
   { name: "deliveryLandmark", label: "Landmark", maxLength: 120 },
   { name: "deliveryPostcode", label: "Postcode", autoComplete: "postal-code", maxLength: 16 },
@@ -55,7 +51,6 @@ const fields = [
 
 type StateFee = { state: string; deliveryFeeMinor: number };
 type UnitPrice = { perfumeVariantId: string; unitPriceMinor: number };
-const SUBMISSION_KEY = "jpscents-commerce-submission";
 
 type CheckoutQuote = {
   version: number;
@@ -76,12 +71,21 @@ function rememberSubmission(current: string | null, replace: boolean, storageKey
   }
 }
 
-function CheckoutField({ field, error }: { field: (typeof fields)[number]; error?: string }) {
+function CheckoutField({
+  field,
+  error,
+  initial,
+}: {
+  field: (typeof fields)[number];
+  error?: string;
+  initial?: string;
+}) {
   return (
     <label className="grid gap-2 text-sm font-semibold">
       {field.label}
       <input
         name={field.name}
+        defaultValue={initial}
         type={"type" in field ? field.type : "text"}
         autoComplete={"autoComplete" in field ? field.autoComplete : undefined}
         required={"required" in field && field.required}
@@ -99,12 +103,20 @@ function CheckoutField({ field, error }: { field: (typeof fields)[number]; error
   );
 }
 
-function useCommerceCheckout(destinations: DeliverySetting[], issuedQuote?: CheckoutQuote) {
+function useCommerceCheckout(
+  destinations: DeliverySetting[],
+  issuedQuote?: CheckoutQuote,
+  recovery?: CommerceCheckoutRecovery | null,
+) {
   const cart = useCart();
-  const key = useRef<string | null>(null);
+  const key = useRef<string | null>(recovery?.submissionKey ?? null);
   const replaceKey = useRef(false);
   const submitting = useRef(false);
-  const [state, setState] = useState("");
+  const [state, setState] = useState(
+    destinations.some((destination) => destination.state === recovery?.details.deliveryState)
+      ? (recovery?.details.deliveryState ?? "")
+      : "",
+  );
   const [updatedFee, setUpdatedFee] = useState<StateFee>();
   const [updatedPrices, setUpdatedPrices] = useState<UnitPrice[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -143,7 +155,9 @@ function useCommerceCheckout(destinations: DeliverySetting[], issuedQuote?: Chec
     }
     const data = new FormData(event.currentTarget);
     const details = { ...Object.fromEntries(data), deliveryCountry: "NG", deliveryState: state };
-    const storageKey = issuedQuote ? `${SUBMISSION_KEY}:${issuedQuote.storageId}` : SUBMISSION_KEY;
+    const storageKey = issuedQuote
+      ? `${COMMERCE_SUBMISSION_STORAGE_KEY}:${issuedQuote.storageId}`
+      : COMMERCE_SUBMISSION_STORAGE_KEY;
     key.current = rememberSubmission(key.current, replaceKey.current, storageKey);
     replaceKey.current = false;
     const submissionKey = key.current;
@@ -225,11 +239,15 @@ function useCommerceCheckout(destinations: DeliverySetting[], issuedQuote?: Chec
 export function CommerceCheckoutForm({
   destinations,
   issuedQuote,
+  addressAssistance,
+  recovery,
 }: {
   destinations: DeliverySetting[];
   issuedQuote?: CheckoutQuote;
+  addressAssistance: boolean;
+  recovery?: CommerceCheckoutRecovery | null;
 }) {
-  const checkout = useCommerceCheckout(destinations, issuedQuote);
+  const checkout = useCommerceCheckout(destinations, issuedQuote, recovery);
   if (
     !issuedQuote &&
     checkout.cart.resolutionState === "idle" &&
@@ -299,11 +317,27 @@ export function CommerceCheckoutForm({
             ) : null}
           </label>
           {fields.map((field) => (
-            <CheckoutField key={field.name} field={field} error={checkout.errors[field.name]} />
+            <CheckoutField
+              key={field.name}
+              field={field}
+              error={checkout.errors[field.name]}
+              initial={recovery?.details[field.name]}
+            />
           ))}
+          <DeliveryAddressField
+            state={checkout.state}
+            suggestionsEnabled={addressAssistance}
+            error={checkout.errors.deliveryAddress}
+            initial={recovery?.details.deliveryAddress}
+          />
           <label className="grid gap-2 text-sm font-semibold">
             Delivery instructions
-            <textarea name="orderNote" maxLength={500} className="border p-3 font-normal" />
+            <textarea
+              name="orderNote"
+              defaultValue={recovery?.details.orderNote}
+              maxLength={500}
+              className="border p-3 font-normal"
+            />
           </label>
         </fieldset>
         <section className="h-fit border bg-jp-surface p-5" aria-label="Order summary">

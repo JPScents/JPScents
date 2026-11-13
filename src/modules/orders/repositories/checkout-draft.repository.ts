@@ -141,7 +141,13 @@ export async function lockCheckoutDraft(tx: Prisma.TransactionClient, id: string
   return row !== undefined;
 }
 
-export async function issueCheckoutDraft(admin: AdminIdentity, id: string, version: number) {
+export async function issueCheckoutDraft(
+  admin: AdminIdentity,
+  id: string,
+  version: number,
+  expectedPrices: ReadonlyMap<string, number>,
+) {
+  requireAdmin(admin);
   const token = randomBytes(32).toString("base64url");
   return prisma.$transaction(async (tx) => {
     if (!(await lockCheckoutDraft(tx, id))) {
@@ -160,6 +166,15 @@ export async function issueCheckoutDraft(admin: AdminIdentity, id: string, versi
     if (!prices) {
       return {
         error: "One or more draft items are unavailable in the requested quantity.",
+      } as const;
+    }
+    if (
+      expectedPrices.size !== prices.size ||
+      [...prices].some(([variantId, item]) => expectedPrices.get(variantId) !== item.priceMinor)
+    ) {
+      return {
+        error: "Item prices changed. Review the updated prices before issuing a link.",
+        stalePrices: true,
       } as const;
     }
     for (const line of draft.lines) {
@@ -209,7 +224,7 @@ export function hashQuoteToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
-export async function getCheckoutQuote(token: string | undefined) {
+export async function getCheckoutQuote(token: string | undefined, checkoutSession?: string | null) {
   if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) {
     return null;
   }
@@ -217,10 +232,20 @@ export async function getCheckoutQuote(token: string | undefined) {
     where: {
       capabilityHash: hashQuoteToken(token),
       expiresAt: { gt: new Date() },
-      OR: [
-        { status: "ISSUED" },
-        { status: "CHECKED_OUT", order: { commerceStatus: "RESERVATION_EXPIRED" } },
-      ],
+      ...(checkoutSession
+        ? {
+            OR: [
+              { status: "ISSUED" },
+              {
+                status: "CHECKED_OUT",
+                order: {
+                  commerceStatus: "RESERVATION_EXPIRED",
+                  checkoutSessionHash: createHash("sha256").update(checkoutSession).digest("hex"),
+                },
+              },
+            ],
+          }
+        : { status: "ISSUED" }),
     },
     select: {
       id: true,

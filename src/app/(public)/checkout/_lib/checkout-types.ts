@@ -1,5 +1,7 @@
 import type { CheckoutInput, OrderCartLine } from "@/modules/orders";
 
+export const COMMERCE_SUBMISSION_STORAGE_KEY = "jpscents-commerce-submission";
+
 export type CheckoutForm = Required<CheckoutInput> & { customCity: string };
 
 export type CheckoutCart = {

@@ -70,3 +70,31 @@ export async function finishPaymentCheck(id: string, leaseId: string, unavailabl
     },
   });
 }
+
+export async function listUnresolvedPayments(take: number) {
+  return prisma.paymentAttempt.findMany({
+    where: { status: { in: [...paymentStatuses] } },
+    select: {
+      id: true,
+      status: true,
+      issue: true,
+      createdAt: true,
+      nextCheckAt: true,
+      order: { select: { reference: true } },
+    },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    take,
+  });
+}
+
+export async function prioritisePaymentCheck(id: string, now: Date) {
+  const result = await prisma.paymentAttempt.updateMany({
+    where: {
+      id,
+      status: { in: [...paymentStatuses] },
+      OR: [{ leaseUntil: null }, { leaseUntil: { lte: now } }],
+    },
+    data: { nextCheckAt: now },
+  });
+  return result.count === 1;
+}

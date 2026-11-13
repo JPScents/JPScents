@@ -153,6 +153,10 @@ function main() {
         PAYSTACK_WEBHOOK_SECRET: "whsec_browser_fixture",
         PAYSTACK_RETURN_ORIGIN: "http://localhost:3000",
         CRON_SECRET: "synthetic-scheduler-fixture",
+        RESEND_API_KEY: "re_browser_fixture",
+        RESEND_FROM: "orders@example.test",
+        GOOGLE_PLACES_ADDRESS_ASSISTANCE: "true",
+        GOOGLE_PLACES_API_KEY: "synthetic-browser-places-key",
         NODE_OPTIONS: "--import=./tests/e2e/paystack-fixture.mjs",
       },
       "inherit",
@@ -181,7 +185,7 @@ function main() {
       !browserFailed &&
       Number.isInteger(passed) &&
       legacyReport.passed >= 3 &&
-      commerceReport.passed >= 4 &&
+      commerceReport.passed >= 6 &&
       failed === 0 &&
       flaky === 0 &&
       skipped === 0

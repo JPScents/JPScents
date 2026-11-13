@@ -1,8 +1,8 @@
 # JPScents
 
-JPScents is a responsive perfume-ordering application for [jpscents.shop](https://jpscents.shop). Customers can discover perfumes, choose a size, manage a cart, place a saved order, receive a human-readable reference, and continue on WhatsApp for manual payment and fulfilment. No online payment is taken in the current release.
+JPScents is a perfume store. Customers browse variants and order for delivery within Nigeria. When commerce is active, guests review their delivery fee and pay through Paystack. They can follow payment, dispatch and refunds through secure order status. The earlier WhatsApp checkout remains available until commerce is activated. [Live storefront](https://jpscents.shop)
 
-The protected Admin manages customers, perfumes, variants, images, merchandising and orders. New orders begin as **Awaiting Payment** and may progress to **Paid**, **Delivered**, or **Cancelled**. Cancelling an order restores its deducted variant quantities exactly once.
+The protected Admin manages the catalogue, customers, delivery fees, order links and fulfilment. Commerce reserves stock when the buyer starts payment. Verified payment consumes the reservation. Admin manages refunds and received returns as separate actions.
 
 ## Technology
 
@@ -24,6 +24,8 @@ Public:
 - `/cart` — full cart
 - `/checkout` — customer and delivery details
 - `/checkout/confirm` — saved-order confirmation and WhatsApp handoff
+- `/checkout/quote` — guest checkout from an Admin-issued link
+- `/checkout/status` — secure commerce order status
 
 Admin:
 
@@ -32,6 +34,7 @@ Admin:
 - `/admin/perfumes`, `/admin/perfumes/new`, `/admin/perfumes/[id]`
 - `/admin/customers`, `/admin/customers/new`, `/admin/customers/[id]`
 - `/admin/orders`, `/admin/orders/[reference]`
+- `/admin/delivery`, `/admin/orders/drafts`, `/admin/operations`
 
 The application supports an empty production database. Public and Admin pages show deliberate empty states until real catalogue and order data exists.
 
@@ -133,9 +136,9 @@ Milestone 7 commerce configuration, payment activation and recovery use the [com
 2. Import the repository into the client-owned Vercel project.
 3. Use Vercel's standard Next.js settings and `npm run build`.
 4. Add only the variables marked for Vercel above.
-5. Deploy from `main`, then verify the public routes, Magic Link callback, Admin image access and a complete order through `/checkout/confirm`.
+5. The human merge to `main` deploys automatically. Verify the public routes, Magic Link callback, Admin image access, and the checkout path enabled on that deployment.
 
-Do not configure `DIRECT_URL` or `SUPABASE_SECRET_KEY` in Vercel. Preview deployments should not point at the production Supabase project. No `vercel.json` is required.
+Keep `DIRECT_URL` and `SUPABASE_SECRET_KEY` in the operator environment. Connect Preview to its own Supabase project. The commerce operations guide covers the scheduled recovery configuration.
 
 ## Quality commands
 

@@ -156,6 +156,18 @@ export function useCartState() {
     [updateItems],
   );
   const clearCart = useCallback(() => updateItems(() => []), [updateItems]);
+  const removePurchasedItems = useCallback(
+    (purchased: CartRequestLine[]) => {
+      const paid = new Map(purchased.map((item) => [item.perfumeVariantId, item.quantity]));
+      updateItems((previous) =>
+        previous.flatMap((item) => {
+          const quantity = item.quantity - (paid.get(item.perfumeVariantId) ?? 0);
+          return quantity > 0 ? [{ ...item, quantity }] : [];
+        }),
+      );
+    },
+    [updateItems],
+  );
 
   const isHydrated = items !== null;
   const requestedItems = items ?? [];
@@ -204,6 +216,7 @@ export function useCartState() {
     changeQuantity,
     removeItem,
     clearCart,
+    removePurchasedItems,
     setOpen,
     refreshCart,
   };

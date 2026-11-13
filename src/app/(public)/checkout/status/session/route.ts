@@ -1,3 +1,4 @@
+import { readLimitedBody } from "@/app/_server/read-limited-body";
 import { findCommerceStatusExpiry } from "@/modules/orders/server";
 
 import { setCommerceStatusCookie } from "../../_server/commerce-session";
@@ -6,11 +7,11 @@ export async function POST(request: Request) {
   if (!request.headers.get("content-type")?.startsWith("application/x-www-form-urlencoded")) {
     return new Response(null, { status: 415 });
   }
-  const body = await request.text();
-  if (body.length > 128) {
+  const body = await readLimitedBody(request, 128);
+  if (!body) {
     return new Response(null, { status: 413 });
   }
-  const form = new URLSearchParams(body);
+  const form = new URLSearchParams(body.toString("utf8"));
   const value = form.get("token");
   const token = typeof value === "string" ? value : null;
   const expiry = token ? await findCommerceStatusExpiry(token) : null;

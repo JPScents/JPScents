@@ -285,15 +285,13 @@ export async function retryFailedCommerceOrder(
         });
         const latest = await latestPaymentAttempt(tx, orderId);
         if (
-          order.commerceStatus !== "RESERVATION_EXPIRED" ||
-          !latest ||
-          latest.status !== "FAILED" ||
-          latest.environment !== environment ||
-          order.checkoutSessionHash !== createHash("sha256").update(sessionToken).digest("hex")
+          order.checkoutSessionHash !== createHash("sha256").update(sessionToken).digest("hex") ||
+          (latest && latest.environment !== environment)
         ) {
-          return {
-            error: "This payment is still being reconciled or can no longer be retried.",
-          } as const;
+          return { error: "This browser cannot retry that payment." } as const;
+        }
+        if (order.commerceStatus !== "RESERVATION_EXPIRED" || latest?.status !== "FAILED") {
+          return { pending: true } as const;
         }
         if (
           order.checkoutDraft &&
@@ -318,7 +316,11 @@ export async function retryFailedCommerceOrder(
           order.deliveryPostcode !== (input.deliveryPostcode ?? null) ||
           order.orderNote !== (input.orderNote ?? null)
         ) {
-          return { restartCheckout: true } as const;
+          return order.checkoutDraft
+            ? ({
+                error: "Use the original checkout details or contact JPScents for an updated link.",
+              } as const)
+            : ({ restartCheckout: true } as const);
         }
         const delivery = await lockDeliveryQuote(tx, input.deliveryState);
         if (!delivery) {
@@ -334,12 +336,22 @@ export async function retryFailedCommerceOrder(
               previous.unitPriceMinor === line.unitPriceMinor
             );
           });
-        if (
-          !sameBasket ||
-          order.deliveryFeeMinor !== delivery.feeMinor ||
-          order.deliveryFeeMinor !== quote.deliveryFeeMinor
-        ) {
-          return { restartCheckout: true } as const;
+        if (order.checkoutDraft && !sameBasket) {
+          return {
+            error: "This checkout link no longer matches the order. Contact JPScents for help.",
+          } as const;
+        }
+        if (!sameBasket || order.deliveryFeeMinor !== delivery.feeMinor) {
+          return order.checkoutDraft
+            ? ({
+                error: "The delivery fee changed. Contact JPScents for an updated link.",
+              } as const)
+            : ({ restartCheckout: true } as const);
+        }
+        if (order.deliveryFeeMinor !== quote.deliveryFeeMinor) {
+          return {
+            staleQuote: { deliveryFeeMinor: delivery.feeMinor, unitPrices: undefined },
+          } as const;
         }
         const stock = await deductStockForOrder(
           tx,

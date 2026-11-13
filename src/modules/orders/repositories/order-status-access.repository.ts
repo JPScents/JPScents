@@ -5,9 +5,15 @@ import { createHash, createHmac, randomBytes } from "node:crypto";
 import type { Prisma } from "@/infrastructure/database/generated/client";
 import { prisma } from "@/infrastructure/database/prisma";
 
-import { findPaymentAttemptByOrder, latestPaymentAttempt } from "@/modules/payments/server";
+import { isNigerianDestination } from "@/modules/delivery";
+import {
+  findPaymentAttemptByOrder,
+  latestPaymentAttempt,
+  listGuestRefundProgress,
+} from "@/modules/payments/server";
 
 import { lockCommerceOrder } from "./commerce-order.repository";
+import type { CommerceCheckoutRecovery } from "../types";
 
 const STATUS_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
 const statusSelect = {
@@ -17,12 +23,15 @@ const statusSelect = {
   fulfilmentStatus: true,
   paidAttemptId: true,
   checkoutDraft: { select: { id: true } },
+  checkoutSessionHash: true,
+  submissionKey: true,
   subtotalMinor: true,
   deliveryFeeMinor: true,
   totalMinor: true,
   items: {
     select: {
       perfumeNameSnapshot: true,
+      perfumeVariantId: true,
       sizeValueSnapshot: true,
       quantity: true,
       unitPriceMinor: true,
@@ -32,6 +41,25 @@ const statusSelect = {
 
 function hash(token: string) {
   return createHash("sha256").update(token).digest("hex");
+}
+
+export async function grantCommerceStatus(
+  tx: Prisma.TransactionClient,
+  orderId: string,
+  token: string,
+  startsAt: Date,
+) {
+  const digest = hash(token);
+  await tx.orderCapability.upsert({
+    where: { hash: digest },
+    create: {
+      orderId,
+      purpose: "STATUS",
+      hash: digest,
+      expiresAt: new Date(startsAt.getTime() + STATUS_LIFETIME_MS),
+    },
+    update: {},
+  });
 }
 
 export async function issueCheckoutStatusToken(orderId: string, sessionToken: string) {
@@ -58,21 +86,15 @@ export async function issueCheckoutStatusToken(orderId: string, sessionToken: st
     const token = createHmac("sha256", key)
       .update(`checkout-status:${orderId}:${nonce}`)
       .digest("base64url");
-    await tx.orderCapability.upsert({
-      where: { hash: hash(token) },
-      create: {
-        orderId,
-        purpose: "STATUS",
-        hash: hash(token),
-        expiresAt: new Date(now.getTime() + STATUS_LIFETIME_MS),
-      },
-      update: {},
-    });
+    await grantCommerceStatus(tx, orderId, token, now);
     return token;
   });
 }
 
-export async function getCommerceStatus(token: string | undefined) {
+export async function getCommerceStatus(
+  token: string | undefined,
+  checkoutSession?: string | null,
+) {
   if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) {
     return null;
   }
@@ -92,6 +114,7 @@ export async function getCommerceStatus(token: string | undefined) {
     }
     const { order } = capability;
     const attempt = await latestPaymentAttempt(tx, order.id);
+    const refunds = await listGuestRefundProgress(tx, order.id);
     return {
       reference: order.reference,
       status: order.commerceStatus,
@@ -105,12 +128,98 @@ export async function getCommerceStatus(token: string | undefined) {
       subtotalMinor: order.subtotalMinor,
       deliveryFeeMinor: order.deliveryFeeMinor,
       totalMinor: order.totalMinor,
+      refunds,
+      paidCart:
+        order.paidAttemptId &&
+        !order.checkoutDraft &&
+        checkoutSession &&
+        order.checkoutSessionHash === hash(checkoutSession)
+          ? {
+              submissionKey: order.submissionKey,
+              lines: order.items.map(({ perfumeVariantId, quantity }) => ({
+                perfumeVariantId,
+                quantity,
+              })),
+            }
+          : null,
       items: order.items.map((item) => ({
         name: item.perfumeNameSnapshot ?? "Perfume",
         size: item.sizeValueSnapshot ? `${item.sizeValueSnapshot.toString()} mL` : "",
         quantity: item.quantity,
         unitPriceMinor: item.unitPriceMinor,
       })),
+    };
+  });
+}
+
+export async function getCommerceCheckoutRecovery(
+  statusToken: string | undefined,
+  checkoutSession: string | null,
+  draftId?: string,
+): Promise<CommerceCheckoutRecovery | null> {
+  if (!checkoutSession || !statusToken || !/^[A-Za-z0-9_-]{43}$/.test(statusToken)) {
+    return null;
+  }
+  return prisma.$transaction(async (tx) => {
+    const capability = await tx.orderCapability.findUnique({
+      where: {
+        hash: hash(statusToken),
+        purpose: "STATUS",
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+        order: {
+          kind: "COMMERCE",
+          commerceStatus: "RESERVATION_EXPIRED",
+          checkoutSessionHash: hash(checkoutSession),
+          checkoutDraft: draftId ? { id: draftId } : { is: null },
+        },
+      },
+      select: {
+        order: {
+          select: {
+            id: true,
+            submissionKey: true,
+            customerNameSnapshot: true,
+            emailSnapshot: true,
+            whatsappNumberSnapshot: true,
+            deliveryStateSnapshot: true,
+            deliveryCitySnapshot: true,
+            deliveryAddressSnapshot: true,
+            deliveryApartment: true,
+            deliveryLandmark: true,
+            deliveryPostcode: true,
+            orderNote: true,
+          },
+        },
+      },
+    });
+    const order = capability?.order;
+    if (
+      !order?.customerNameSnapshot ||
+      !order.emailSnapshot ||
+      !order.whatsappNumberSnapshot ||
+      !isNigerianDestination(order.deliveryStateSnapshot) ||
+      !order.deliveryCitySnapshot ||
+      !order.deliveryAddressSnapshot ||
+      (await latestPaymentAttempt(tx, order.id))?.status !== "FAILED"
+    ) {
+      return null;
+    }
+    return {
+      submissionKey: order.submissionKey,
+      details: {
+        customerName: order.customerNameSnapshot,
+        email: order.emailSnapshot,
+        whatsappNumber: order.whatsappNumberSnapshot,
+        deliveryCountry: "NG",
+        deliveryState: order.deliveryStateSnapshot,
+        deliveryCity: order.deliveryCitySnapshot,
+        deliveryAddress: order.deliveryAddressSnapshot,
+        deliveryApartment: order.deliveryApartment ?? undefined,
+        deliveryLandmark: order.deliveryLandmark ?? undefined,
+        deliveryPostcode: order.deliveryPostcode ?? undefined,
+        orderNote: order.orderNote ?? undefined,
+      },
     };
   });
 }
