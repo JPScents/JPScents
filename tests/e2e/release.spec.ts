@@ -4,7 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { createClient } from "@supabase/supabase-js";
 
-import { PrismaClient } from "../../src/db/generated/client";
+import { PrismaClient } from "../../src/infrastructure/database/generated/client";
 
 const origin = "http://localhost:3000";
 const inbox = "http://127.0.0.1:56324";
@@ -171,7 +171,7 @@ test("guest can retry checkout without a second order and confirmation is privat
   }
 });
 
-test("Admin magic link allows image upload, stock conflict handling and cancellation", async ({
+test("Admin magic link allows delivery settings, image upload, stock conflict handling and cancellation", async ({
   page,
 }) => {
   const product = await perfume("admin-amber", 1);
@@ -203,6 +203,40 @@ test("Admin magic link allows image upload, stock conflict handling and cancella
   await followMagicLink(page, adminEmail);
   const callbackDestination = new URL(page.url());
   expect(callbackDestination.pathname, "Admin magic link callback destination").toBe("/admin");
+
+  await page.goto("/admin/delivery");
+  await expect(page.getByRole("heading", { name: "Delivery" })).toBeVisible();
+  const deliveryFee = page.getByRole("textbox", { name: "Lagos delivery fee (NGN)" });
+  const saveDelivery = page.getByRole("button", { name: "Save delivery settings" });
+  await page.getByRole("checkbox", { name: "Lagos", exact: true }).check();
+  await deliveryFee.fill("1500.25");
+  await saveDelivery.click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Delivery settings saved" }),
+  ).toBeVisible();
+  expect(
+    await db.deliveryDestination.findUniqueOrThrow({ where: { state: "Lagos" } }),
+  ).toMatchObject({
+    enabled: true,
+    feeMinor: 150_025,
+    version: 1,
+  });
+  await db.deliveryDestination.update({
+    where: { state: "Lagos" },
+    data: { feeMinor: 160_000, version: { increment: 1 } },
+  });
+  await deliveryFee.fill("1400");
+  await saveDelivery.click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Delivery settings changed" }),
+  ).toBeVisible();
+  await expect(deliveryFee).toHaveValue("1400");
+  expect(
+    await db.deliveryDestination.findUniqueOrThrow({ where: { state: "Lagos" } }),
+  ).toMatchObject({
+    feeMinor: 160_000,
+    version: 2,
+  });
 
   const editUrl = `/admin/perfumes/${product.id}`;
   await page.goto(editUrl);

@@ -2,8 +2,8 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { siteConfig } from "@/config/site";
-import { getAdminIdentity } from "@/lib/auth/identity";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAdminIdentity } from "@/modules/access/server";
+import { createSupabaseServerClient } from "@/app/_server/supabase-session";
 
 const allowedOtpTypes = new Set<EmailOtpType>(["email", "magiclink"]);
 

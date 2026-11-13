@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
-import { MotionReveal } from "@/components/shared/MotionReveal";
+import { MotionReveal } from "@/ui/MotionReveal";
 import { absoluteUrl, siteConfig } from "@/config/site";
-import { getPerfumeBySlug, getRelatedPerfumes } from "@/features/catalogue/server";
+import { getRelatedPerfumes } from "@/modules/catalogue/server";
+import { getPerfumeDetail } from "./_server/perfume-detail";
 
 import { DesktopProfile } from "./_components/DesktopProfile";
 import { PerfumeDetails } from "./_components/PerfumeDetails";
@@ -18,7 +19,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const perfume = await getPerfumeBySlug(slug);
+  const perfume = await getPerfumeDetail(slug);
   if (!perfume) {
     notFound();
   }
@@ -44,7 +45,7 @@ export async function generateMetadata({
 
 export default async function PerfumeDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const perfume = await getPerfumeBySlug(slug);
+  const perfume = await getPerfumeDetail(slug);
   if (!perfume) {
     notFound();
   }

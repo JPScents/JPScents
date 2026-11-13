@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { JsonLd } from "@/components/shared/JsonLd";
+import { JsonLd } from "@/ui/JsonLd";
 import { siteConfig } from "@/config/site";
-import { getFeaturedPerfumes } from "@/features/catalogue/server";
+import { isCommerceCheckoutActive } from "@/infrastructure/paystack/client";
+import { getFeaturedPerfumes } from "@/modules/catalogue/server";
 import { ClosingCta } from "./_components/ClosingCta";
 import { Faqs } from "./_components/Faqs";
 import { FeaturedPerfumes } from "./_components/FeaturedPerfumes";
@@ -19,6 +20,7 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const { hero, products } = await getFeaturedPerfumes();
+  const onlineCheckout = isCommerceCheckoutActive();
   return (
     <>
       <JsonLd
@@ -49,8 +51,8 @@ export default async function HomePage() {
           <GuidancePreview />
         </>
       ) : null}
-      <OrderingSteps />
-      <Faqs />
+      <OrderingSteps onlineCheckout={onlineCheckout} />
+      <Faqs onlineCheckout={onlineCheckout} />
       {hero ? <ClosingCta /> : null}
     </>
   );

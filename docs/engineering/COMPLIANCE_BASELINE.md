@@ -88,3 +88,11 @@ Hosted GitHub and Vercel gates, production upload behaviour, live RLS and Storag
 ## Milestone 6 changes against the baseline
 
 [PR #1](https://github.com/JPScents/JPScents/pull/1) addresses GAP-002 through GAP-005. Catalogue owns stock participation in the Orders transaction, an absolute Admin adjustment checks the observed quantity, and new order snapshots retain placed facts alongside the original relations. Existing orders retain a labelled fallback. The original baseline above records the audited revision. Consult the PR for exact candidate evidence and disposition.
+
+## Milestone 7 checkout input boundary
+
+The first implementation under Milestone 7 addresses GAP-001 within [ADR-0001](../architecture/adr/0001-feature-boundaries-and-checkout-input.md). The server action now decodes and normalises the request before passing typed values to Orders. The action tests exercise malformed and merged carts, invalid submission identities, field errors, a corrected retry with the same key and the scoped confirmation cookie. The original register above records the audited baseline. [Checkout action](../../src/app/%28public%29/checkout/_actions/submit-order.action.ts) · [Action tests](../../tests/src/app/order-actions.test.ts)
+
+## Milestone 7 structural adoption
+
+Stage A implements ADR-0005. The structure checker and fixtures follow business modules, route-local UI, infrastructure and shared code. GAP-006 is resolved by narrowing both existing directives to the approved images and removing the legacy baseline. The checker now follows recognised source imports from browser and neutral module entries to privileged runtimes. This covers the static part of GAP-015 and leaves isolated build and browser evidence under VER-02. [Accepted decision](../architecture/adr/0005-commerce-module-and-route-boundaries.md) · [Updated enforcement](ENFORCEMENT_MATRIX.md#milestone-7-adoption)

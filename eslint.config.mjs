@@ -27,7 +27,7 @@ const eslintConfig = defineConfig([
     "coverage/**",
     "output/**",
     ".playwright-cli/**",
-    "src/db/generated/**",
+    "src/infrastructure/database/generated/**",
     "supabase/.temp/**",
     ".vercel/**",
     "**/.env*",

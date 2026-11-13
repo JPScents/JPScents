@@ -1,10 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { MotionReveal } from "@/components/shared/MotionReveal";
-import { ProductBottlePlaceholder } from "@/components/shared/public/ProductBottlePlaceholder";
+import { MotionReveal } from "@/ui/MotionReveal";
+import { ProductBottlePlaceholder } from "@/ui/ProductBottlePlaceholder";
 import { siteConfig } from "@/config/site";
-import type { PublicPerfumeDetail } from "@/features/catalogue";
+import type { PublicPerfumeDetail } from "@/modules/catalogue";
 
 import { ProductDetailsAccordion } from "./ProductDetailsAccordion";
 import { VariantPurchaseControls } from "./VariantPurchaseControls";

@@ -5,9 +5,13 @@
 - **Recording date** — 12 November 2026
 - **Approval evidence** — D5 and VER-01–03 define the accepted gate and evidence requirements. CS3 and CS4 supplement them with test and rollout standards. [Approved architecture decisions](../ARCHITECTURE.md#approved-decisions) · [Approved coding decisions](../../engineering/CODING_STANDARDS.md#approved-decisions)
 
+## Milestone 7 successor
+
+[ADR-0010](0010-commerce-release-and-recovery-evidence.md) governs commerce pre-merge and deployed evidence. The required candidate check, scoped exceptions, real-boundary verification and automatic deployments still apply.
+
 ## Context and problem
 
-The repository has a full local check covering architecture, formatting, lint, types, and tests. The audit found no active local Git hooks or tracked CI gate and could not verify hosted branch or deployment rules. Some meaningful transaction tests use mocks. One returning-customer test passed while logging a `TypeError` because it did not assert the successful result. [Package scripts](../../../package.json#L14) · [Executed audit](../../engineering/CONTROLS_AUDIT.md#executed-verification) · [Returning-customer test](../../../tests/src/features/orders/services/order.service.test.ts#L208)
+The repository has a full local check covering architecture, formatting, lint, types, and tests. The audit found no active local Git hooks or tracked CI gate and could not verify hosted branch or deployment rules. Some meaningful transaction tests use mocks. One returning-customer test passed while logging a `TypeError` because it did not assert the successful result. [Package scripts](../../../package.json#L14) · [Executed audit](../../engineering/CONTROLS_AUDIT.md#executed-verification) · [Returning-customer test](https://github.com/JPScents/JPScents/blob/b02113b0c625fd538d41be42a74e50e6e7765f66/tests/src/features/orders/services/order.service.test.ts#L208)
 
 ## Decision
 

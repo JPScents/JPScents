@@ -1,6 +1,6 @@
-import { BrandLogo } from "@/components/shared/BrandLogo";
+import { BrandLogo } from "@/ui/BrandLogo";
 import { siteConfig } from "@/config/site";
-import { getCurrentAdmin } from "@/lib/auth/admin";
+import { getCurrentAdmin } from "@/app/_server/admin-session";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 

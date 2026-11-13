@@ -1,7 +1,7 @@
 "use client";
 
-import { Checkout as OrderCheckout } from "@/features/orders/client";
-import { useCart } from "@/features/cart";
+import { CheckoutForm } from "./CheckoutForm";
+import { useCart } from "@/app/(public)/_cart/providers/CartProvider";
 
 export function Checkout() {
   const cart = useCart();
@@ -25,5 +25,5 @@ export function Checkout() {
     );
   }
 
-  return <OrderCheckout cart={cart} />;
+  return <CheckoutForm cart={cart} />;
 }

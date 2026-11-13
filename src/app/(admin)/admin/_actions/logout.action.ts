@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { siteConfig } from "@/config/site";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/app/_server/supabase-session";
 
 export async function signOutAdmin() {
   const supabase = await createSupabaseServerClient();

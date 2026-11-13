@@ -2,8 +2,8 @@ import { ImageResponse } from "next/og";
 import { notFound } from "next/navigation";
 
 import { siteConfig } from "@/config/site";
-import { getPerfumeBySlug } from "@/features/catalogue/server";
-import { getBrandLogoDataUrl } from "@/lib/metadata/brand-image";
+import { getPerfumeDetail } from "./_server/perfume-detail";
+import { getBrandLogoDataUrl } from "@/app/_lib/brand-image";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ export const contentType = "image/png";
 
 export default async function OpenGraphImage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const perfume = await getPerfumeBySlug(slug);
+  const perfume = await getPerfumeDetail(slug);
   if (!perfume) {
     notFound();
   }

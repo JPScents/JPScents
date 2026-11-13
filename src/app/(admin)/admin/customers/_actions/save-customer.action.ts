@@ -1,0 +1,28 @@
+"use server";
+
+import { redirect } from "next/navigation";
+
+import { siteConfig } from "@/config/site";
+import { getCurrentAdmin } from "@/app/_server/admin-session";
+
+import { parseCustomerForm, saveCustomer } from "@/modules/customers/server";
+import type { CustomerActionState } from "@/modules/customers";
+
+export async function saveCustomerAdmin(
+  _: CustomerActionState,
+  formData: FormData,
+): Promise<CustomerActionState> {
+  if (!(await getCurrentAdmin())) {
+    return { errors: { form: "You are not authorized." } };
+  }
+  const parsed = parseCustomerForm(formData);
+  if (!parsed.input) {
+    return { errors: parsed.errors };
+  }
+  const id = formData.get("id");
+  const result = await saveCustomer(typeof id === "string" && id ? id : undefined, parsed.input);
+  if ("errors" in result) {
+    return result;
+  }
+  redirect(siteConfig.routes.adminCustomer(result.customer.id));
+}

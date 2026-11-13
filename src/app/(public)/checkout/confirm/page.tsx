@@ -1,5 +1,6 @@
-import { Confirmation } from "@/features/orders/client";
-import { getOrderConfirmation, readConfirmationCookie } from "@/features/orders/server";
+import { Confirmation } from "./_components/Confirmation";
+import { getOrderConfirmation } from "@/modules/orders/server";
+import { readConfirmationCookie } from "@/app/(public)/checkout/_server/confirmation-cookie";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

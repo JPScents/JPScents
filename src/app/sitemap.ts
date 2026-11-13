@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { absoluteUrl, siteConfig } from "@/config/site";
-import { listPublishedPerfumeSitemapEntries } from "@/features/catalogue/server";
+import { listPublishedPerfumeSitemapEntries } from "@/modules/catalogue/server";
 
 export const dynamic = "force-dynamic";
 

@@ -1,6 +1,6 @@
-import { MotionReveal } from "@/components/shared/MotionReveal";
-import { ScentCharacterBrowse } from "@/features/catalogue/server";
-import { scentCharacters } from "@/features/catalogue";
+import { MotionReveal } from "@/ui/MotionReveal";
+import { ScentCharacterBrowse } from "./ScentCharacterBrowse";
+import { scentCharacters } from "@/modules/catalogue";
 
 export function ScentStartingPoints() {
   return (

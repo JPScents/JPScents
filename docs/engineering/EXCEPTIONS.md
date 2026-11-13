@@ -6,21 +6,21 @@
 
 ## Approved exceptions
 
-The two image exceptions apply to **STD-005**, solely for `@next/next/no-img-element`. **STD-025** and **GOV-01** govern the approval. **STD-012** remains applicable to decorative alt text and accessible control names. Catalogue public UI owns both. They cover only the existing Fresh, Warm, Sweet and Woody PNGs under `public/scent-characters/`, as mapped by `scentCharacterContent`. [Image map](../../src/features/catalogue/constants/catalogue.ts#L6) · [Governance](../architecture/ARCHITECTURE.md#4-verification-and-exceptions)
+The two image exceptions apply to **STD-005**, solely for `@next/next/no-img-element`. **STD-025** and **GOV-01** govern the approval. **STD-012** remains applicable to decorative alt text and accessible control names. The public route family owns both. They cover only the existing Fresh, Warm, Sweet and Woody PNGs under `public/scent-characters/`, as mapped by `scentCharacterContent`. [Image map](../../src/app/%28public%29/_lib/scent-character-content.ts) · [Governance](../architecture/ARCHITECTURE.md#4-verification-and-exceptions)
 
 ### EXC-001 Scent browsing
 
 - **Status** — Approved, corresponding to coding standard exception EX-01 under CS4.
-- **Exact scope** — The existing native `<img src={item.image} alt="">` inside the link rendered for each scent by `ScentCharacterBrowse`. Approval applies to that element and those assets. [Image and link label](../../src/features/catalogue/components/public/ScentCharacterBrowse.tsx#L14)
+- **Exact scope** — The existing native `<img src={item.image} alt="">` inside the link rendered for each scent by `ScentCharacterBrowse`. Approval applies to that element and those assets. [Image and link label](../../src/app/%28public%29/_components/ScentCharacterBrowse.tsx)
 - **Justification and trade-off** — Retains native rendering of existing controlled decorative artwork. The visible scent label names the link. Using the Next image component is the documented alternative and would remove the need for this lint exception. [Approved rationale](CODING_STANDARDS.md#approved-decorative-image-exceptions)
-- **Verification and review** — Source inspection confirmed the element, empty alt text and label. Review eligibility on changes to the asset, image markup or image pipeline. Verify the link name and keyboard interaction in the affected UI. Narrow the suppression to the element when editing the component. The approval specifies a review condition. [Existing directive](../../src/features/catalogue/components/public/ScentCharacterBrowse.tsx#L7)
+- **Verification and review** — Source inspection confirmed the element, empty alt text and label. Review eligibility on changes to the asset, image markup or image pipeline. Verify the link name and keyboard interaction in the affected UI. Keep the suppression attached to the approved element. Stage A moved the existing element and narrowed its directive. [Existing directive](../../src/app/%28public%29/_components/ScentCharacterBrowse.tsx)
 
 ### EXC-002 Scent selection
 
 - **Status** — Approved, corresponding to coding standard exception EX-02 under CS4.
-- **Exact scope** — The existing native `<img src={item.image} alt="">` inside the `ScentCharacterSelect` button. Approval applies to that element and those assets. [Button and image](../../src/features/catalogue/components/public/ScentCharacterSelect.tsx#L18) · [Visible label](../../src/features/catalogue/components/public/ScentCharacterSelect.tsx#L35)
+- **Exact scope** — The existing native `<img src={item.image} alt="">` inside the `ScentCharacterSelect` button. Approval applies to that element and those assets. [Button and image](../../src/app/%28public%29/help-me-choose/_components/ScentCharacterSelect.tsx) · [Visible label](../../src/app/%28public%29/help-me-choose/_components/ScentCharacterSelect.tsx)
 - **Justification and trade-off** — Retains native rendering of existing controlled decorative artwork. The visible scent label names the button and `aria-pressed` communicates selection independently. Using the Next image component is the documented alternative. [Approved rationale](CODING_STANDARDS.md#approved-decorative-image-exceptions)
-- **Verification and review** — Source inspection confirmed empty alt text, label and pressed state. Review eligibility on changes to the asset, image markup or image pipeline. Verify the button name, keyboard interaction and pressed state in the affected UI. Narrow the suppression to the element when editing the component. The approval specifies a review condition. [Existing directive](../../src/features/catalogue/components/public/ScentCharacterSelect.tsx#L6)
+- **Verification and review** — Source inspection confirmed empty alt text, label and pressed state. Review eligibility on changes to the asset, image markup or image pipeline. Verify the button name, keyboard interaction and pressed state in the affected UI. Keep the suppression attached to the approved element. Stage A moved the existing element and narrowed its directive. [Existing directive](../../src/app/%28public%29/help-me-choose/_components/ScentCharacterSelect.tsx)
 
 ### EXC-003 Dependency tooling for PR #1
 

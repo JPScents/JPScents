@@ -6,7 +6,7 @@ const { getHeaders, signInWithOtp } = vi.hoisted(() => ({
 }));
 
 vi.mock("next/headers", () => ({ headers: getHeaders }));
-vi.mock("@/lib/supabase/server", () => ({
+vi.mock("@/app/_server/supabase-session", () => ({
   createSupabaseServerClient: vi.fn(async () => ({
     auth: { signInWithOtp },
   })),

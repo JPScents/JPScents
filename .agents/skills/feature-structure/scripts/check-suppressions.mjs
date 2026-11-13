@@ -1,9 +1,6 @@
-import { readFile } from "node:fs/promises";
 import ts from "typescript";
 
-const imageRule = "@next/next/no-img-element";
-const legacyBaseline = ".agents/skills/feature-structure/scripts/suppression-baseline.json";
-const assetsModule = "src/features/catalogue/constants/catalogue.ts";
+const assetsModule = "src/app/(public)/_lib/scent-character-content.ts";
 const approvedAssets = {
   FRESH: "/scent-characters/scent-fresh-natural.png",
   WARM: "/scent-characters/scent-warm-natural.png",
@@ -12,15 +9,24 @@ const approvedAssets = {
 };
 
 // EXC-001 and EXC-002 approve one decorative element in each named component.
-const imageExceptions = new Map(
+const imageExceptions = new Map([
   [
-    ["ScentCharacterBrowse", "Link"],
-    ["ScentCharacterSelect", "button"],
-  ].map(([component, container]) => [
-    `src/features/catalogue/components/public/${component}.tsx`,
-    { component, container },
-  ]),
-);
+    "src/app/(public)/_components/ScentCharacterBrowse.tsx",
+    {
+      component: "ScentCharacterBrowse",
+      container: "Link",
+      assetImport: "../_lib/scent-character-content",
+    },
+  ],
+  [
+    "src/app/(public)/help-me-choose/_components/ScentCharacterSelect.tsx",
+    {
+      component: "ScentCharacterSelect",
+      container: "button",
+      assetImport: "../../_lib/scent-character-content",
+    },
+  ],
+]);
 
 function descendants(node, predicate) {
   const matches = [];
@@ -167,7 +173,7 @@ function approvedImage(file, exception) {
     (statement) =>
       ts.isImportDeclaration(statement) &&
       ts.isStringLiteral(statement.moduleSpecifier) &&
-      statement.moduleSpecifier.text === "../../constants/catalogue" &&
+      statement.moduleSpecifier.text === exception.assetImport &&
       statement.importClause?.namedBindings &&
       ts.isNamedImports(statement.importClause.namedBindings) &&
       statement.importClause.namedBindings.elements.some(
@@ -181,46 +187,12 @@ function approvedImage(file, exception) {
   ) {
     return undefined;
   }
-  return { image, owner };
+  return image;
 }
 
 function report(file, position, message) {
   const { line, character } = file.getLineAndCharacterOfPosition(position);
   return `${file.fileName}:${line + 1}:${character + 1} [STD-025] ${message}`;
-}
-
-async function loadBaseline() {
-  let json;
-  try {
-    json = await readFile(legacyBaseline, "utf8");
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      return new Map();
-    }
-    throw error;
-  }
-  const entries = JSON.parse(json);
-  if (!Array.isArray(entries)) {
-    throw new Error(`${legacyBaseline} [STD-025] expected an array of scoped legacy entries.`);
-  }
-  const baseline = new Map();
-  for (const entry of entries) {
-    if (
-      !entry ||
-      entry.finding !== "GAP-006" ||
-      imageExceptions.get(entry.path)?.component !== entry.component ||
-      entry.rule !== imageRule ||
-      entry.directive !==
-        `/* eslint-disable ${imageRule} -- local controlled scent assets are decorative. */` ||
-      baseline.has(entry.path)
-    ) {
-      throw new Error(
-        `${legacyBaseline} [STD-025] invalid or duplicate entry. Keep only the recorded GAP-006 directives.`,
-      );
-    }
-    baseline.set(entry.path, entry);
-  }
-  return baseline;
 }
 
 function matchesScopedDirective(file, range, directive, image) {
@@ -239,10 +211,8 @@ function matchesScopedDirective(file, range, directive, image) {
   return directiveLine + 1 === imageLine && (between === "" || between === "}");
 }
 
-export async function checkSuppressions(sources) {
+export function checkSuppressions(sources) {
   const errors = [];
-  const baseline = await loadBaseline();
-  const matched = new Set();
   const assetsApproved = hasApprovedAssets(sources.get(assetsModule));
   for (const [filename, file] of sources) {
     const exception = imageExceptions.get(filename);
@@ -258,21 +228,10 @@ export async function checkSuppressions(sources) {
       ) {
         continue;
       }
-      const legacy = baseline.get(filename);
-      if (
-        approved &&
-        raw === legacy?.directive &&
-        !matched.has(filename) &&
-        file.text.slice(range.end, approved.owner.getStart(file)).trim() === ""
-      ) {
-        matched.add(filename);
-        continue;
-      }
       if (
         approved &&
         !usedScopedException &&
-        !matched.has(filename) &&
-        matchesScopedDirective(file, range, directive, approved.image)
+        matchesScopedDirective(file, range, directive, approved)
       ) {
         usedScopedException = true;
         continue;
@@ -285,18 +244,6 @@ export async function checkSuppressions(sources) {
         ),
       );
     }
-  }
-  for (const filename of baseline.keys()) {
-    if (!matched.has(filename)) {
-      errors.push(
-        `${legacyBaseline} [STD-025] stale or changed GAP-006 entry for ${filename}. Remove the entry when the legacy directive is resolved. Review any scope changes explicitly.`,
-      );
-    }
-  }
-  if (!errors.length && matched.size) {
-    console.log(
-      `Retained ${matched.size} exact GAP-006 legacy directives. Narrow them when editing the approved images.`,
-    );
   }
   return errors;
 }

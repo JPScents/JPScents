@@ -1,5 +1,7 @@
-import { listAdminPerfumes, PerfumeList } from "@/features/catalogue/server";
-import type { CatalogueFilters } from "@/features/catalogue";
+import { getCurrentAdmin } from "@/app/_server/admin-session";
+import { listAdminPerfumes } from "@/modules/catalogue/server";
+import { PerfumeList } from "./_components/PerfumeList";
+import type { CatalogueFilters } from "@/modules/catalogue";
 
 export default async function AdminPerfumesPage({
   searchParams,
@@ -18,5 +20,10 @@ export default async function AdminPerfumesPage({
         ? params.placement
         : "all",
   };
-  return <PerfumeList perfumes={await listAdminPerfumes(filters)} filters={filters} />;
+  return (
+    <PerfumeList
+      perfumes={await listAdminPerfumes(await getCurrentAdmin(), filters)}
+      filters={filters}
+    />
+  );
 }

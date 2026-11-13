@@ -11,7 +11,7 @@ Supabase provides Postgres, passwordless Admin Auth, and catalogue image Storage
 
 Application tables have RLS enabled, forced, and no Data API grants or policies; trusted Next.js server code uses Prisma. The `perfume-images` bucket stays private. Visitors may request short-lived signed reads only for the `perfumes/` catalogue prefix. Upload, replacement, listing, and deletion remain restricted to authenticated users whose trusted JWT `app_metadata.role` is `admin`; JPEG, PNG, and WebP uploads are limited to 5 MiB.
 
-Admin authentication is passwordless. Put the server-only local secret/service-role key in ignored `.env.local`, then run `npm run admin:provision`. The idempotent command creates or promotes `JP_SCENTS_ADMIN_EMAIL`, confirms the email, and sets trusted `app_metadata.role=admin`. The secret key is an operator credential only: it is not used by the Next.js application and must not be configured in Vercel.
+Admin authentication is passwordless. Put the server-only local secret/service-role key in ignored `.env.local`, then run `npm run admin:provision`. The idempotent command creates or promotes `JP_SCENTS_ADMIN_EMAIL`, confirms the email, and sets trusted `app_metadata.role=admin`. The secret key is an operator credential only: it is not used by the Next.js application and must not be configured in Netlify.
 
 The login form calls Supabase only for the exact normalized trusted address, uses `shouldCreateUser: false`, and the callback independently checks both the email and trusted role before entering Admin. Do not use user-editable metadata for authorization.
 
@@ -27,6 +27,6 @@ Local sign-in emails are captured by the local email-testing inbox at `http://12
 6. Keep public sign-up disabled, email sign-in enabled, OTP expiry at one hour or less, and install the token-hash Magic Link markup from `supabase/templates/magic_link.html`.
 7. Configure client-owned production SMTP and disable link tracking. Supabase’s default SMTP is not suitable for production delivery.
 8. Run `APP_ENV_FILE=.env.production.local npm run admin:provision` once, then test the complete Magic Link flow on the production domain.
-9. Review Security Advisor, keep RLS enabled, enable SSL enforcement, and apply appropriate network restrictions after the Vercel/database connectivity path is confirmed.
+9. Review Security Advisor, keep RLS enabled, enable SSL enforcement, and apply appropriate network restrictions after the hosting/database connectivity path is confirmed.
 
 The checked-in root `supabase/config.toml` is a reproducible local configuration and contains localhost Auth URLs. Do not push it unchanged to production. Once the client domain and project reference exist, add a production remote configuration or apply the exact Auth values above in the Dashboard before using `supabase config push`.
