@@ -9,6 +9,7 @@ The commerce branch uses the required `JPScents quality` check. Merging the PR i
 - Configure `PAYSTACK_MODE=TEST` in isolated Preview and `PAYSTACK_MODE=LIVE` in Production. Use the corresponding `PAYSTACK_SECRET_KEY`, an HTTPS `PAYSTACK_RETURN_ORIGIN` matching that deployment, and a random server-only `COMMERCE_STATUS_SECRET`. Store values using the hosting provider's secret UI.
 - Register `/api/paystack/webhook` with the relevant Paystack integration. Use `PAYSTACK_WEBHOOK_SECRET` and optionally `PAYSTACK_PREVIOUS_WEBHOOK_SECRET` during rotation. `PAYSTACK_ALLOW_TEST_LEGACY_WEBHOOK=true` allows test-only legacy signatures when the current signing header is absent. Use the current signing scheme for live payments. [Paystack webhook signing](https://paystack.com/docs/payments/webhooks/)
 - The browser suite uses disposable PostgreSQL and Supabase with synthetic Paystack, Google Places and Resend responses. Record actual HTTPS provider setup, payment, webhook, refund and recovery evidence on the milestone PR.
+- The original checkout browser can reopen an existing Paystack session while the stock reservation and applicable quote are current. Once a provider request has started, preserve its reference and verify its outcome before retrying. Reservation expiry closes an attempt the app never sent to Paystack and restores its stock.
 
 ## Address suggestions and email
 

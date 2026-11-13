@@ -8,8 +8,7 @@ import {
   findOrderConfirmation,
   findAdminOrder,
   listOrderRecords,
-  countOrdersAwaitingPayment,
-  countOrdersSince,
+  readAdminOrderOverview,
   createOrderWithStockDeduction,
   type PublicOrderRecord,
 } from "../repositories/order.repository";
@@ -73,12 +72,7 @@ export async function getOrdersAdminOverview(admin: AdminIdentity | null) {
   start.setHours(0, 0, 0, 0);
   start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
 
-  const [awaitingAction, ordersThisWeek, recentOrders] = await Promise.all([
-    countOrdersAwaitingPayment(),
-    countOrdersSince(start),
-    listOrderRecords({}, 3),
-  ]);
-  return { awaitingAction, ordersThisWeek, recentOrders: recentOrders.map(toAdminOrderRow) };
+  return readAdminOrderOverview(start);
 }
 
 export async function createOrder(

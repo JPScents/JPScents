@@ -96,6 +96,13 @@ export async function recordPaymentInitialisation(
   });
 }
 
+export async function closeUnstartedPayment(tx: Prisma.TransactionClient, orderId: string) {
+  await tx.paymentAttempt.updateMany({
+    where: { orderId, status: "INITIATING", initialiseStartedAt: null },
+    data: { status: "FAILED", issue: "INITIALISATION_NOT_STARTED" },
+  });
+}
+
 export async function recordAttemptVerification(
   tx: Prisma.TransactionClient,
   attemptId: string,

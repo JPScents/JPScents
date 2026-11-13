@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { canStartPaystackPayment } from "@/infrastructure/paystack/client";
 import {
   findStatusOrderPayment,
   getCommerceStatus,
@@ -8,8 +9,13 @@ import {
 } from "@/modules/orders/server";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 
+import { resumePayment } from "../_actions/resume-payment.action";
 import { SettlePaidCart } from "../_components/SettlePaidCart";
-import { readCheckoutSessionToken, readCommerceStatusCookie } from "../_server/commerce-session";
+import {
+  readCheckoutSessionToken,
+  readCommerceQuoteCookie,
+  readCommerceStatusCookie,
+} from "../_server/commerce-session";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -41,18 +47,29 @@ const fulfilmentText = {
   DELIVERED: "Your order has been delivered",
 };
 
-export default async function CommerceStatusPage() {
-  const token = await readCommerceStatusCookie();
+export default async function CommerceStatusPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ resume?: string; link?: string }>;
+}) {
+  const { resume, link } = await searchParams;
+  const token = link === "unavailable" ? undefined : await readCommerceStatusCookie();
   const attempt = await findStatusOrderPayment(token);
-  if (attempt && attempt.status !== "SUCCEEDED") {
+  if (attempt?.initialiseStartedAt && attempt.status !== "SUCCEEDED") {
     try {
       await reconcileCommercePayment(attempt.providerReference, attempt.environment);
     } catch {
       console.error("[orders] Status refresh could not verify payment.");
     }
   }
-  const order = await getCommerceStatus(token, await readCheckoutSessionToken());
-  const title = order?.retryable
+  const order = await getCommerceStatus(
+    token,
+    await readCheckoutSessionToken(),
+    await readCommerceQuoteCookie(),
+  );
+  const resumeUnavailable = resume === "unavailable";
+  const paymentAvailable = canStartPaystackPayment();
+  const title = order?.paymentFailed
     ? "Payment failed"
     : order?.status === "AWAITING_PAYMENT" && order.payment === "PENDING"
       ? "Payment pending"
@@ -84,13 +101,38 @@ export default async function CommerceStatusPage() {
                 : "We’re checking your payment. Refresh this page for the latest status."}
             </p>
           ) : null}
-          {order.status === "RESERVATION_EXPIRED" && !order.retryable ? (
+          {order.status === "RESERVATION_EXPIRED" && !order.paymentFailed ? (
             <p className="mt-3 text-jp-text-secondary">
               We released the stock while we check your payment. Check here for updates before
               trying to pay again.
             </p>
           ) : null}
-          {order.retryable ? (
+          {order.paymentFailed && !order.retryable ? (
+            <p className="mt-3 text-jp-text-secondary">
+              Use the original checkout session or contact JPScents for help with your order.
+            </p>
+          ) : null}
+          {order.paymentFailed && order.retryable && !paymentAvailable ? (
+            <p className="mt-3 text-jp-text-secondary">
+              Online payments are temporarily unavailable.
+            </p>
+          ) : null}
+          {order.canContinue && paymentAvailable ? (
+            <form action={resumePayment} className="mt-4">
+              <button
+                type="submit"
+                className="border bg-jp-olive px-4 py-2 text-sm font-semibold text-white"
+              >
+                Continue to Paystack
+              </button>
+            </form>
+          ) : null}
+          {resumeUnavailable && order.status === "AWAITING_PAYMENT" ? (
+            <p role="status" className="mt-3 text-jp-text-secondary">
+              We could not reopen Paystack. Check this page for updates before trying again.
+            </p>
+          ) : null}
+          {order.retryable && paymentAvailable ? (
             <Link
               href={order.issuedQuote ? "/checkout/quote?retry=1" : "/checkout?retry=1"}
               className="mt-4 inline-block underline"

@@ -11,7 +11,7 @@ export default function OpenQuotePage() {
   return (
     <OpenCheckoutLink
       target="/checkout/quote/session"
-      fallback="/checkout/quote"
+      fallback="/checkout/quote?link=unavailable"
       title="Opening checkout link"
     />
   );

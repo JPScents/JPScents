@@ -13,6 +13,7 @@ export {
 export {
   beginCommerceCheckout,
   reconcileCommercePayment,
+  resumeCommercePayment,
 } from "./services/commerce-checkout.service";
 export {
   findStatusOrderPayment,

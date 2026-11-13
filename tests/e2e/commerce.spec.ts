@@ -250,6 +250,65 @@ test("signed delivery is durable and the protected scheduler verifies it without
   ).toBe(1);
 });
 
+test("the original checkout browser can reopen the same active Paystack payment", async ({
+  page,
+  browser,
+}) => {
+  const variantId = await openCheckout(page, "continue@example.test", "447700900463");
+  let opens = 0;
+  await page.route("https://checkout.paystack.com/**", async (route) => {
+    opens += 1;
+    if (opens === 1) {
+      await route.fulfill({
+        status: 302,
+        headers: { Location: "http://localhost:3000/checkout/status" },
+      });
+    } else {
+      await route.fulfill({ status: 200, body: "Resumed synthetic Paystack checkout" });
+    }
+  });
+  await page.getByRole("button", { name: "Pay with Paystack" }).click();
+  await expect(page.getByRole("heading", { name: "Payment pending" })).toBeVisible();
+  const attempt = await db.paymentAttempt.findFirstOrThrow({
+    where: { order: { items: { some: { perfumeVariantId: variantId } } } },
+    select: { id: true, orderId: true, status: true },
+  });
+  expect(attempt.status).toBe("PENDING");
+
+  const statusOnly = await browser.newPage();
+  try {
+    const context = statusOnly.context();
+    const statusCookies = (await page.context().cookies()).filter(
+      ({ name }) => name === "jp_commerce_status",
+    );
+    await context.addCookies(statusCookies);
+    await statusOnly.goto("http://localhost:3000/checkout/status");
+    await expect(statusOnly.getByRole("heading", { name: "Payment pending" })).toBeVisible();
+    await expect(statusOnly.getByRole("button", { name: "Continue to Paystack" })).toHaveCount(0);
+  } finally {
+    await statusOnly.close();
+  }
+
+  await page.getByRole("button", { name: "Continue to Paystack" }).click();
+  await expect(page.getByText("Resumed synthetic Paystack checkout")).toBeVisible();
+  expect(opens).toBe(2);
+  expect(
+    await db.paymentAttempt.findMany({
+      where: { orderId: attempt.orderId },
+      select: { id: true },
+    }),
+  ).toEqual([{ id: attempt.id }]);
+  expect(await db.stockReservation.count({ where: { orderId: attempt.orderId } })).toBe(1);
+  expect(await db.perfumeVariant.findUniqueOrThrow({ where: { id: variantId } })).toMatchObject({
+    quantity: 1,
+  });
+  // Keep this deliberately pending payment out of later scenarios' recovery batches.
+  await db.paymentAttempt.update({
+    where: { id: attempt.id },
+    data: { nextCheckAt: new Date("2037-01-01") },
+  });
+});
+
 test("Admin issues a locked quote, fulfils the payment and records refund and return separately", async ({
   page,
   browser,
@@ -285,13 +344,20 @@ test("Admin issues a locked quote, fulfils the payment and records refund and re
     await expect(
       guest.getByRole("region", { name: "Order summary" }).getByRole("listitem"),
     ).toContainText("₦1,200");
+    const invalidLink = new URL(checkoutLink);
+    invalidLink.hash = "a".repeat(43);
+    await guest.goto(invalidLink.href);
+    await expect(guest.getByRole("heading", { name: "Checkout link unavailable" })).toBeVisible();
+    await expect(guest.getByRole("button", { name: "Pay with Paystack" })).toHaveCount(0);
+    await guest.goto(checkoutLink);
+    await expect(guest).toHaveURL(/\/checkout\/quote$/);
     await fillCheckout(guest, "quote@example.test", "447700900460");
     await checkoutRedirect(guest, variantId);
     await guest.getByRole("button", { name: "Pay with Paystack" }).click();
     await expect(guest.getByRole("heading", { name: "Payment confirmed" })).toBeVisible();
     const order = await db.order.findFirstOrThrow({
       where: { items: { some: { perfumeVariantId: variantId } } },
-      select: { id: true, reference: true, subtotalMinor: true },
+      select: { id: true, reference: true, subtotalMinor: true, customerId: true },
     });
     expect(order.subtotalMinor).toBe(120_000);
 
@@ -299,6 +365,15 @@ test("Admin issues a locked quote, fulfils the payment and records refund and re
     await adminPage.getByRole("button", { name: "Mark Processing" }).click();
     await adminPage.getByRole("button", { name: "Mark Dispatched" }).click();
     await expect(adminPage.getByRole("button", { name: "Mark Delivered" })).toBeVisible();
+    await adminPage.goto("/admin");
+    await expect(adminPage.getByRole("link", { name: new RegExp(order.reference) })).toContainText(
+      "Paid · Dispatched",
+    );
+    await adminPage.goto(`/admin/customers/${order.customerId}`);
+    await expect(
+      adminPage.getByRole("listitem").filter({ hasText: order.reference }),
+    ).toContainText("Paid · Dispatched");
+    await adminPage.goto(`/admin/orders/${order.reference}`);
     await adminPage.getByLabel("Refund amount (NGN)").fill("500");
     await adminPage.getByLabel("Refund reason").fill("Synthetic partial refund");
     await adminPage.getByRole("button", { name: "Request refund" }).click();

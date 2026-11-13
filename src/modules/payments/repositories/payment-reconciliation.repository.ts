@@ -34,6 +34,7 @@ export async function claimDuePaymentWork(now: Date, take: number) {
       WITH due AS (
         SELECT "id" FROM "PaymentAttempt"
         WHERE "status" IN (${statuses}) AND "nextCheckAt" <= ${now}
+          AND ("status" <> 'INITIATING' OR "initialiseStartedAt" IS NOT NULL)
           AND ("leaseUntil" IS NULL OR "leaseUntil" <= ${now})
         ORDER BY "nextCheckAt", "id" LIMIT ${take} FOR UPDATE SKIP LOCKED
       )

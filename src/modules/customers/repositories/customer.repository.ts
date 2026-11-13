@@ -54,9 +54,10 @@ export async function findCustomerRecord(id: string) {
       orders: {
         select: {
           reference: true,
+          kind: true,
           status: true,
-          subtotalMinor: true,
-          createdAt: true,
+          commerceStatus: true,
+          fulfilmentStatus: true,
           _count: { select: { items: true } },
         },
         orderBy: { createdAt: "desc" },

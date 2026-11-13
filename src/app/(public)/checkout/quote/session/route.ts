@@ -19,7 +19,7 @@ export async function POST(request: Request) {
   return new Response(null, {
     status: 303,
     headers: {
-      Location: "/checkout/quote",
+      Location: quote ? "/checkout/quote" : "/checkout/quote?link=unavailable",
       "Cache-Control": "private, no-store",
       "Referrer-Policy": "no-referrer",
       "X-Robots-Tag": "noindex, nofollow",

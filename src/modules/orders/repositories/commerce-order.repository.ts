@@ -14,12 +14,20 @@ import {
 } from "@/modules/catalogue/server";
 import { CustomerIdentityConflict, resolveCustomerForOrder } from "@/modules/customers/server";
 import { lockDeliveryQuote } from "@/modules/delivery/server";
-import { createPaymentAttempt, latestPaymentAttempt } from "@/modules/payments/server";
+import {
+  closeUnstartedPayment,
+  createPaymentAttempt,
+  latestPaymentAttempt,
+} from "@/modules/payments/server";
 
 import type { CommerceCheckoutCommand, CommerceCheckoutInput, CommerceQuoteInput } from "../types";
 import { calculateCommerceTotals } from "../utils/commerce-totals";
 import { createReference } from "./order.repository";
-import { completeCheckoutQuote, lockIssuedCheckoutQuote } from "./checkout-draft.repository";
+import {
+  completeCheckoutQuote,
+  hasCurrentCheckoutQuote,
+  lockIssuedCheckoutQuote,
+} from "./checkout-draft.repository";
 
 const orderForReplay = {
   id: true,
@@ -258,6 +266,7 @@ export async function expireCommerceReservation(orderId: string, now = new Date(
     ) {
       return false;
     }
+    await closeUnstartedPayment(tx, orderId);
     await tx.order.update({
       where: { id: orderId },
       data: { commerceStatus: "RESERVATION_EXPIRED" },
@@ -297,10 +306,7 @@ export async function retryFailedCommerceOrder(
           order.checkoutDraft &&
           (!issuedQuote ||
             order.checkoutDraft.version !== issuedQuote.version ||
-            !order.checkoutDraft.expiresAt ||
-            order.checkoutDraft.expiresAt <= new Date() ||
-            order.checkoutDraft.capabilityHash !==
-              createHash("sha256").update(issuedQuote.token).digest("hex"))
+            !hasCurrentCheckoutQuote(order.checkoutDraft, issuedQuote.token, new Date()))
         ) {
           return { error: "The issued quote is no longer valid for a retry." } as const;
         }

@@ -185,7 +185,7 @@ function main() {
       !browserFailed &&
       Number.isInteger(passed) &&
       legacyReport.passed >= 3 &&
-      commerceReport.passed >= 6 &&
+      commerceReport.passed >= 7 &&
       failed === 0 &&
       flaky === 0 &&
       skipped === 0

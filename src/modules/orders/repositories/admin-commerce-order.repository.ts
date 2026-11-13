@@ -11,6 +11,7 @@ import {
   restorePaidAllocation,
 } from "@/modules/catalogue/server";
 import {
+  closeUnstartedPayment,
   hasRefundRequest,
   readPaymentAttempt,
   refundableBalance,
@@ -117,6 +118,7 @@ async function cancel(
   } else {
     await releaseHeldStock(tx, order.id, new Date(), "CANCELLED");
   }
+  await closeUnstartedPayment(tx, order.id);
   await tx.order.update({
     where: { id: order.id },
     data: {

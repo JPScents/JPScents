@@ -28,7 +28,7 @@ function verificationReport(mode: Mode) {
       : []),
     databaseStage,
   ];
-  const count = quality ? 5 : 27;
+  const count = quality ? 5 : 29;
   return {
     mode,
     status: "PASS",
@@ -213,7 +213,7 @@ test("known failure", () => {
     }
   }, 15_000);
 
-  const pass = { head: candidateSha, passed: 9, failed: 0, flaky: 0, skipped: 0 };
+  const pass = { head: candidateSha, passed: 10, failed: 0, flaky: 0, skipped: 0 };
   it.each([
     ["all cases passed", pass, 0, 0],
     ["missing report", null, 0, 1],

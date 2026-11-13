@@ -65,7 +65,13 @@ globalThis.fetch = async function fixtureFetch(input, init) {
     if (email.startsWith("uncertain") && count === 1) {
       throw new Error("Synthetic transport interruption");
     }
-    const status = email.startsWith("retry") && count === 1 ? "failed" : "success";
+    let status = "success";
+    if (email.startsWith("retry") && count === 1) {
+      status = "failed";
+    }
+    if (email.startsWith("continue")) {
+      status = "pending";
+    }
     attempts.set(reference, {
       id: ++identity,
       domain: "test",

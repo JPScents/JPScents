@@ -1,6 +1,7 @@
 import "server-only";
 
 import {
+  canStartPaystackPayment,
   hostedCheckoutUrl,
   initialisePaystackPayment,
   verifyPaystackPayment,
@@ -15,7 +16,10 @@ import {
   prepareCommerceInitialisation,
   saveCommerceInitialisation,
 } from "../repositories/commerce-payment.repository";
-import { issueCheckoutStatusToken } from "../repositories/order-status-access.repository";
+import {
+  findStatusOrderPayment,
+  issueCheckoutStatusToken,
+} from "../repositories/order-status-access.repository";
 import type { CommerceCheckoutCommand } from "../types";
 
 export async function reconcileCommercePayment(
@@ -37,11 +41,17 @@ export async function beginCommerceCheckout(command: CommerceCheckoutCommand) {
   if (!statusToken) {
     return { error: "This browser cannot access that order." } as const;
   }
-  if (reserved.duplicate && reserved.attempt && reserved.attempt.status !== "SUCCEEDED") {
-    await reconcileCommercePayment(
-      reserved.attempt.providerReference,
-      reserved.attempt.environment,
-    );
+  const previousAttempt = reserved.duplicate ? reserved.attempt : null;
+  if (previousAttempt && previousAttempt.status !== "SUCCEEDED") {
+    if (previousAttempt.initialiseStartedAt && previousAttempt.status !== "FAILED") {
+      const outcome = await reconcileCommercePayment(
+        previousAttempt.providerReference,
+        previousAttempt.environment,
+      );
+      if (outcome === "UNAVAILABLE") {
+        return { statusToken, checkoutUrl: null } as const;
+      }
+    }
     const retry = await retryFailedCommerceOrder(orderId, command);
     if ("restartCheckout" in retry) {
       return {
@@ -59,16 +69,57 @@ export async function beginCommerceCheckout(command: CommerceCheckoutCommand) {
     }
   }
 
-  const initialisation = await prepareCommerceInitialisation(orderId);
+  const checkoutUrl = await openCommercePayment(
+    orderId,
+    command.environment,
+    command.issuedQuote?.token,
+  );
+  return { statusToken, checkoutUrl } as const;
+}
+
+export async function resumeCommercePayment(
+  statusToken: string | undefined,
+  checkoutSession: string | null,
+  quoteToken?: string,
+) {
+  const environment = canStartPaystackPayment();
+  if (!environment || !checkoutSession) {
+    return null;
+  }
+  const attempt = await findStatusOrderPayment(statusToken, undefined, checkoutSession);
+  if (!attempt || attempt.environment !== environment) {
+    return null;
+  }
+  if (
+    attempt.initialiseStartedAt &&
+    (await reconcileCommercePayment(attempt.providerReference, environment)) !== "PENDING"
+  ) {
+    return null;
+  }
+  return openCommercePayment(attempt.orderId, environment, quoteToken, attempt.id);
+}
+
+async function openCommercePayment(
+  orderId: string,
+  environment: CommerceCheckoutCommand["environment"],
+  quoteToken?: string,
+  resumeAttemptId?: string,
+) {
+  const initialisation = await prepareCommerceInitialisation(
+    orderId,
+    environment,
+    quoteToken,
+    resumeAttemptId,
+  );
   if (!initialisation) {
-    return { statusToken, processing: true } as const;
+    return null;
   }
   if ("checkoutUrl" in initialisation && initialisation.checkoutUrl) {
-    return { statusToken, checkoutUrl: hostedCheckoutUrl(initialisation.checkoutUrl) } as const;
+    return hostedCheckoutUrl(initialisation.checkoutUrl);
   }
   const { attempt, email } = initialisation;
-  if (!attempt || !email || attempt.environment !== command.environment) {
-    return { statusToken, processing: true } as const;
+  if (!attempt || !email) {
+    return null;
   }
   const checkoutUrl = await initialisePaystackPayment({
     environment: attempt.environment,
@@ -77,5 +128,5 @@ export async function beginCommerceCheckout(command: CommerceCheckoutCommand) {
     email,
   });
   const usable = await saveCommerceInitialisation(orderId, attempt.id, checkoutUrl);
-  return { statusToken, checkoutUrl: usable ? checkoutUrl : null } as const;
+  return usable ? checkoutUrl : null;
 }

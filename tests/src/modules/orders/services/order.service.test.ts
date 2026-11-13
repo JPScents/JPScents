@@ -341,20 +341,29 @@ describe("orders", () => {
     });
     expect(mocks.eventCreate).not.toHaveBeenCalled();
   });
-  it("counts awaiting-payment orders and fetches only three recent rows for the overview", async () => {
-    await expect(getOrdersAdminOverview(admin)).resolves.toMatchObject({ awaitingAction: 0 });
-    expect(mocks.orderCount).toHaveBeenCalledWith({
-      where: { kind: "LEGACY_MANUAL", status: "AWAITING_PAYMENT" },
+  it("shows commerce totals and separate lifecycle alongside legacy orders on the overview", async () => {
+    mocks.orderFindMany.mockResolvedValue([
+      {
+        ...order,
+        reference: "JP-COMMERCE",
+        kind: "COMMERCE",
+        commerceStatus: "PAID",
+        fulfilmentStatus: "PROCESSING",
+        totalMinor: 145_000,
+      },
+      { ...order, kind: "LEGACY_MANUAL", commerceStatus: null, totalMinor: null },
+    ]);
+    await expect(getOrdersAdminOverview(admin)).resolves.toMatchObject({
+      recentOrders: [
+        {
+          reference: "JP-COMMERCE",
+          status: "PAID",
+          fulfilmentStatus: "PROCESSING",
+          amountMinor: 145_000,
+        },
+        { reference: "JP-ABC", status: "AWAITING_PAYMENT", amountMinor: 120_000 },
+      ],
     });
-    expect(mocks.orderFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        take: 3,
-        orderBy: { createdAt: "desc" },
-        select: expect.objectContaining({
-          customer: { select: { name: true, whatsappNumber: true } },
-        }),
-      }),
-    );
   });
 
   it("cancels once, restores grouped stock, and records a status event", async () => {

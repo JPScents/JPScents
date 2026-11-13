@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 
 export function OpenCheckoutLink({
   target = "/checkout/status/session",
-  fallback = "/checkout/status",
+  fallback = "/checkout/status?link=unavailable",
   title = "Opening order status",
 }: {
   target?: string;

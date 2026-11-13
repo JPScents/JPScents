@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   return new Response(null, {
     status: 303,
     headers: {
-      Location: "/checkout/status",
+      Location: expiry ? "/checkout/status" : "/checkout/status?link=unavailable",
       "Cache-Control": "private, no-store",
       "Referrer-Policy": "no-referrer",
       "X-Robots-Tag": "noindex, nofollow",

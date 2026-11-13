@@ -21,10 +21,14 @@ export const dynamic = "force-dynamic";
 export default async function CheckoutQuotePage({
   searchParams,
 }: {
-  searchParams: Promise<{ retry?: string }>;
+  searchParams: Promise<{ retry?: string; link?: string }>;
 }) {
+  const { retry, link } = await searchParams;
   const checkoutSession = await readCheckoutSessionToken();
-  const quote = await getCheckoutQuote(await readCommerceQuoteCookie(), checkoutSession);
+  const quote =
+    link === "unavailable"
+      ? null
+      : await getCheckoutQuote(await readCommerceQuoteCookie(), checkoutSession);
   if (!quote || !canStartPaystackPayment()) {
     return (
       <main className="mx-auto max-w-2xl px-5 py-14">
@@ -36,7 +40,7 @@ export default async function CheckoutQuotePage({
     );
   }
   const recovery =
-    (await searchParams).retry === "1"
+    retry === "1"
       ? await getCommerceCheckoutRecovery(
           await readCommerceStatusCookie(),
           checkoutSession,

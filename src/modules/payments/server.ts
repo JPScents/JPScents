@@ -2,6 +2,7 @@ import "server-only";
 
 export {
   claimPaymentInitialisation,
+  closeUnstartedPayment,
   createPaymentAttempt,
   findPaymentAttempt,
   findPaymentAttemptByOrder,

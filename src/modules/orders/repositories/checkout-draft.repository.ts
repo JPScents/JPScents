@@ -224,6 +224,19 @@ export function hashQuoteToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
+export function hasCurrentCheckoutQuote(
+  quote: { capabilityHash: string | null; expiresAt: Date | null },
+  token: string | undefined,
+  now: Date,
+) {
+  return Boolean(
+    token &&
+    quote.expiresAt &&
+    quote.expiresAt > now &&
+    quote.capabilityHash === hashQuoteToken(token),
+  );
+}
+
 export async function getCheckoutQuote(token: string | undefined, checkoutSession?: string | null) {
   if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) {
     return null;

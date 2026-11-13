@@ -3,7 +3,7 @@ import "server-only";
 import type { Prisma } from "@/infrastructure/database/generated/client";
 import { prisma } from "@/infrastructure/database/prisma";
 
-import type { VerifiedPaystackPayment } from "@/infrastructure/paystack/client";
+import type { PaystackMode, VerifiedPaystackPayment } from "@/infrastructure/paystack/client";
 import {
   consumeReservedStock,
   deductStockForOrder,
@@ -14,6 +14,7 @@ import {
 } from "@/modules/catalogue/server";
 import {
   claimPaymentInitialisation,
+  closeUnstartedPayment,
   findPaymentAttempt,
   findVerifiedProviderIdentity,
   latestPaymentAttempt,
@@ -24,32 +25,46 @@ import {
 } from "@/modules/payments/server";
 
 import { lockCommerceOrder } from "./commerce-order.repository";
+import { hasCurrentCheckoutQuote } from "./checkout-draft.repository";
 import { enqueueCommerceNotification } from "./order-notification.repository";
 
-export async function prepareCommerceInitialisation(orderId: string) {
+export async function prepareCommerceInitialisation(
+  orderId: string,
+  environment: PaystackMode,
+  quoteToken?: string,
+  resumeAttemptId?: string,
+) {
   return prisma.$transaction(async (tx) => {
     if (!(await lockCommerceOrder(tx, orderId))) {
       return null;
     }
     const order = await tx.order.findUniqueOrThrow({
       where: { id: orderId },
-      select: { commerceStatus: true, emailSnapshot: true, reference: true },
+      select: {
+        commerceStatus: true,
+        emailSnapshot: true,
+        checkoutDraft: { select: { capabilityHash: true, expiresAt: true } },
+      },
     });
     const attempt = await latestPaymentAttempt(tx, orderId);
-    if (order.commerceStatus !== "AWAITING_PAYMENT" || !attempt || !order.emailSnapshot) {
-      return null;
-    }
     const now = new Date();
-    if (!(await hasActiveReservation(tx, attempt.id, now))) {
+    if (
+      order.commerceStatus !== "AWAITING_PAYMENT" ||
+      attempt?.environment !== environment ||
+      (resumeAttemptId && attempt.id !== resumeAttemptId) ||
+      !order.emailSnapshot ||
+      (order.checkoutDraft && !hasCurrentCheckoutQuote(order.checkoutDraft, quoteToken, now)) ||
+      !(await hasActiveReservation(tx, attempt.id, now))
+    ) {
       return null;
     }
     if (attempt.status === "PENDING" && attempt.checkoutUrl) {
-      return { checkoutUrl: attempt.checkoutUrl, reference: order.reference } as const;
+      return { checkoutUrl: attempt.checkoutUrl } as const;
     }
     if (!(await claimPaymentInitialisation(tx, attempt.id, now))) {
       return null;
     }
-    return { attempt, email: order.emailSnapshot, reference: order.reference } as const;
+    return { attempt, email: order.emailSnapshot } as const;
   });
 }
 
@@ -66,9 +81,16 @@ export async function saveCommerceInitialisation(
     await recordPaymentInitialisation(tx, attemptId, checkoutUrl, now);
     const order = await tx.order.findUniqueOrThrow({
       where: { id: orderId },
-      select: { commerceStatus: true },
+      select: {
+        commerceStatus: true,
+        paymentAttempts: {
+          where: { id: attemptId, status: "PENDING", checkoutUrl },
+          select: { id: true },
+        },
+      },
     });
     return (
+      Boolean(checkoutUrl && order.paymentAttempts.length) &&
       order.commerceStatus === "AWAITING_PAYMENT" &&
       (await hasActiveReservation(tx, attemptId, now))
     );
@@ -142,6 +164,7 @@ async function applySuccessfulPayment(
     return "REFUND_REQUIRED";
   }
 
+  await closeUnstartedPayment(tx, order.id);
   let allocated = await consumeReservedStock(tx, order.id, attempt.id, now);
   if (!allocated) {
     // Release an expired or newer hold first so every item is available to allocate as a single set.
@@ -196,7 +219,7 @@ export async function applyVerifiedCommercePayment(
         return "UNKNOWN" as const;
       }
       const attempt = await readPaymentAttempt(tx, expected.id);
-      if (!attempt || attempt.status === "SUCCEEDED") {
+      if (!attempt || attempt.status === "SUCCEEDED" || !attempt.initialiseStartedAt) {
         return "UNCHANGED" as const;
       }
       if (

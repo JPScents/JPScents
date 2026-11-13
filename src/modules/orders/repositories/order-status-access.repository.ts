@@ -5,6 +5,7 @@ import { createHash, createHmac, randomBytes } from "node:crypto";
 import type { Prisma } from "@/infrastructure/database/generated/client";
 import { prisma } from "@/infrastructure/database/prisma";
 
+import { hasActiveReservation } from "@/modules/catalogue/server";
 import { isNigerianDestination } from "@/modules/delivery";
 import {
   findPaymentAttemptByOrder,
@@ -13,6 +14,7 @@ import {
 } from "@/modules/payments/server";
 
 import { lockCommerceOrder } from "./commerce-order.repository";
+import { hasCurrentCheckoutQuote } from "./checkout-draft.repository";
 import type { CommerceCheckoutRecovery } from "../types";
 
 const STATUS_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
@@ -22,7 +24,7 @@ const statusSelect = {
   commerceStatus: true,
   fulfilmentStatus: true,
   paidAttemptId: true,
-  checkoutDraft: { select: { id: true } },
+  checkoutDraft: { select: { capabilityHash: true, expiresAt: true } },
   checkoutSessionHash: true,
   submissionKey: true,
   subtotalMinor: true,
@@ -94,6 +96,7 @@ export async function issueCheckoutStatusToken(orderId: string, sessionToken: st
 export async function getCommerceStatus(
   token: string | undefined,
   checkoutSession?: string | null,
+  quoteToken?: string,
 ) {
   if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) {
     return null;
@@ -115,25 +118,36 @@ export async function getCommerceStatus(
     const { order } = capability;
     const attempt = await latestPaymentAttempt(tx, order.id);
     const refunds = await listGuestRefundProgress(tx, order.id);
+    const ownCheckout = Boolean(
+      checkoutSession && order.checkoutSessionHash === hash(checkoutSession),
+    );
+    const currentQuote =
+      !order.checkoutDraft || hasCurrentCheckoutQuote(order.checkoutDraft, quoteToken, new Date());
+    const paymentFailed =
+      !order.paidAttemptId &&
+      attempt?.status === "FAILED" &&
+      order.commerceStatus === "RESERVATION_EXPIRED";
     return {
       reference: order.reference,
       status: order.commerceStatus,
       fulfilment: order.fulfilmentStatus,
       payment: order.paidAttemptId ? ("SUCCEEDED" as const) : (attempt?.status ?? null),
-      retryable:
-        !order.paidAttemptId &&
-        attempt?.status === "FAILED" &&
-        order.commerceStatus === "RESERVATION_EXPIRED",
+      paymentFailed,
+      retryable: ownCheckout && currentQuote && paymentFailed,
+      canContinue:
+        ownCheckout &&
+        currentQuote &&
+        order.commerceStatus === "AWAITING_PAYMENT" &&
+        ((attempt?.status === "PENDING" && Boolean(attempt.checkoutUrl)) ||
+          (attempt?.status === "INITIATING" && !attempt.initialiseStartedAt)) &&
+        (await hasActiveReservation(tx, attempt.id, new Date())),
       issuedQuote: order.checkoutDraft !== null,
       subtotalMinor: order.subtotalMinor,
       deliveryFeeMinor: order.deliveryFeeMinor,
       totalMinor: order.totalMinor,
       refunds,
       paidCart:
-        order.paidAttemptId &&
-        !order.checkoutDraft &&
-        checkoutSession &&
-        order.checkoutSessionHash === hash(checkoutSession)
+        order.paidAttemptId && !order.checkoutDraft && ownCheckout
           ? {
               submissionKey: order.submissionKey,
               lines: order.items.map(({ perfumeVariantId, quantity }) => ({
@@ -241,7 +255,11 @@ export async function findCommerceStatusExpiry(token: string | undefined) {
   return capability?.expiresAt ?? null;
 }
 
-export async function findStatusOrderPayment(token: string | undefined, reference?: string) {
+export async function findStatusOrderPayment(
+  token: string | undefined,
+  reference?: string,
+  checkoutSession?: string,
+) {
   if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) {
     return null;
   }
@@ -252,7 +270,10 @@ export async function findStatusOrderPayment(token: string | undefined, referenc
         purpose: "STATUS",
         revokedAt: null,
         expiresAt: { gt: new Date() },
-        order: { kind: "COMMERCE" },
+        order: {
+          kind: "COMMERCE",
+          ...(checkoutSession ? { checkoutSessionHash: hash(checkoutSession) } : {}),
+        },
       },
       select: { orderId: true },
     });

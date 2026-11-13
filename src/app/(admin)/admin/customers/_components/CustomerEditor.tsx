@@ -5,29 +5,14 @@ import { useActionState, useState, useTransition } from "react";
 
 import { ModalShell } from "@/ui/ModalShell";
 import { siteConfig } from "@/config/site";
-import type { OrderStatus } from "@/modules/orders";
+import type { getCustomerById } from "@/modules/customers/server";
 import { formatEnumLabel } from "@/shared/utils/format-enum-label";
 
 import { deleteCustomerAdmin } from "../_actions/delete-customer.admin.action";
 import { saveCustomerAdmin } from "../_actions/save-customer.admin.action";
 import type { CustomerActionState } from "@/modules/customers";
 
-type CustomerEditorRecord = {
-  id: string;
-  name: string;
-  whatsappNumber: string;
-  email: string | null;
-  deliveryState: string;
-  deliveryCity: string;
-  deliveryAddress: string;
-  orders: Array<{
-    reference: string;
-    status: OrderStatus;
-    subtotalMinor: number;
-    createdAt: Date;
-    _count: { items: number };
-  }>;
-};
+type CustomerEditorRecord = NonNullable<Awaited<ReturnType<typeof getCustomerById>>>;
 
 const initial: CustomerActionState = {};
 
@@ -165,7 +150,14 @@ export function CustomerEditor({ customer }: { customer?: CustomerEditorRecord }
                     {order.reference}
                   </a>
                   <span>{order._count.items} items</span>
-                  <span>{formatEnumLabel(order.status)}</span>
+                  <span>
+                    {order.kind === "COMMERCE"
+                      ? formatEnumLabel(order.commerceStatus ?? "STATUS_UNAVAILABLE")
+                      : formatEnumLabel(order.status)}
+                    {order.commerceStatus === "PAID" && order.fulfilmentStatus
+                      ? ` · ${formatEnumLabel(order.fulfilmentStatus)}`
+                      : null}
+                  </span>
                 </li>
               ))}
             </ul>

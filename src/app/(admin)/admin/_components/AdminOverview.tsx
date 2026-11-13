@@ -5,7 +5,7 @@ import { EmptyState } from "@/ui/EmptyState";
 import { siteConfig } from "@/config/site";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 import { formatEnumLabel } from "@/shared/utils/format-enum-label";
-import type { AdminOrderRow } from "@/modules/orders";
+import type { getOrdersAdminOverview } from "@/modules/orders/server";
 
 export function AdminOverview({
   overview,
@@ -17,7 +17,7 @@ export function AdminOverview({
     availablePerfumes: number;
     zeroStockVariants: number;
     ordersThisWeek: number;
-    recentOrders: AdminOrderRow[];
+    recentOrders: Awaited<ReturnType<typeof getOrdersAdminOverview>>["recentOrders"];
     attention: { id: string; name: string; status: string }[];
     bestseller: { id: string; name: string } | null;
   };
@@ -78,10 +78,13 @@ export function AdminOverview({
                     <span className="text-jp-text-secondary">{order.customerName}</span>
                   </span>
                   <span className="text-right">
-                    {formatNairaFromMinor(order.subtotalMinor)}
+                    {formatNairaFromMinor(order.amountMinor)}
                     <br />
                     <span className="text-xs text-jp-text-secondary">
-                      {formatEnumLabel(order.status)}
+                      {order.status ? formatEnumLabel(order.status) : "Status unavailable"}
+                      {order.fulfilmentStatus && order.status === "PAID"
+                        ? ` · ${formatEnumLabel(order.fulfilmentStatus)}`
+                        : null}
                     </span>
                   </span>
                 </Link>

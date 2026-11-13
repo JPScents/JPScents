@@ -60,7 +60,7 @@ export async function findAdminOrder(reference: string) {
   });
 }
 
-export async function listOrderRecords(filters: OrderFilters = {}, take?: number) {
+export async function listOrderRecords(filters: OrderFilters = {}) {
   const query = filters.query;
   return await prisma.order.findMany({
     where: {
@@ -96,18 +96,54 @@ export async function listOrderRecords(filters: OrderFilters = {}, take?: number
       _count: { select: { items: true } },
     },
     orderBy: { createdAt: "desc" },
-    take,
   });
 }
 
 export type OrderRowRecord = Awaited<ReturnType<typeof listOrderRecords>>[number];
 
-export async function countOrdersAwaitingPayment() {
-  return await prisma.order.count({ where: { kind: "LEGACY_MANUAL", status: "AWAITING_PAYMENT" } });
-}
-
-export async function countOrdersSince(start: Date) {
-  return await prisma.order.count({ where: { kind: "LEGACY_MANUAL", createdAt: { gte: start } } });
+export async function readAdminOrderOverview(start: Date) {
+  const [awaitingAction, ordersThisWeek, latest] = await Promise.all([
+    prisma.order.count({
+      where: {
+        OR: [
+          { kind: "LEGACY_MANUAL", status: "AWAITING_PAYMENT" },
+          {
+            kind: "COMMERCE",
+            commerceStatus: "PAID",
+            fulfilmentStatus: { in: ["UNFULFILLED", "PROCESSING"] },
+          },
+          { kind: "COMMERCE", commerceStatus: "REFUND_REQUIRED" },
+        ],
+      },
+    }),
+    prisma.order.count({ where: { createdAt: { gte: start } } }),
+    prisma.order.findMany({
+      select: {
+        reference: true,
+        kind: true,
+        status: true,
+        commerceStatus: true,
+        fulfilmentStatus: true,
+        subtotalMinor: true,
+        totalMinor: true,
+        customerNameSnapshot: true,
+        customer: { select: { name: true } },
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: 3,
+    }),
+  ]);
+  return {
+    awaitingAction,
+    ordersThisWeek,
+    recentOrders: latest.map((order) => ({
+      reference: order.reference,
+      customerName: order.customerNameSnapshot ?? order.customer.name,
+      amountMinor: order.totalMinor ?? order.subtotalMinor,
+      status: order.kind === "COMMERCE" ? order.commerceStatus : order.status,
+      fulfilmentStatus: order.fulfilmentStatus,
+    })),
+  };
 }
 
 class OrderConflict extends Error {}

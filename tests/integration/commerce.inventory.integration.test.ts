@@ -417,7 +417,8 @@ describe("PostgreSQL approved acceptance commerce inventory", () => {
       await db.stockMovement.count({ where: { orderId: placed.order.id, kind: "RELEASE" } }),
     ).toBe(1);
     expect(await db.paymentAttempt.findUnique({ where: { id: placed.attempt.id } })).toMatchObject({
-      status: "INITIATING",
+      status: "FAILED",
+      issue: "INITIALISATION_NOT_STARTED",
     });
     expect(await orders.expireCommerceReservation(placed.order.id, when)).toBe(false);
     expect(
@@ -441,9 +442,76 @@ function verified(placed: ReturnType<typeof created>, status: "success" | "faile
 }
 
 describe("PostgreSQL approved acceptance commerce payment", () => {
+  it("closes a never-claimed initialisation at expiry and can retry the order without a provider lookup", async () => {
+    const purchase = await basket([2]);
+    const placed = created(await orders.reserveCommerceOrder(purchase));
+    const when = new Date(placed.expiresAt.getTime() + 1);
+    const [claims] = await Promise.all([
+      receipts.claimDuePaymentWork(when, 100),
+      orders.expireCommerceReservation(placed.order.id, when),
+    ]);
+    expect(claims.attempts.map(({ id }) => id)).not.toContain(placed.attempt.id);
+    const closed = await db.paymentAttempt.findUniqueOrThrow({ where: { id: placed.attempt.id } });
+    expect(closed).toMatchObject({
+      status: "FAILED",
+      issue: "INITIALISATION_NOT_STARTED",
+      initialiseStartedAt: null,
+    });
+    expect(await available(purchase.perfume.id)).toEqual([2]);
+    const fact = verified(placed);
+    expect(await payments.applyVerifiedCommercePayment(fact.reference, fact)).toBe("UNCHANGED");
+    expect(await orders.retryFailedCommerceOrder(placed.order.id, purchase)).toMatchObject({
+      retry: true,
+    });
+    expect(await available(purchase.perfume.id)).toEqual([1]);
+    expect(await db.paymentAttempt.count({ where: { orderId: placed.order.id } })).toBe(2);
+  });
+
+  it("allows a scoped buyer to resume only the existing payment with an active hold", async () => {
+    const purchase = await basket([2]);
+    const placed = created(await orders.reserveCommerceOrder(purchase));
+    const { id } = placed.order;
+    const token =
+      (await statusAccess.issueCheckoutStatusToken(id, purchase.sessionToken)) ?? undefined;
+    expect(await statusAccess.getCommerceStatus(token, randomUUID())).toMatchObject({
+      canContinue: false,
+    });
+    expect(await statusAccess.getCommerceStatus(token, purchase.sessionToken)).toMatchObject({
+      canContinue: true,
+    });
+    expect(
+      await payments.prepareCommerceInitialisation(id, "TEST", undefined, randomUUID()),
+    ).toBeNull();
+    expect(await payments.prepareCommerceInitialisation(id, "LIVE")).toBeNull();
+    expect(await payments.prepareCommerceInitialisation(id, "TEST")).toMatchObject({
+      attempt: { id: placed.attempt.id },
+    });
+    expect(await payments.prepareCommerceInitialisation(id, "TEST")).toBeNull();
+    const checkoutUrl = "https://checkout.paystack.com/synthetic-test-url";
+    expect(await payments.saveCommerceInitialisation(id, placed.attempt.id, checkoutUrl)).toBe(
+      true,
+    );
+    expect(await payments.prepareCommerceInitialisation(id, "TEST")).toEqual({ checkoutUrl });
+    expect(await statusAccess.getCommerceStatus(token, purchase.sessionToken)).toMatchObject({
+      canContinue: true,
+    });
+    await orders.expireCommerceReservation(id, new Date(placed.expiresAt.getTime() + 1));
+    expect(await statusAccess.getCommerceStatus(token, purchase.sessionToken)).toMatchObject({
+      canContinue: false,
+      retryable: false,
+    });
+    expect(await payments.prepareCommerceInitialisation(id, "TEST")).toBeNull();
+    expect(
+      await db.paymentAttempt.findUniqueOrThrow({ where: { id: placed.attempt.id } }),
+    ).toMatchObject({
+      status: "PENDING",
+    });
+  });
+
   it("does not accept mismatched provider facts and consumes the matching hold exactly once", async () => {
     const purchase = await basket([2, 2]);
     const placed = created(await orders.reserveCommerceOrder(purchase));
+    await payments.prepareCommerceInitialisation(placed.order.id, "TEST");
     const fact = verified(placed);
     expect(
       await payments.applyVerifiedCommercePayment(fact.reference, { ...fact, amountMinor: 1 }),
@@ -491,6 +559,7 @@ describe("PostgreSQL approved acceptance commerce payment", () => {
   it("reallocates a late success at the original total after all lines were released", async () => {
     const purchase = await basket([2, 2]);
     const placed = created(await orders.reserveCommerceOrder(purchase));
+    await payments.prepareCommerceInitialisation(placed.order.id, "TEST");
     const late = new Date(placed.expiresAt.getTime() + 1);
     expect(await orders.expireCommerceReservation(placed.order.id, late)).toBe(true);
     expect(await available(purchase.perfume.id)).toEqual([2, 2]);
@@ -509,6 +578,7 @@ describe("PostgreSQL approved acceptance commerce payment", () => {
   it("records one full refund and allocates no line when a late order cannot be fulfilled", async () => {
     const purchase = await basket([1, 1]);
     const placed = created(await orders.reserveCommerceOrder(purchase));
+    await payments.prepareCommerceInitialisation(placed.order.id, "TEST");
     const late = new Date(placed.expiresAt.getTime() + 1);
     await orders.expireCommerceReservation(placed.order.id, late);
     await db.perfumeVariant.update({
@@ -531,6 +601,7 @@ describe("PostgreSQL approved acceptance commerce payment", () => {
   it("retries only a verified failed attempt and refunds a second success without extra stock debit", async () => {
     const purchase = await basket([2]);
     const placed = created(await orders.reserveCommerceOrder(purchase));
+    await payments.prepareCommerceInitialisation(placed.order.id, "TEST");
     const first = verified(placed);
     expect(await orders.retryFailedCommerceOrder(placed.order.id, purchase)).toHaveProperty(
       "pending",
@@ -559,6 +630,7 @@ describe("PostgreSQL approved acceptance commerce payment", () => {
     const next = await db.paymentAttempt.findFirstOrThrow({
       where: { orderId: placed.order.id, id: { not: placed.attempt.id } },
     });
+    await payments.prepareCommerceInitialisation(placed.order.id, "TEST");
     expect(await payments.applyVerifiedCommercePayment(first.reference, first)).toBe("PAID");
     const extra = { ...first, reference: next.providerReference, providerId: randomUUID() };
     expect(await payments.applyVerifiedCommercePayment(extra.reference, extra)).toBe(
@@ -729,6 +801,7 @@ describe("PostgreSQL approved acceptance commerce administration", () => {
   it("cancels a late-allocated paid order once with a full refund including delivery", async () => {
     const purchase = await basket([2]);
     const placed = created(await orders.reserveCommerceOrder(purchase));
+    await payments.prepareCommerceInitialisation(placed.order.id, "TEST");
     const late = new Date(placed.expiresAt.getTime() + 1);
     await orders.expireCommerceReservation(placed.order.id, late);
     const fact = verified(placed);
@@ -765,6 +838,7 @@ describe("PostgreSQL approved acceptance commerce administration", () => {
     const fulfil = (next: "PROCESSING" | "DISPATCHED") =>
       adminOrders.applyAdminCommerceOrderAction(admin, orderId, { action: "FULFIL", next });
     expect(await fulfil("DISPATCHED")).toHaveProperty("error");
+    await payments.prepareCommerceInitialisation(orderId, "TEST");
     const fact = verified(placed);
     await payments.applyVerifiedCommercePayment(fact.reference, fact);
     expect(await fulfil("PROCESSING")).toHaveProperty("ok");
@@ -820,6 +894,7 @@ describe("PostgreSQL approved acceptance commerce notifications and recovery", (
   async function paidOrder() {
     const purchase = await basket([2]);
     const placed = created(await orders.reserveCommerceOrder(purchase));
+    await payments.prepareCommerceInitialisation(placed.order.id, "TEST");
     const fact = verified(placed);
     expect(await payments.applyVerifiedCommercePayment(fact.reference, fact)).toBe("PAID");
     const email = await db.orderNotification.findFirstOrThrow({
