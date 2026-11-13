@@ -9,8 +9,8 @@ import {
 import {
   replacePrimaryImage,
   removePrimaryImageRecord,
-} from "../repositories/perfume-image.repository";
-import type { ImageActionState } from "../types";
+} from "../../repositories/admin/perfume-image.repository";
+import type { ImageActionState } from "../../types";
 
 export async function uploadPerfumeImage(
   perfumeId: string,

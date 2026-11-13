@@ -21,12 +21,12 @@ vi.mock("@/infrastructure/database/prisma", () => ({
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 
-import { setBestseller } from "@/app/(admin)/admin/_actions/bestseller.admin.action";
-import { removePrimaryImage } from "@/app/(admin)/admin/perfumes/_actions/remove-primary-image.admin.action";
-import { savePrimaryImage } from "@/app/(admin)/admin/perfumes/_actions/save-primary-image.admin.action";
-import { savePerfume } from "@/app/(admin)/admin/perfumes/_actions/save-perfume.admin.action";
-import { deleteVariant } from "@/app/(admin)/admin/perfumes/_actions/delete-variant.admin.action";
-import { saveVariant } from "@/app/(admin)/admin/perfumes/_actions/save-variant.admin.action";
+import { setBestseller } from "@/app/(admin)/admin/_actions/set-bestseller.action";
+import { removePrimaryImage } from "@/app/(admin)/admin/perfumes/_actions/remove-primary-image.action";
+import { savePrimaryImage } from "@/app/(admin)/admin/perfumes/_actions/save-primary-image.action";
+import { savePerfume } from "@/app/(admin)/admin/perfumes/_actions/save-perfume.action";
+import { deleteVariant } from "@/app/(admin)/admin/perfumes/_actions/delete-variant.action";
+import { saveVariant } from "@/app/(admin)/admin/perfumes/_actions/save-variant.action";
 import { validateImageInput } from "@/modules/catalogue/validators/image.validator";
 
 function publishedPerfumeForm(quantity: number) {

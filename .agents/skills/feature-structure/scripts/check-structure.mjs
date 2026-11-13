@@ -19,7 +19,7 @@ const fileRules = {
   constants: named(""),
 };
 const routeFileRules = {
-  actions: named("(?:\\.admin)?\\.action"),
+  actions: named("\\.action"),
   components: /^[A-Z][A-Za-z0-9]*\.(?:tsx|module\.css)$/,
   hooks: /^use[A-Z][A-Za-z0-9]*\.ts$/,
   providers: /^[A-Z][A-Za-z0-9]*Provider\.tsx$/,

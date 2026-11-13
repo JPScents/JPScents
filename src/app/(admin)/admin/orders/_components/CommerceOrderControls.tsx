@@ -7,7 +7,7 @@ import { parseNairaToMinor } from "@/modules/catalogue";
 import { formatEnumLabel } from "@/shared/utils/format-enum-label";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 
-import { updateCommerceOrder } from "../_actions/update-commerce-order.admin.action";
+import { updateCommerceOrder } from "../_actions/update-commerce-order.action";
 
 type Controls = {
   id: string;

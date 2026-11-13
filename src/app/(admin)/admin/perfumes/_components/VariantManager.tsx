@@ -4,8 +4,8 @@ import type { VariantActionState, AdminPerfume } from "@/modules/catalogue";
 import { useActionState, useState } from "react";
 import { ModalShell } from "@/ui/ModalShell";
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
-import { deleteVariant } from "../_actions/delete-variant.admin.action";
-import { saveVariant } from "../_actions/save-variant.admin.action";
+import { deleteVariant } from "../_actions/delete-variant.action";
+import { saveVariant } from "../_actions/save-variant.action";
 
 type Variant = AdminPerfume["variants"][number];
 const initial: VariantActionState = {};

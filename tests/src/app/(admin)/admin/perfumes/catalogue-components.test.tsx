@@ -2,22 +2,22 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/app/(admin)/admin/_actions/bestseller.admin.action", () => ({ setBestseller: vi.fn() }));
+vi.mock("@/app/(admin)/admin/_actions/set-bestseller.action", () => ({ setBestseller: vi.fn() }));
 const { savePerfume, deleteVariant } = vi.hoisted(() => ({
   savePerfume: vi.fn(),
   deleteVariant: vi.fn(),
 }));
-vi.mock("@/app/(admin)/admin/perfumes/_actions/save-perfume.admin.action", () => ({ savePerfume }));
-vi.mock("@/app/(admin)/admin/perfumes/_actions/save-variant.admin.action", () => ({
+vi.mock("@/app/(admin)/admin/perfumes/_actions/save-perfume.action", () => ({ savePerfume }));
+vi.mock("@/app/(admin)/admin/perfumes/_actions/save-variant.action", () => ({
   saveVariant: vi.fn(),
 }));
-vi.mock("@/app/(admin)/admin/perfumes/_actions/delete-variant.admin.action", () => ({
+vi.mock("@/app/(admin)/admin/perfumes/_actions/delete-variant.action", () => ({
   deleteVariant,
 }));
-vi.mock("@/app/(admin)/admin/perfumes/_actions/save-primary-image.admin.action", () => ({
+vi.mock("@/app/(admin)/admin/perfumes/_actions/save-primary-image.action", () => ({
   savePrimaryImage: vi.fn(),
 }));
-vi.mock("@/app/(admin)/admin/perfumes/_actions/remove-primary-image.admin.action", () => ({
+vi.mock("@/app/(admin)/admin/perfumes/_actions/remove-primary-image.action", () => ({
   removePrimaryImage: vi.fn(),
 }));
 

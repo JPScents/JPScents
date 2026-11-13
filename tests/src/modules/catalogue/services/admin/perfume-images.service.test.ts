@@ -6,14 +6,14 @@ const mocks = vi.hoisted(() => ({
   replace: vi.fn(),
   removeRecord: vi.fn(),
 }));
-vi.mock("@/modules/catalogue/repositories/perfume-image.repository", () => ({
+vi.mock("@/modules/catalogue/repositories/admin/perfume-image.repository", () => ({
   replacePrimaryImage: mocks.replace,
   removePrimaryImageRecord: mocks.removeRecord,
 }));
 import {
   savePrimaryImageAsset,
   removePrimaryImageAsset,
-} from "@/modules/catalogue/services/perfume-images.service";
+} from "@/modules/catalogue/services/admin/perfume-images.service";
 
 const createClient = async () => ({
   storage: { from: () => ({ upload: mocks.upload, remove: mocks.remove }) },

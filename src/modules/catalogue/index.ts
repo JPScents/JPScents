@@ -1,5 +1,5 @@
 export { occasions, scentCharacters, timesOfDay } from "./constants/catalogue";
-export { parseVariantInput } from "./parsers/variant-input.parser";
+export { parseVariantInput } from "./parsers/admin/variant-input.parser";
 export { parseNairaToMinor } from "./utils/price";
 export { normalizeSizeValue } from "./utils/size";
 export type {

@@ -6,13 +6,13 @@ import {
   findAdminPerfumeRecord,
   findBestsellerCandidates,
   readCatalogueAdminOverview,
-} from "../repositories/perfume.repository";
+} from "../../repositories/perfume.repository";
 import {
   toAdminPerfume,
   toAdminPerfumeListItem,
   toBestsellerCandidate,
-} from "../mappers/admin-perfume.mapper";
-import type { CatalogueFilters } from "../types";
+} from "../../mappers/admin/perfume.mapper";
+import type { CatalogueFilters } from "../../types";
 
 export async function listAdminPerfumes(
   admin: AdminIdentity | null,

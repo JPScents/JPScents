@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useState, useTransition } from "react";
 import { ModalShell } from "@/ui/ModalShell";
 import type { BestsellerCandidate } from "@/modules/catalogue";
-import { setBestseller } from "../_actions/bestseller.admin.action";
+import { setBestseller } from "../_actions/set-bestseller.action";
 
 export function BestsellerSelector({
   candidates,

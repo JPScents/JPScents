@@ -2,8 +2,8 @@ import "server-only";
 
 import { Prisma } from "@/infrastructure/database/generated/client";
 import { prisma } from "@/infrastructure/database/prisma";
-import type { VariantInput, VariantActionState } from "../types";
-import { lockPerfumeStock } from "./stock.repository";
+import type { VariantInput, VariantActionState } from "../../types";
+import { lockPerfumeStock } from "../stock.repository";
 
 export async function saveVariantRecord(
   perfumeId: string,

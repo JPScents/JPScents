@@ -23,10 +23,10 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("@/app/(admin)/admin/orders/_actions/change-order-status.admin.action", () => ({
+vi.mock("@/app/(admin)/admin/orders/_actions/change-order-status.action", () => ({
   changeOrderStatus: vi.fn(),
 }));
-vi.mock("@/app/(admin)/admin/orders/_actions/cancel-order.admin.action", () => ({
+vi.mock("@/app/(admin)/admin/orders/_actions/cancel-order.action", () => ({
   cancelOrderAdmin: mocks.cancelOrderAdmin,
 }));
 vi.mock("@/app/(public)/checkout/_actions/submit-order.action", () => ({

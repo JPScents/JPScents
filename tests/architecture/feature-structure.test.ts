@@ -36,7 +36,7 @@ describe("architecture enforcement", () => {
       "src/modules/shop/types/index.ts":
         'import type { Perfume } from "@/infrastructure/database/generated/client"; export type Product = Pick<Perfume, "id">;',
       "src/modules/shop/index.ts": 'export type { Product } from "./types";',
-      "src/modules/shop/repositories/perfume.repository.ts":
+      "src/modules/shop/repositories/admin/perfume.repository.ts":
         'import { prisma } from "@/infrastructure/database/prisma"; export async function listPerfumes() { return await prisma.perfume.findMany(); }',
     });
     expect(result.status, result.stderr).toBe(0);
@@ -196,10 +196,13 @@ describe("architecture enforcement", () => {
     const result = await check({
       "src/app/(public)/_cart/hooks/cart.ts": 'export const cart = "fixture";',
       "src/app/(admin)/admin/_actions/incorrect.ts": 'export const action = "fixture";',
+      "src/app/(admin)/admin/_actions/update-perfume.admin.action.ts":
+        'export const action = "fixture";',
     });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("cart.ts [STD-001] name does not follow the hooks/");
     expect(result.stderr).toContain("incorrect.ts [STD-001] name does not follow the actions/");
+    expect(result.stderr).toContain("update-perfume.admin.action.ts [STD-001]");
   });
 
   it("keeps the direct module scan usable and identifies its limited scope", async () => {

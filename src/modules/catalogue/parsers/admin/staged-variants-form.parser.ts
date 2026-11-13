@@ -1,5 +1,5 @@
-import type { VariantInput } from "../types";
-import { normalizeSizeValue } from "../utils/size";
+import type { VariantInput } from "../../types";
+import { normalizeSizeValue } from "../../utils/size";
 import { parseVariantInput } from "./variant-input.parser";
 
 export function parseStagedVariants(value: FormDataEntryValue | null): {

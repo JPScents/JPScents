@@ -5,12 +5,8 @@ import { useRouter } from "next/navigation";
 
 import { formatNairaFromMinor } from "@/shared/utils/format-naira";
 
-import { findDraftVariants } from "../_actions/search-draft-variants.admin.action";
-import {
-  issueDraftLink,
-  revokeDraftLink,
-  saveDraft,
-} from "../_actions/checkout-draft.admin.action";
+import { findDraftVariants } from "../_actions/search-draft-variants.action";
+import { issueDraftLink, revokeDraftLink, saveDraft } from "../_actions/checkout-draft.action";
 
 export type DraftVariant = {
   id: string;

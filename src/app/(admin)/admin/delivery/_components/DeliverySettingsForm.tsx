@@ -6,7 +6,7 @@ import { parseNairaToMinor } from "@/modules/catalogue";
 import { nigeriaRegions, type DeliverySetting, type NigerianDestination } from "@/modules/delivery";
 import { isNairaMinor } from "@/shared/utils/naira-minor";
 
-import { updateDeliverySettings } from "../_actions/save-delivery-settings.admin.action";
+import { updateDeliverySettings } from "../_actions/save-delivery-settings.action";
 
 type Draft = { enabled: boolean; fee: string };
 type Feedback = { error?: string; status?: string };

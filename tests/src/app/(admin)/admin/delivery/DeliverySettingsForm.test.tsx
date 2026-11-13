@@ -5,7 +5,7 @@ import type { DeliverySetting } from "@/modules/delivery";
 
 const { save } = vi.hoisted(() => ({ save: vi.fn() }));
 
-vi.mock("@/app/(admin)/admin/delivery/_actions/save-delivery-settings.admin.action", () => ({
+vi.mock("@/app/(admin)/admin/delivery/_actions/save-delivery-settings.action", () => ({
   updateDeliverySettings: save,
 }));
 

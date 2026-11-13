@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { savePerfume } from "../_actions/save-perfume.admin.action";
+import { savePerfume } from "../_actions/save-perfume.action";
 import { parseNairaToMinor } from "@/modules/catalogue";
 import type { StagedVariant } from "../_lib/staged-variant";
 import type { AdminPerfume, PerfumeActionState, PerfumeInput } from "@/modules/catalogue";

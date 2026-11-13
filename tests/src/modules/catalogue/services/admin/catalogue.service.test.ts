@@ -16,7 +16,7 @@ vi.mock("@/infrastructure/supabase/perfume-images", () => ({
 import {
   getEligibleBestsellerCandidates,
   listAdminPerfumes,
-} from "@/modules/catalogue/services/admin-catalogue.service";
+} from "@/modules/catalogue/services/admin/catalogue.service";
 
 const admin = { id: "admin", email: "admin@example.com" };
 

@@ -4,8 +4,8 @@ import type {
   TimeOfDay,
 } from "@/infrastructure/database/generated/enums";
 
-import { occasions, scentCharacters, timesOfDay } from "../constants/catalogue";
-import type { PerfumeInput } from "../types";
+import { occasions, scentCharacters, timesOfDay } from "../../constants/catalogue";
+import type { PerfumeInput } from "../../types";
 
 const text = (value: unknown) => (typeof value === "string" ? value.trim() : "");
 const enumValues = <T extends string>(values: unknown[], options: readonly T[]) =>

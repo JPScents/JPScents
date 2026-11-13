@@ -1,7 +1,7 @@
 import { isNairaMinor } from "@/shared/utils/naira-minor";
 
-import type { CommerceAdminCommand } from "../repositories/admin-commerce-order.repository";
-import { isSubmissionKey } from "./order-submission.parser";
+import type { CommerceAdminCommand } from "../../repositories/admin/commerce-order.repository";
+import { isSubmissionKey } from "../order-submission.parser";
 
 export function parseCommerceAdminAction(
   value: unknown,

@@ -19,8 +19,8 @@ import {
 } from "@/modules/payments/server";
 import { isNairaMinor } from "@/shared/utils/naira-minor";
 
-import { lockCommerceOrder } from "./commerce-order.repository";
-import { enqueueCommerceNotification } from "./order-notification.repository";
+import { lockCommerceOrder } from "../commerce-order.repository";
+import { enqueueCommerceNotification } from "../order-notification.repository";
 
 const allowedNext: Partial<Record<FulfilmentStatus, FulfilmentStatus>> = {
   UNFULFILLED: "PROCESSING",

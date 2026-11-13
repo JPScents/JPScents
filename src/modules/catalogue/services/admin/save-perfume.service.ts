@@ -3,9 +3,9 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 
 import type { CreateImageStorageClient } from "@/infrastructure/supabase/perfume-images";
-import { checkPerfumeCreationSlug, savePerfumeRecord } from "../repositories/perfume.repository";
-import type { PerfumeActionState, PerfumeInput, VariantInput } from "../types";
-import { getPublishingErrors } from "../validators/publishing.validator";
+import { checkPerfumeCreationSlug, savePerfumeRecord } from "../../repositories/perfume.repository";
+import type { PerfumeActionState, PerfumeInput, VariantInput } from "../../types";
+import { getPublishingErrors } from "../../validators/publishing.validator";
 import { uploadPerfumeImage, removePerfumeImageFiles } from "./perfume-images.service";
 
 export async function savePerfumeWithImage(

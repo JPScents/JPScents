@@ -1,18 +1,21 @@
 import "server-only";
 
-export { parsePerfumeForm } from "./parsers/perfume-form.parser";
-export { parseStagedVariants } from "./parsers/staged-variants-form.parser";
-export { parseVariantForm } from "./parsers/variant-form.parser";
-export { deleteVariantRecord, saveVariantRecord } from "./repositories/variant.repository";
-export { removePrimaryImageAsset, savePrimaryImageAsset } from "./services/perfume-images.service";
-export { savePerfumeWithImage } from "./services/save-perfume.service";
+export { parsePerfumeForm } from "./parsers/admin/perfume-form.parser";
+export { parseStagedVariants } from "./parsers/admin/staged-variants-form.parser";
+export { parseVariantForm } from "./parsers/admin/variant-form.parser";
+export { deleteVariantRecord, saveVariantRecord } from "./repositories/admin/variant.repository";
+export {
+  removePrimaryImageAsset,
+  savePrimaryImageAsset,
+} from "./services/admin/perfume-images.service";
+export { savePerfumeWithImage } from "./services/admin/save-perfume.service";
 export { validateImageInput } from "./validators/image.validator";
 export {
   getAdminPerfume,
   getCatalogueAdminOverview,
   getEligibleBestsellerCandidates,
   listAdminPerfumes,
-} from "./services/admin-catalogue.service";
+} from "./services/admin/catalogue.service";
 export {
   getFeaturedPerfumes,
   getPerfumeBySlug,

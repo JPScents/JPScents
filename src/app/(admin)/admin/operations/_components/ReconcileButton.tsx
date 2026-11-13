@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 
-import { reconcileAdminCommerce } from "../_actions/reconcile.admin.action";
+import { reconcileAdminCommerce } from "../_actions/reconcile.action";
 
 export function ReconcileButton({
   kind,

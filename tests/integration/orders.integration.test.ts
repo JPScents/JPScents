@@ -12,7 +12,7 @@ let db: PrismaClient;
 let applicationClient: PrismaClient | undefined;
 let orders: typeof import("@/modules/orders/repositories/order.repository");
 let orderMapper: typeof import("@/modules/orders/mappers/order.mapper");
-let variants: typeof import("@/modules/catalogue/repositories/variant.repository");
+let variants: typeof import("@/modules/catalogue/repositories/admin/variant.repository");
 let catalogue: typeof import("@/modules/catalogue/server");
 let fixtureNumber = 0;
 
@@ -36,7 +36,7 @@ beforeAll(async () => {
   [orders, orderMapper, variants, catalogue] = await Promise.all([
     import("@/modules/orders/repositories/order.repository"),
     import("@/modules/orders/mappers/order.mapper"),
-    import("@/modules/catalogue/repositories/variant.repository"),
+    import("@/modules/catalogue/repositories/admin/variant.repository"),
     import("@/modules/catalogue/server"),
   ]);
 });

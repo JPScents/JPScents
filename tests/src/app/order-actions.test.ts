@@ -18,8 +18,8 @@ vi.mock("@/modules/orders/repositories/order.repository", () => ({
   updateOrderStatus: mocks.updateOrderStatus,
   cancelOrderAndRestoreStock: mocks.cancelOrder,
 }));
-import { changeOrderStatus } from "@/app/(admin)/admin/orders/_actions/change-order-status.admin.action";
-import { cancelOrderAdmin } from "@/app/(admin)/admin/orders/_actions/cancel-order.admin.action";
+import { changeOrderStatus } from "@/app/(admin)/admin/orders/_actions/change-order-status.action";
+import { cancelOrderAdmin } from "@/app/(admin)/admin/orders/_actions/cancel-order.action";
 import { submitOrder } from "@/app/(public)/checkout/_actions/submit-order.action";
 import { readConfirmationCookie } from "@/app/(public)/checkout/_server/confirmation-cookie";
 

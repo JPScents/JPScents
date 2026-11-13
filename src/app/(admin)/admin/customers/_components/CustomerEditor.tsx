@@ -8,8 +8,8 @@ import { siteConfig } from "@/config/site";
 import type { getCustomerById } from "@/modules/customers/server";
 import { formatEnumLabel } from "@/shared/utils/format-enum-label";
 
-import { deleteCustomerAdmin } from "../_actions/delete-customer.admin.action";
-import { saveCustomerAdmin } from "../_actions/save-customer.admin.action";
+import { deleteCustomerAdmin } from "../_actions/delete-customer.action";
+import { saveCustomerAdmin } from "../_actions/save-customer.action";
 import type { CustomerActionState } from "@/modules/customers";
 
 type CustomerEditorRecord = NonNullable<Awaited<ReturnType<typeof getCustomerById>>>;

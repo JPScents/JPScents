@@ -309,9 +309,10 @@ test("the original checkout browser can reopen the same active Paystack payment"
   });
 });
 
-test("Admin issues a locked quote, fulfils the payment and records refund and return separately", async ({
+test("Admin controls quote validity, fulfils a paid quote and records refund and return separately", async ({
   page,
   browser,
+  request,
 }) => {
   const guest = await browser.newPage();
   const adminPage = page;
@@ -329,9 +330,31 @@ test("Admin issues a locked quote, fulfils the payment and records refund and re
     await adminPage.getByRole("textbox", { name: "Contact name" }).fill("Draft-only Contact");
     await adminPage.getByRole("button", { name: "Save draft" }).click();
     await expect(adminPage).toHaveURL(/\/admin\/orders\/drafts\/[0-9a-f-]+$/);
+    const draftId = new URL(adminPage.url()).pathname.split("/").at(-1);
     await adminPage.getByRole("button", { name: "Issue checkout link" }).click();
     const linkField = adminPage.getByRole("textbox", { name: "Checkout link" });
     await expect(linkField).toBeVisible();
+    const revokedLink = await linkField.inputValue();
+    await guest.goto(revokedLink);
+    await expect(guest).toHaveURL(/\/checkout\/quote$/);
+    await adminPage.getByRole("button", { name: "Revoke checkout link" }).click();
+    await expect(adminPage.getByText("Checkout link revoked.")).toBeVisible();
+    await guest.goto(revokedLink);
+    await expect(guest.getByRole("heading", { name: "Checkout link unavailable" })).toBeVisible();
+    await expect(guest.getByRole("button", { name: "Pay with Paystack" })).toHaveCount(0);
+
+    await adminPage.getByRole("button", { name: "Issue checkout link" }).click();
+    await expect(linkField).toBeVisible();
+    const expiredLink = await linkField.inputValue();
+    await guest.goto(expiredLink);
+    await expect(guest).toHaveURL(/\/checkout\/quote$/);
+    await db.checkoutDraft.update({ where: { id: draftId }, data: { expiresAt: new Date(0) } });
+    await guest.goto(expiredLink);
+    await expect(guest.getByRole("heading", { name: "Checkout link unavailable" })).toBeVisible();
+    await expect(guest.getByRole("button", { name: "Pay with Paystack" })).toHaveCount(0);
+
+    await adminPage.getByRole("button", { name: "Reissue at current prices" }).click();
+    await expect(linkField).not.toHaveValue(expiredLink);
     const checkoutLink = await linkField.inputValue();
     expect(await db.perfumeVariant.findUniqueOrThrow({ where: { id: variantId } })).toMatchObject({
       quantity: 2,
@@ -355,6 +378,7 @@ test("Admin issues a locked quote, fulfils the payment and records refund and re
     await checkoutRedirect(guest, variantId);
     await guest.getByRole("button", { name: "Pay with Paystack" }).click();
     await expect(guest.getByRole("heading", { name: "Payment confirmed" })).toBeVisible();
+    const statusUrl = guest.url();
     const order = await db.order.findFirstOrThrow({
       where: { items: { some: { perfumeVariantId: variantId } } },
       select: { id: true, reference: true, subtotalMinor: true, customerId: true },
@@ -381,6 +405,21 @@ test("Admin issues a locked quote, fulfils the payment and records refund and re
     expect(await db.perfumeVariant.findUniqueOrThrow({ where: { id: variantId } })).toMatchObject({
       quantity: 1,
     });
+    await guest.goto(statusUrl);
+    const refundProgress = guest.getByRole("region", { name: "Refund progress" });
+    await expect(refundProgress).toContainText("₦500 · Requested");
+    const reconciled = await request.post("/api/commerce/reconcile", {
+      headers: { Authorization: "Bearer synthetic-scheduler-fixture" },
+    });
+    expect(await reconciled.json()).toMatchObject({ refunds: 1 });
+    await guest.reload();
+    await expect(refundProgress).toContainText("₦500 · Processed by Paystack.");
+    expect(
+      await db.refund.findMany({
+        where: { paymentAttempt: { orderId: order.id } },
+        select: { amountMinor: true, status: true },
+      }),
+    ).toEqual([{ amountMinor: 50_000, status: "PROCESSED" }]);
 
     await adminPage.getByLabel("Returned item").selectOption(variantId);
     await adminPage.getByLabel("Received quantity").fill("1");

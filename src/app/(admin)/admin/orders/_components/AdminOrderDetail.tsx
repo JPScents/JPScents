@@ -9,8 +9,8 @@ import { siteConfig } from "@/config/site";
 import type { OrderStatus } from "@/modules/orders";
 import { formatEnumLabel } from "@/shared/utils/format-enum-label";
 
-import { changeOrderStatus } from "../_actions/change-order-status.admin.action";
-import { cancelOrderAdmin } from "../_actions/cancel-order.admin.action";
+import { changeOrderStatus } from "../_actions/change-order-status.action";
+import { cancelOrderAdmin } from "../_actions/cancel-order.action";
 import { orderStatuses } from "@/modules/orders";
 import type { AdminOrder, PublicOrder } from "@/modules/orders";
 import { OrderSummary } from "@/ui/OrderSummary";

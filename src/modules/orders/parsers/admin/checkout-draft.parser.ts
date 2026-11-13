@@ -1,6 +1,6 @@
 import { isNairaMinor } from "@/shared/utils/naira-minor";
 
-import { isSubmissionKey, parseOrderLines } from "./order-submission.parser";
+import { isSubmissionKey, parseOrderLines } from "../order-submission.parser";
 
 export function parseCheckoutDraft(value: unknown) {
   if (!value || typeof value !== "object") {

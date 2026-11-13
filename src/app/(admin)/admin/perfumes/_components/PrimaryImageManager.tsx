@@ -3,8 +3,8 @@ import type { ImageActionState } from "@/modules/catalogue";
 
 import Image from "next/image";
 import { useActionState } from "react";
-import { removePrimaryImage } from "../_actions/remove-primary-image.admin.action";
-import { savePrimaryImage } from "../_actions/save-primary-image.admin.action";
+import { removePrimaryImage } from "../_actions/remove-primary-image.action";
+import { savePrimaryImage } from "../_actions/save-primary-image.action";
 
 const initial: ImageActionState & ImageActionState = {};
 

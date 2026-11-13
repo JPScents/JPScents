@@ -1,5 +1,5 @@
-import type { VariantInput } from "../types";
-import { parseNairaToMinor } from "../utils/price";
+import type { VariantInput } from "../../types";
+import { parseNairaToMinor } from "../../utils/price";
 
 export function parseVariantInput(raw: Record<string, unknown>): {
   input?: VariantInput;

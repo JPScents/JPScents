@@ -18,7 +18,7 @@ let legacy: typeof import("@/modules/orders/repositories/order.repository");
 let delivery: typeof import("@/modules/delivery/server");
 let payments: typeof import("@/modules/orders/repositories/commerce-payment.repository");
 let statusAccess: typeof import("@/modules/orders/repositories/order-status-access.repository");
-let adminOrders: typeof import("@/modules/orders/repositories/admin-commerce-order.repository");
+let adminOrders: typeof import("@/modules/orders/repositories/admin/commerce-order.repository");
 let drafts: typeof import("@/modules/orders/repositories/checkout-draft.repository");
 let receipts: typeof import("@/modules/payments/server");
 let notifications: typeof import("@/modules/notifications/server");
@@ -71,7 +71,7 @@ beforeAll(async () => {
     import("@/modules/orders/repositories/commerce-payment.repository"),
     import("@/modules/orders/repositories/order-status-access.repository"),
     import("@/modules/payments/server"),
-    import("@/modules/orders/repositories/admin-commerce-order.repository"),
+    import("@/modules/orders/repositories/admin/commerce-order.repository"),
     import("@/modules/orders/repositories/checkout-draft.repository"),
     import("@/modules/notifications/server"),
     import("@/modules/orders/services/commerce-notification.service"),

@@ -1,5 +1,5 @@
-import type { AdminPerfume, AdminPerfumeListItem, BestsellerCandidate } from "../types";
-import type { PerfumeRecord, BestsellerRecord } from "../repositories/perfume.repository";
+import type { AdminPerfume, AdminPerfumeListItem, BestsellerCandidate } from "../../types";
+import type { PerfumeRecord, BestsellerRecord } from "../../repositories/perfume.repository";
 
 export function toAdminPerfumeListItem(
   perfume: PerfumeRecord,

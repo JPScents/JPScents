@@ -19,7 +19,7 @@ For each module, determine what it actually does, who calls it, whether it needs
 
 ## Business module layout
 
-Use responsibility folders only when they contain a real operation or contract.
+Use responsibility folders only when they contain a real operation or contract. Group related Admin-only implementations in an `admin/` subfolder of the relevant responsibility folder, for example `orders/repositories/admin/commerce-order.repository.ts`. Shared operations stay with their domain and responsibility, including checkout quotes used by both Admin and guests.
 
 ```text
 src/modules/<domain>/
@@ -66,7 +66,7 @@ Do not add services for simple forwarding, renaming a repository function, type 
 
 ### Actions
 
-Use route-local `_actions/<verb-subject>.action.ts`, retaining `.admin.action.ts` for protected Admin operations, for example `actions/cancel-order.admin.action.ts`.
+Use route-local `_actions/<verb-subject>.action.ts` for public and Admin actions. The Admin route owns its actions, for example `src/app/(admin)/admin/orders/_actions/cancel-order.action.ts`. Authorise each protected operation at its callable boundary.
 
 Actions are actual callable server entry points. Own runtime input handling, authorization, service/repository invocation, expected error responses, and framework effects such as cookie writes, redirects, and revalidation. A simple authorized write can call a repository directly; do not require a service in between. Keep substantial business workflows out of actions.
 
