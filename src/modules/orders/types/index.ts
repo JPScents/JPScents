@@ -1,5 +1,7 @@
 import type { OrderStatus } from "@/infrastructure/database/generated/enums";
 
+import type { NigerianDestination } from "@/modules/delivery";
+
 export type OrderCartLine = { perfumeVariantId: string; quantity: number };
 export type CheckoutInput = {
   customerName: string;
@@ -11,6 +13,20 @@ export type CheckoutInput = {
   orderNote?: string;
 };
 export type OrderFilters = { query?: string; status?: OrderStatus };
+
+export type CommerceCheckoutInput = Omit<CheckoutInput, "email" | "deliveryState"> & {
+  email: string;
+  deliveryCountry: "NG";
+  deliveryState: NigerianDestination;
+  deliveryApartment?: string;
+  deliveryLandmark?: string;
+  deliveryPostcode?: string;
+};
+
+export type CommerceQuoteInput = {
+  lines: Array<OrderCartLine & { unitPriceMinor: number }>;
+  deliveryFeeMinor: number;
+};
 
 export type OrderLine = {
   name: string;

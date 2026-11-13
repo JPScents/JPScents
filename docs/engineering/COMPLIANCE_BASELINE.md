@@ -91,7 +91,7 @@ Hosted GitHub and Vercel gates, production upload behaviour, live RLS and Storag
 
 ## Milestone 7 checkout input boundary
 
-The first implementation under Milestone 7 addresses GAP-001 within [ADR-0001](../architecture/adr/0001-feature-boundaries-and-checkout-input.md). The server action now decodes and normalises the request before passing typed values to Orders. The action tests exercise malformed and merged carts, invalid submission identities, field errors, a corrected retry with the same key and the scoped confirmation cookie. The original register above records the audited baseline. [Checkout action](../../src/features/orders/actions/submit-order.action.ts) · [Action tests](../../tests/src/features/orders/actions/order-actions.test.ts)
+The first implementation under Milestone 7 addresses GAP-001 within [ADR-0001](../architecture/adr/0001-feature-boundaries-and-checkout-input.md). The server action now decodes and normalises the request before passing typed values to Orders. The action tests exercise malformed and merged carts, invalid submission identities, field errors, a corrected retry with the same key and the scoped confirmation cookie. The original register above records the audited baseline. [Checkout action](../../src/app/%28public%29/checkout/_actions/submit-order.action.ts) · [Action tests](../../tests/src/app/order-actions.test.ts)
 
 ## Milestone 7 structural adoption
 

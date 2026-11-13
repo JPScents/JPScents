@@ -5,8 +5,11 @@ import { parseCheckoutInput } from "./checkout.parser";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-function parseLines(lines: unknown): OrderCartLine[] | null {
-  if (!Array.isArray(lines) || !lines.length) {
+export function parseOrderLines(
+  lines: unknown,
+  maxLines = Number.POSITIVE_INFINITY,
+): OrderCartLine[] | null {
+  if (!Array.isArray(lines) || !lines.length || lines.length > maxLines) {
     return null;
   }
 
@@ -35,12 +38,16 @@ function parseLines(lines: unknown): OrderCartLine[] | null {
   return [...merged].map(([perfumeVariantId, quantity]) => ({ perfumeVariantId, quantity }));
 }
 
+export function isSubmissionKey(value: unknown): value is string {
+  return typeof value === "string" && UUID.test(value);
+}
+
 export function parseOrderSubmission(
   linesRaw: unknown,
   checkoutRaw: unknown,
   submissionKey: unknown,
 ) {
-  const lines = parseLines(linesRaw);
+  const lines = parseOrderLines(linesRaw);
   const parsed = parseCheckoutInput(checkoutRaw);
   if (!lines) {
     return { error: "Your cart is empty or invalid. Return to Cart and try again." } as const;
@@ -49,7 +56,7 @@ export function parseOrderSubmission(
     return { errors: parsed.errors } as const;
   }
   const input = parsed.input;
-  if (typeof submissionKey !== "string" || !UUID.test(submissionKey)) {
+  if (!isSubmissionKey(submissionKey)) {
     return { error: "Unable to safely place this order. Please refresh and try again." } as const;
   }
 

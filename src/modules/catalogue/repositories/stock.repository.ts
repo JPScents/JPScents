@@ -29,7 +29,11 @@ async function lockStockLines(tx: Prisma.TransactionClient, lines: StockLine[]) 
   return ids;
 }
 
-export async function deductStockForOrder(tx: Prisma.TransactionClient, lines: StockLine[]) {
+export async function deductStockForOrder(
+  tx: Prisma.TransactionClient,
+  lines: StockLine[],
+  expectedPrices?: ReadonlyMap<string, number>,
+) {
   const ids = await lockStockLines(tx, lines);
   const variants = await tx.perfumeVariant.findMany({
     where: { id: { in: ids }, perfume: { status: "PUBLISHED" } },
@@ -37,6 +41,7 @@ export async function deductStockForOrder(tx: Prisma.TransactionClient, lines: S
       id: true,
       perfumeId: true,
       priceMinor: true,
+      quantity: true,
       sizeValue: true,
       sizeUnit: true,
       perfume: { select: { name: true } },
@@ -47,6 +52,27 @@ export async function deductStockForOrder(tx: Prisma.TransactionClient, lines: S
   }
 
   const byId = new Map(variants.map((variant) => [variant.id, variant]));
+  if (
+    expectedPrices &&
+    variants.some((variant) => expectedPrices.get(variant.id) !== variant.priceMinor)
+  ) {
+    return {
+      stalePrices: variants.map(({ id, priceMinor }) => ({
+        perfumeVariantId: id,
+        unitPriceMinor: priceMinor,
+      })),
+    } as const;
+  }
+  // Validate the whole basket under the same parent locks before making any debit.
+  if (
+    lines.some(
+      ({ perfumeVariantId, quantity }) => (byId.get(perfumeVariantId)?.quantity ?? 0) < quantity,
+    )
+  ) {
+    return {
+      error: "One or more perfumes are no longer available in the requested quantity.",
+    } as const;
+  }
   for (const { perfumeVariantId: id, quantity } of lines) {
     const variant = byId.get(id)!;
     // The eligibility trigger checks each variant write, so clear placement before the final debit.

@@ -19,7 +19,7 @@ const acceptanceDatabase = {
   args: testArgs,
   tool: ".bin/vitest",
   needsClient: true,
-  database: { group: "PostgreSQL approved acceptance", minimum: 3 },
+  database: { group: "PostgreSQL approved acceptance", minimum: 14 },
 };
 
 function run(file, args, options = {}) {
@@ -81,7 +81,12 @@ function databaseResult(stage, child, reportPath) {
   }
   const selected = report.testResults
     .flatMap((suite) => suite.assertionResults)
-    .filter((test) => test?.ancestorTitles?.[0] === stage.database.group);
+    .filter(
+      (test) =>
+        typeof test?.ancestorTitles?.[0] === "string" &&
+        (test.ancestorTitles[0] === stage.database.group ||
+          test.ancestorTitles[0].startsWith(stage.database.group + " ")),
+    );
   const passed = selected.filter((test) => test.status === "passed").length;
   const failed = selected.filter((test) => test.status === "failed");
   const counts = { selected: selected.length, passed, failed: failed.length };

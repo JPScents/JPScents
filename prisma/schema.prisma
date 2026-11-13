@@ -38,6 +38,53 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum OrderKind {
+  LEGACY_MANUAL
+  COMMERCE
+}
+
+enum CommerceOrderStatus {
+  AWAITING_PAYMENT
+  RESERVATION_EXPIRED
+  PAID
+  REFUND_REQUIRED
+  CANCELLED
+}
+
+enum FulfilmentStatus {
+  UNFULFILLED
+  PROCESSING
+  DISPATCHED
+  DELIVERED
+}
+
+enum PaymentEnvironment {
+  TEST
+  LIVE
+}
+
+enum PaymentAttemptStatus {
+  INITIATING
+  PENDING
+  AMBIGUOUS
+  FAILED
+  SUCCEEDED
+  NEEDS_ATTENTION
+}
+
+enum ReservationStatus {
+  HELD
+  CONSUMED
+  RELEASED
+}
+
+enum StockMovementKind {
+  RESERVE
+  ALLOCATE
+  RELEASE
+  RETURN
+}
+
 model Perfume {
   id              String           @id @default(uuid()) @db.Uuid
   name            String
@@ -74,16 +121,17 @@ model PerfumeImage {
 }
 
 model PerfumeVariant {
-  id         String      @id @default(uuid()) @db.Uuid
-  perfumeId  String      @db.Uuid
-  sizeValue  Decimal     @db.Decimal(8, 2)
-  sizeUnit   String
-  priceMinor Int
-  quantity   Int
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  perfume    Perfume     @relation(fields: [perfumeId], references: [id], onDelete: Restrict)
-  orderItems OrderItem[]
+  id             String          @id @default(uuid()) @db.Uuid
+  perfumeId      String          @db.Uuid
+  sizeValue      Decimal         @db.Decimal(8, 2)
+  sizeUnit       String
+  priceMinor     Int
+  quantity       Int
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  perfume        Perfume         @relation(fields: [perfumeId], references: [id], onDelete: Restrict)
+  orderItems     OrderItem[]
+  stockMovements StockMovement[]
 
   @@unique([perfumeId, sizeValue, sizeUnit])
   @@index([perfumeId])
@@ -103,11 +151,11 @@ model Customer {
 }
 
 model Order {
-  id                      String             @id @default(uuid()) @db.Uuid
-  customerId              String             @db.Uuid
-  reference               String             @unique
-  confirmationToken       String             @unique
-  submissionKey           String             @unique
+  id                      String               @id @default(uuid()) @db.Uuid
+  customerId              String               @db.Uuid
+  reference               String               @unique
+  confirmationToken       String               @unique
+  submissionKey           String               @unique
   orderNote               String?
   customerNameSnapshot    String?
   whatsappNumberSnapshot  String?
@@ -116,13 +164,30 @@ model Order {
   deliveryCitySnapshot    String?
   deliveryAddressSnapshot String?
   subtotalMinor           Int
-  status                  OrderStatus        @default(AWAITING_PAYMENT)
+  status                  OrderStatus          @default(AWAITING_PAYMENT)
+  kind                    OrderKind            @default(LEGACY_MANUAL)
+  commerceStatus          CommerceOrderStatus?
+  checkoutSessionHash     String?              @db.Char(64)
+  fulfilmentStatus        FulfilmentStatus?
+  currency                String?              @db.Char(3)
+  deliveryFeeMinor        Int?
+  totalMinor              Int?
+  deliveryCountry         String?              @db.Char(2)
+  deliveryApartment       String?
+  deliveryLandmark        String?
+  deliveryPostcode        String?
+  cancelledAt             DateTime?
+  cancelledBy             String?              @db.Uuid
+  cancellationReason      String?
   stockRestoredAt         DateTime?
-  createdAt               DateTime           @default(now())
-  updatedAt               DateTime           @updatedAt
-  customer                Customer           @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+  customer                Customer             @relation(fields: [customerId], references: [id], onDelete: Restrict)
   items                   OrderItem[]
   statusEvents            OrderStatusEvent[]
+  paymentAttempts         PaymentAttempt[]
+  reservations            StockReservation[]
+  stockMovements          StockMovement[]
 
   @@index([status, createdAt])
   @@index([customerId, createdAt])
@@ -153,4 +218,63 @@ model OrderStatusEvent {
   order      Order        @relation(fields: [orderId], references: [id], onDelete: Restrict)
 
   @@index([orderId, createdAt])
+}
+
+model DeliveryDestination {
+  state     String   @id
+  enabled   Boolean  @default(false)
+  feeMinor  Int?
+  version   Int      @default(0)
+  updatedAt DateTime @default(now()) @updatedAt
+  updatedBy String?  @db.Uuid
+}
+
+model PaymentAttempt {
+  id                String               @id @default(uuid()) @db.Uuid
+  orderId           String               @db.Uuid
+  providerReference String               @unique
+  amountMinor       Int
+  currency          String               @db.Char(3)
+  environment       PaymentEnvironment
+  status            PaymentAttemptStatus @default(INITIATING)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  order             Order                @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  reservation       StockReservation?
+
+  @@unique([orderId, id])
+  @@index([orderId, createdAt])
+}
+
+model StockReservation {
+  id               String            @id @default(uuid()) @db.Uuid
+  orderId          String            @db.Uuid
+  paymentAttemptId String            @db.Uuid
+  status           ReservationStatus @default(HELD)
+  expiresAt        DateTime
+  closedAt         DateTime?
+  createdAt        DateTime          @default(now())
+  order            Order             @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  paymentAttempt   PaymentAttempt    @relation(fields: [orderId, paymentAttemptId], references: [orderId, id], onDelete: Restrict)
+  movements        StockMovement[]
+
+  @@unique([orderId, paymentAttemptId])
+  @@unique([orderId, id])
+  @@index([status, expiresAt])
+}
+
+model StockMovement {
+  id               String            @id @default(uuid()) @db.Uuid
+  orderId          String            @db.Uuid
+  reservationId    String?           @db.Uuid
+  perfumeVariantId String            @db.Uuid
+  kind             StockMovementKind
+  quantity         Int
+  createdAt        DateTime          @default(now())
+  order            Order             @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  reservation      StockReservation? @relation(fields: [orderId, reservationId], references: [orderId, id], onDelete: Restrict)
+  perfumeVariant   PerfumeVariant    @relation(fields: [perfumeVariantId], references: [id], onDelete: Restrict)
+
+  @@unique([reservationId, perfumeVariantId, kind])
+  @@index([orderId, kind])
 }

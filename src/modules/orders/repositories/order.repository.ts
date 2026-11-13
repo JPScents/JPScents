@@ -44,19 +44,23 @@ export type AdminOrderRecord = Prisma.OrderGetPayload<{ include: typeof adminOrd
 
 export async function findOrderConfirmation(confirmationToken: string) {
   return await prisma.order.findUnique({
-    where: { confirmationToken },
+    where: { confirmationToken, kind: "LEGACY_MANUAL" },
     select: publicOrderSelect,
   });
 }
 
 export async function findAdminOrder(reference: string) {
-  return await prisma.order.findUnique({ where: { reference }, include: adminOrderInclude });
+  return await prisma.order.findUnique({
+    where: { reference, kind: "LEGACY_MANUAL" },
+    include: adminOrderInclude,
+  });
 }
 
 export async function listOrderRecords(filters: OrderFilters = {}, take?: number) {
   const query = filters.query;
   return await prisma.order.findMany({
     where: {
+      kind: "LEGACY_MANUAL",
       ...(filters.status ? { status: filters.status } : {}),
       ...(query
         ? {
@@ -95,17 +99,17 @@ export async function listOrderRecords(filters: OrderFilters = {}, take?: number
 export type OrderRowRecord = Awaited<ReturnType<typeof listOrderRecords>>[number];
 
 export async function countOrdersAwaitingPayment() {
-  return await prisma.order.count({ where: { status: "AWAITING_PAYMENT" } });
+  return await prisma.order.count({ where: { kind: "LEGACY_MANUAL", status: "AWAITING_PAYMENT" } });
 }
 
 export async function countOrdersSince(start: Date) {
-  return await prisma.order.count({ where: { createdAt: { gte: start } } });
+  return await prisma.order.count({ where: { kind: "LEGACY_MANUAL", createdAt: { gte: start } } });
 }
 
 class OrderConflict extends Error {}
 const REFERENCE_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 
-function createReference() {
+export function createReference() {
   const code = [...randomBytes(7)].map((value) => REFERENCE_ALPHABET[value & 31]).join("");
   return `${commerceConfig.orderReference.prefix}${code}`;
 }
@@ -119,7 +123,7 @@ export async function createOrderWithStockDeduction(
     return await prisma.$transaction(
       async (tx) => {
         const duplicate = await tx.order.findUnique({
-          where: { submissionKey },
+          where: { submissionKey, kind: "LEGACY_MANUAL" },
           select: checkoutOrderSelect,
         });
         if (duplicate) {
@@ -129,6 +133,9 @@ export async function createOrderWithStockDeduction(
         const stock = await deductStockForOrder(tx, lines);
         if ("error" in stock) {
           throw new OrderConflict(stock.error);
+        }
+        if ("stalePrices" in stock) {
+          throw new Error("Unexpected price comparison during legacy checkout.");
         }
         const byId = stock.variants;
         const subtotalMinor = lines.reduce(
@@ -187,7 +194,7 @@ export async function createOrderWithStockDeduction(
       (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")
     ) {
       const duplicate = await prisma.order.findUnique({
-        where: { submissionKey },
+        where: { submissionKey, kind: "LEGACY_MANUAL" },
         select: checkoutOrderSelect,
       });
       if (duplicate) {
@@ -206,7 +213,7 @@ export async function updateOrderStatus(
   nextStatus: Exclude<OrderStatus, "CANCELLED">,
 ) {
   return await prisma.$transaction(async (tx) => {
-    const order = await tx.order.findUnique({ where: { reference } });
+    const order = await tx.order.findUnique({ where: { reference, kind: "LEGACY_MANUAL" } });
     if (!order) {
       return { error: "Order not found." } as const;
     }
@@ -233,7 +240,10 @@ export async function updateOrderStatus(
 export async function cancelOrderAndRestoreStock(reference: string) {
   return await prisma.$transaction(
     async (tx) => {
-      const order = await tx.order.findUnique({ where: { reference }, include: { items: true } });
+      const order = await tx.order.findUnique({
+        where: { reference, kind: "LEGACY_MANUAL" },
+        include: { items: true },
+      });
       if (!order) {
         return { error: "Order not found." } as const;
       }

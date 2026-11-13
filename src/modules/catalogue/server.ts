@@ -22,6 +22,7 @@ export {
 } from "./services/public-catalogue.service";
 export { parsePreferences, parseScent } from "./parsers/public-preferences-query.parser";
 export { deductStockForOrder, restoreStockForOrder } from "./repositories/stock.repository";
+export { recordStockReservation, releaseHeldStock } from "./repositories/reservation.repository";
 export {
   getPublishedVariantsByIds,
   setBestsellerRecord,

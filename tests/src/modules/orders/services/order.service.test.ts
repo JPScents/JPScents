@@ -144,6 +144,7 @@ describe("orders", () => {
         id,
         perfumeId: "perfume",
         priceMinor: 120000,
+        quantity: 2,
         sizeValue: 50,
         sizeUnit: "ML",
         perfume: { name: "Quiet Fig" },
@@ -342,7 +343,9 @@ describe("orders", () => {
   });
   it("counts awaiting-payment orders and fetches only three recent rows for the overview", async () => {
     await expect(getOrdersAdminOverview(admin)).resolves.toMatchObject({ awaitingAction: 0 });
-    expect(mocks.orderCount).toHaveBeenCalledWith({ where: { status: "AWAITING_PAYMENT" } });
+    expect(mocks.orderCount).toHaveBeenCalledWith({
+      where: { kind: "LEGACY_MANUAL", status: "AWAITING_PAYMENT" },
+    });
     expect(mocks.orderFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
         take: 3,
