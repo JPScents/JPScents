@@ -123,7 +123,7 @@ function readQualityReport(log) {
 
 function validateVerificationReport(report, exitCode, candidate, mode = "quality") {
   const commands = mode === "quality" ? QUALITY_STAGES : ACCEPTANCE_STAGES;
-  const minimumCases = mode === "quality" ? 5 : 29;
+  const minimumCases = mode === "quality" ? 5 : 30;
   if (
     report?.mode !== mode ||
     !["PASS", "FAIL", "BLOCKED"].includes(report.status) ||

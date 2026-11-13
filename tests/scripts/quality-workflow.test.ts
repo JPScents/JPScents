@@ -28,7 +28,7 @@ function verificationReport(mode: Mode) {
       : []),
     databaseStage,
   ];
-  const count = quality ? 5 : 29;
+  const count = quality ? 5 : 30;
   return {
     mode,
     status: "PASS",

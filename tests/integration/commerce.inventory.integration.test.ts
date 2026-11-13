@@ -831,6 +831,48 @@ describe("PostgreSQL approved acceptance commerce administration", () => {
     ).toBe(1);
   });
 
+  it("keeps a cancellation final when verified success and reservation expiry race", async () => {
+    const purchase = await basket([1, 1]);
+    const placed = created(await orders.reserveCommerceOrder(purchase));
+    const orderId = placed.order.id;
+    expect(await payments.prepareCommerceInitialisation(orderId, "TEST")).toHaveProperty("attempt");
+    const fact = verified(placed);
+    const deadline = new Date(placed.expiresAt.getTime() + 1);
+    const command = { action: "CANCEL" as const, reason: "Customer requested cancellation" };
+
+    const [cancellation, payment] = await Promise.all([
+      adminOrders.applyAdminCommerceOrderAction(admin, orderId, command),
+      payments.applyVerifiedCommercePayment(fact.reference, fact, deadline),
+      orders.expireCommerceReservation(orderId, deadline),
+    ]);
+    expect(cancellation).toEqual({ ok: true });
+    expect(["PAID", "REFUND_REQUIRED"]).toContain(payment);
+    expect(await payments.applyVerifiedCommercePayment(fact.reference, fact, deadline)).toBe(
+      "UNCHANGED",
+    );
+    expect(await adminOrders.applyAdminCommerceOrderAction(admin, orderId, command)).toEqual({
+      unchanged: true,
+    });
+    expect(await orders.expireCommerceReservation(orderId, deadline)).toBe(false);
+
+    expect(await db.order.findUniqueOrThrow({ where: { id: orderId } })).toMatchObject({
+      commerceStatus: "CANCELLED",
+      fulfilmentStatus: "UNFULFILLED",
+      cancelledBy: admin.id,
+      cancellationReason: command.reason,
+    });
+    expect(await available(purchase.perfume.id)).toEqual([1, 1]);
+    expect(await db.stockReservation.count({ where: { orderId, status: "HELD" } })).toBe(0);
+    expect(
+      await db.paymentAttempt.findUniqueOrThrow({ where: { id: placed.attempt.id } }),
+    ).toMatchObject({ status: "SUCCEEDED", providerId: fact.providerId });
+    expect(
+      await db.refund.findMany({ where: { paymentAttemptId: placed.attempt.id } }),
+    ).toMatchObject([{ amountMinor: placed.totalMinor, status: "REQUESTED" }]);
+    expect(await db.commerceOrderEvent.count({ where: { orderId, action: "CANCELLED" } })).toBe(1);
+    expect(await db.orderNotification.count({ where: { orderId, kind: "CANCELLED" } })).toBe(1);
+  });
+
   it("guards dispatch and caps concurrent refunds and received returns independently", async () => {
     const purchase = await basket([2]);
     const placed = created(await orders.reserveCommerceOrder(purchase));
