@@ -44,8 +44,8 @@
     "architecture:check": "node .agents/skills/feature-structure/scripts/check-structure.mjs"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "7.9.1",
-    "@prisma/client": "7.9.1",
+    "@prisma/adapter-pg": "7.10.1",
+    "@prisma/client": "7.10.1",
     "@supabase/ssr": "0.12.5",
     "@supabase/supabase-js": "2.112.4",
     "class-variance-authority": "^0.7.1",
@@ -74,7 +74,7 @@
     "eslint-config-next": "16.4.6",
     "jsdom": "28.1.0",
     "prettier": "^3.9.6",
-    "prisma": "7.9.1",
+    "prisma": "7.10.1",
     "supabase": "2.109.1",
     "tailwindcss": "^4",
     "tsx": "4.21.0",
