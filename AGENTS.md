@@ -40,6 +40,13 @@ Agents MUST complete both steps before editing code.
 - Never inspect, copy or expose secret files or values. Use documented variable names and non-secret examples. Account for commands that load environment files automatically.
 - Preserve unrelated index and working-tree changes. Commit, push, merge, rebase, deploy, run destructive database operations, or mutate external systems only with applicable user authorization. Inspect the entire index before any authorized commit and keep the commit limited to the task.
 
+## Mandatory ADR approval checkpoints
+
+- The Orchestrator MUST apply the [canonical ADR approval contract](docs/engineering/CHANGE_CONTROL.md#mandatory-architecture-approval-contract) and [milestone checkpoints](docs/engineering/MILESTONE_INTEGRATION.md#mandatory-adr-checkpoints) during planning, authoring, task assignment and resume. Classify no architectural change, use of an existing approved decision, or a new/modified decision; record task-to-ADR coverage and exact blocked dependencies.
+- Every new or modified architectural decision MUST receive explicit repository owner approval recorded in an Accepted ADR before affected implementation. The Orchestrator owns the six-part decision brief, approval evidence and propagation. Silence, existing code, passing checks, an Active milestone, review PASS or merge approval MUST NOT substitute for architecture approval.
+- The Execution Agent MUST independently verify coverage, stop affected work immediately on an unforeseen decision, mark dependent tasks BLOCKED and notify the Orchestrator. Independent authorised tasks may continue. Resume only after approved contracts/task/verification instructions agree and the Execution Agent acknowledges the revised scope/ADR version.
+- Independent review MUST verify actual changes against the approved ADR and evidence. An unresolved decision prevents PASS/APPROVE/READY/READY FOR MERGE. Architecture approval and the later human merge approval are separate gates. Preserve active milestone scope and review history; apply approved revisions through the existing workflow.
+
 ## Verification and completion
 
 - Run `npm test -- <test-path>` for affected behavior and `npm run check` or the documented isolated equivalent for code refactors and architecture-affecting changes. The full check includes `npm run architecture:check`, formatting, lint, type checking and Vitest. For a full refactor, review every affected module's actual responsibility and explain any retained layers or unresolved violations.

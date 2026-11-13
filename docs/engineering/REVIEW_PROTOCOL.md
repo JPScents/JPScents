@@ -26,6 +26,14 @@ Read applicable repository instructions, the approved architecture and coding st
 | Types and maintainability          | Inspect data contracts, unsafe narrowing, error handling, security and privacy boundaries, naming, duplication, and complexity. Apply the review thresholds and scoped exceptions from the approved standards. Judge legitimate implementations by their contracts and effects.                                                          |
 | Tests and evidence                 | Check that assertions observe outcomes and consequential side effects. Review boundary mocks, concurrency and negative cases. Compare the tests with the actual path and identify production behavior a mock cannot establish.                                                                                                           |
 
+## Verify architectural approval before verdict
+
+The reviewer MUST apply the [mandatory approval contract](CHANGE_CONTROL.md#mandatory-architecture-approval-contract). Require a task/change-to-ADR mapping with classifications, exact Accepted ADR/version, owner approval reference/scope/conditions and propagation/acknowledgement evidence. Independently inspect the diff for decisions omitted from that mapping. Verify the actual owner decision; a status string, general plan approval, green checks or an implementer's assertion is insufficient.
+
+Record each architecture change as covered, decision required or approval evidence unavailable. A required new decision is ESCALATE and affected tasks are BLOCKED; unavailable evidence is BLOCKED. Either prevents PASS, APPROVE, READY and READY FOR MERGE for the affected candidate. Unchanged independent tasks can retain their scoped results but cannot make the blocked milestone ready. If code preceded its approval, record the violation and stop further affected work; do not legitimise it retroactively. The owner decides scope/adoption, and the resulting candidate still needs verification and review.
+
+The review artifact MUST include: change/task, relevant rule, ADR/version/status, direct owner evidence, scope match, propagation consistency and unresolved decision. Use None with rationale when no architectural change exists. The reviewer MUST NOT accept an ADR or substitute review/merge approval for the pre-implementation architecture decision.
+
 ## Verify the evidence
 
 The reviewer MUST check what ran, on which candidate, with what exit status and at which boundary. Inspect the relevant deterministic results under the [verification contract](VERIFICATION_CONTRACT.md#status-and-evidence) and [enforcement matrix](ENFORCEMENT_MATRIX.md). Treat old output, an implementation summary, a different SHA, or an unmatched dirty worktree as insufficient for current required evidence. Read the tests as well as the command output.
@@ -78,7 +86,7 @@ Required corrections or approvals: action, prior finding disposition, or None
 Remaining uncertainty: missing evidence, affected decisions, or None
 ```
 
-Invoke the [repository-local skill](../../.agents/skills/independent-review/SKILL.md) explicitly in the separate reviewer context. The existing milestone workflow retains its independent review, PR record, verdict vocabulary, review budget and human merge step. Task 15 will address integration.
+Invoke the [repository-local skill](../../.agents/skills/independent-review/SKILL.md) explicitly in the separate reviewer context. The existing milestone workflow retains its independent review, PR record, verdict vocabulary, review budget and human merge step. The milestone checkpoints integrate this protocol with authoring, execution and resume.
 
 ## Validation record
 

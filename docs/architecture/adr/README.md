@@ -19,6 +19,14 @@ This index records the repository owner's approved decisions and links them to t
 
 An ADR covers a consequential architectural choice. The coding standards hold routine conventions, review thresholds, and the two approved image lint exceptions. Their approval is recorded there. [Coding decisions](../../engineering/CODING_STANDARDS.md#approved-decisions) · [Image exceptions](../../engineering/CODING_STANDARDS.md#approved-decorative-image-exceptions)
 
+## Approval gate for new decisions
+
+Every new architectural decision or material modification MUST follow the [mandatory architecture approval contract](../../engineering/CHANGE_CONTROL.md#mandatory-architecture-approval-contract). The Orchestrator presents the six-part brief and records the owner's approve/revise/reject response; the Execution Agent stops affected work until an Accepted ADR with matching approval and consistent adoption artifacts exists. Independent review verifies that mapping and cannot grant approval. General milestone activation and merge approval do not substitute for a decision-specific approval.
+
+For each new proposal record its stable ID, version/digest, reason, recommendation, alternatives/trade-offs, affected rules/milestone/tasks, blocked dependencies, approval reference/quotation, scope/conditions and actual disposition/date where known. A rejected proposal retains unapproved status and disposition history; a revised proposal needs approval of its changed scope. Existing Accepted ADRs retain their original approval evidence; this update neither re-approves them nor changes their design.
+
+Use the milestone/task/PR architecture-impact table for coordination, not a duplicate ADR register. No architectural change or an implementation wholly covered by an existing Accepted ADR requires a new record merely for uniformity.
+
 ## Open Decisions
 
 | Question                                                                                | Evidence needed before choosing                                                                                                                                                                                                                                                                                                       |

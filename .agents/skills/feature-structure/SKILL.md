@@ -7,6 +7,10 @@ description: Refactor or implement repository features with enforced responsibil
 
 Read the project's AGENTS.md and README, then apply this standard to the whole requested feature and its affected consumers. Existing names and folders are evidence to examine, not architectural authority. Current instructions supersede older structural choices in archived milestones; preserve their still-applicable business requirements.
 
+## Approval before a new structure
+
+Follow the [mandatory ADR checkpoint](../../../docs/engineering/CHANGE_CONTROL.md#mandatory-architecture-approval-contract). A new ownership, dependency, runtime, provider or transaction boundary needs explicit owner approval in an Accepted ADR before affected code. The Execution Agent stops and escalates unforeseen decisions to the Orchestrator; independent authorised work may continue. A requested refactor, existing implementation or passing checker is not approval for a new architecture. Apply approved successors only after contracts, tasks and verification instructions agree and the execution handoff is acknowledged. This skill's current layout remains operative until that adoption is authorised.
+
 ## What refactor means
 
 Understand behavior and data flow, question every existing responsibility and abstraction, remove unnecessary code, merge needless layers, and correct ownership and names without breaking behavior. A rename, split, or move is useful only when it resolves an identified problem. A few opportunistic fixes do not complete a feature-wide refactor.
