@@ -11,7 +11,7 @@ The protected Admin manages the catalogue, customers, delivery fees, order links
 - Motion for interface transitions
 - Prisma for schema declarations, migrations and database access
 - Supabase for PostgreSQL, passwordless Admin authentication and private product-image storage
-- Vercel for production hosting
+- Netlify Free for the commerce storefront and isolated previews
 
 ## Application routes
 
@@ -80,17 +80,17 @@ Application startup and deployment never seed data automatically.
 
 Use `.env.example` for local development and `.env.production.example` for a private operator production file. Never commit real credentials.
 
-| Variable                               | Purpose                                                                    | Configure in Vercel |
-| -------------------------------------- | -------------------------------------------------------------------------- | ------------------- |
-| `DATABASE_URL`                         | Application connection; use the Supavisor transaction pooler in production | Yes                 |
-| `DIRECT_URL`                           | Direct or session-pooler connection used only for migrations               | No                  |
-| `NEXT_PUBLIC_SITE_URL`                 | Canonical origin; production is `https://jpscents.shop`                    | Yes                 |
-| `NEXT_PUBLIC_SUPABASE_URL`             | Supabase project URL                                                       | Yes                 |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser-safe Supabase key                                                  | Yes                 |
-| `SUPABASE_SECRET_KEY`                  | Operator-only Admin provisioning credential                                | No                  |
-| `JP_SCENTS_ADMIN_EMAIL`                | Primary trusted Admin email                                                | Yes                 |
-| `JP_SCENTS_SECONDARY_ADMIN_EMAIL`      | Optional temporary trusted Admin email                                     | When used           |
-| `JP_SCENTS_WHATSAPP_NUMBER`            | International digits-only business number                                  | Yes                 |
+| Variable                               | Purpose                                                                    | Configure in Netlify |
+| -------------------------------------- | -------------------------------------------------------------------------- | -------------------- |
+| `DATABASE_URL`                         | Application connection; use the Supavisor transaction pooler in production | Yes                  |
+| `DIRECT_URL`                           | Direct or session-pooler connection used only for migrations               | No                   |
+| `NEXT_PUBLIC_SITE_URL`                 | Canonical origin; production is `https://jpscents.shop`                    | Yes                  |
+| `NEXT_PUBLIC_SUPABASE_URL`             | Supabase project URL                                                       | Yes                  |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser-safe Supabase key                                                  | Yes                  |
+| `SUPABASE_SECRET_KEY`                  | Operator-only Admin provisioning credential                                | No                   |
+| `JP_SCENTS_ADMIN_EMAIL`                | Primary trusted Admin email                                                | Yes                  |
+| `JP_SCENTS_SECONDARY_ADMIN_EMAIL`      | Optional temporary trusted Admin email                                     | When used            |
+| `JP_SCENTS_WHATSAPP_NUMBER`            | International digits-only business number                                  | Yes                  |
 
 ## Database and Supabase
 
@@ -128,17 +128,9 @@ Production Supabase must have:
 - The private `perfume-images` Storage bucket and policies installed by the Prisma migration history
 - Trusted Admin users provisioned with server-controlled `app_metadata.role=admin`
 
-## Vercel deployment
+## Netlify deployment
 
-Milestone 7 commerce configuration, payment activation and recovery use the [commerce operations guide](docs/engineering/COMMERCE_OPERATIONS.md).
-
-1. Apply production Prisma migrations before deploying code that depends on them.
-2. Import the repository into the client-owned Vercel project.
-3. Use Vercel's standard Next.js settings and `npm run build`.
-4. Add only the variables marked for Vercel above.
-5. The human merge to `main` deploys automatically. Verify the public routes, Magic Link callback, Admin image access, and the checkout path enabled on that deployment.
-
-Keep `DIRECT_URL` and `SUPABASE_SECRET_KEY` in the operator environment. Connect Preview to its own Supabase project. The commerce operations guide covers the scheduled recovery configuration.
+Use the [commerce operations guide](docs/engineering/COMMERCE_OPERATIONS.md#netlify-deployment) to connect the repository, isolate Preview from Production, configure Supabase Cron and verify the Free credit budget. Git deploys and publishes `main` automatically after the human merge. Apply compatible Production migrations before code that depends on them. Keep operator credentials out of Netlify.
 
 ## Quality commands
 

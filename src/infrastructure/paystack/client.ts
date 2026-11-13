@@ -1,16 +1,13 @@
 import "server-only";
 
+import { deploymentContext } from "@/config/deployment";
 import { isNairaMinor } from "@/shared/utils/naira-minor";
 
 export type PaystackMode = "TEST" | "LIVE";
 
 function deploymentAllows(mode: PaystackMode) {
-  const deployment = process.env.VERCEL_ENV;
-  return deployment
-    ? deployment === "production"
-      ? mode === "LIVE"
-      : mode === "TEST"
-    : mode === "TEST";
+  const deployment = deploymentContext();
+  return deployment !== null && (deployment === "production" ? mode === "LIVE" : mode === "TEST");
 }
 
 function apiKey(mode: PaystackMode) {
@@ -61,7 +58,7 @@ export function getPaystackReturnOrigin() {
       return null;
     }
     const local =
-      !process.env.VERCEL_ENV &&
+      deploymentContext() === "local" &&
       url.protocol === "http:" &&
       ["localhost", "127.0.0.1"].includes(url.hostname);
     return url.protocol === "https:" || local ? url.origin : null;

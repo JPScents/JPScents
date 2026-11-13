@@ -11,7 +11,7 @@ This index records the repository owner's approved decisions and links them to t
 
 ## Accepted decisions for Milestone 7
 
-The owner approved all six v1 decisions on 13 November 2026. The scoped successors retain the legacy guarantees and D1–D5 where applicable. Implementation and verification follow the assigned stages of [Milestone 7](https://github.com/JPScents/JPScents/pull/3). [Owner decision](https://github.com/JPScents/JPScents/pull/3#issuecomment-6848173613)
+The owner approved ADR-0005–0010 v1 on 13 November 2026 and later approved ADR-0011 v1 for hosting and scheduling. The scoped successors retain the legacy guarantees and D1–D5 where applicable. Implementation and verification follow the assigned stages of [Milestone 7](https://github.com/JPScents/JPScents/pull/3). [Owner decision](https://github.com/JPScents/JPScents/pull/3#issuecomment-6848173613)
 
 | Decision                                                                                                         | Status   | Affected work                                                                |
 | ---------------------------------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------- |
@@ -21,6 +21,7 @@ The owner approved all six v1 decisions on 13 November 2026. The scoped successo
 | [ADR-0008 · Commerce provider trust boundaries](0008-commerce-provider-trust-boundaries.md)                      | Accepted | C–E · Paystack, Google Places and Resend                                     |
 | [ADR-0009 · Durable commerce reconciliation](0009-durable-commerce-reconciliation.md)                            | Accepted | C–F · database recovery, minute-level scheduling and operator visibility     |
 | [ADR-0010 · Commerce release and recovery evidence](0010-commerce-release-and-recovery-evidence.md)              | Accepted | F · merge evidence, deployment verification, payment activation and recovery |
+| [ADR-0011 · Free hosting and scheduled commerce recovery](0011-free-hosting-and-scheduled-commerce-recovery.md)  | Accepted | E–F · Netlify Free, isolated Preview, automatic deploys and Supabase Cron    |
 
 ## Naming and lifecycle
 
@@ -42,6 +43,6 @@ Use the milestone/task/PR architecture-impact table for coordination, not a dupl
 
 ## Earlier questions
 
-The merge mechanism is now the required `JPScents quality` check. The automatic Vercel Production deployment remains in place. ADR-0010 adds milestone-specific release evidence. ADR-0006 defines expiry for new reservations and retains the existing treatment of legacy unpaid orders. [Quality gates](../../engineering/QUALITY_GATES.md) · [Commerce lifecycle](0006-commerce-orders-payments-and-stock-lifecycle.md) · [Release evidence](0010-commerce-release-and-recovery-evidence.md)
+The merge mechanism is now the required `JPScents quality` check. ADR-0011 sets the commerce target for automatic deployment. ADR-0010 adds milestone-specific release evidence. ADR-0006 defines expiry for new reservations and retains the existing treatment of legacy unpaid orders. [Quality gates](../../engineering/QUALITY_GATES.md) · [Commerce lifecycle](0006-commerce-orders-payments-and-stock-lifecycle.md) · [Release evidence](0010-commerce-release-and-recovery-evidence.md)
 
 The archived Orders milestone records an initial `NEW` status, manual restocking after cancellation, and display labels read from live catalogue data. The current lifecycle and D3 replace those historical choices. The archive remains evidence for its own milestone. [Archived Orders milestone](../../../.agents/milestones/archive/milestone-5-orders-and-completion.md#L29) · [Current order lifecycle](0002-order-transactions-and-inventory-consistency.md) · [Historical order facts](0003-historical-order-facts.md)

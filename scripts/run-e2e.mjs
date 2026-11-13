@@ -12,6 +12,8 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import pg from "pg";
+
 const directory = mkdtempSync(join(tmpdir(), "jpscents-e2e-"));
 const configPath = join(directory, "supabase", "config.toml");
 const prismaConfig = join(directory, "prisma-input");
@@ -77,7 +79,7 @@ function isLoopback(value, port) {
   return ["127.0.0.1", "localhost"].includes(url.hostname) && url.port === port;
 }
 
-function main() {
+async function main() {
   mkdirSync(join(directory, "supabase", "templates"), { recursive: true });
   copyFileSync(
     "supabase/templates/magic_link.html",
@@ -119,6 +121,17 @@ function main() {
     JP_SCENTS_ADMIN_EMAIL: "admin@example.test",
   };
   run("npm", ["run", "db:migrate:deploy"], appEnv);
+  const db = new pg.Client({ connectionString: stack.DB_URL });
+  await db.connect();
+  try {
+    await db.query(readFileSync("supabase/commerce-scheduler.sql", "utf8"));
+  } catch (error) {
+    const code =
+      typeof error?.code === "string" && /^[A-Z\d]{5}$/.test(error.code) ? error.code : "unknown";
+    throw new Error(`The disposable scheduler setup failed (SQLSTATE ${code}).`);
+  } finally {
+    await db.end();
+  }
   run("npm", ["run", "build"], appEnv);
 
   let browserFailed = false;
@@ -203,7 +216,7 @@ function main() {
 }
 
 try {
-  main();
+  await main();
 } catch (error) {
   console.error(
     error instanceof SyntaxError ? "The E2E report could not be parsed." : error.message,

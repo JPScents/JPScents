@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   canStartPaystackPayment,
+  getPaystackReturnOrigin,
   hostedCheckoutUrl,
   initialisePaystackPayment,
   verifyPaystackPayment,
@@ -38,6 +39,40 @@ describe("Paystack transaction transport", () => {
     expect(canStartPaystackPayment()).toBeNull();
     vi.stubEnv("VERCEL_ENV", "preview");
     vi.stubEnv("PAYSTACK_WEBHOOK_SECRET", undefined);
+    expect(canStartPaystackPayment()).toBeNull();
+  });
+
+  it("fails closed on Netlify without an explicit mode or when the build context disagrees", () => {
+    vi.stubEnv("VERCEL_ENV", undefined);
+    vi.stubEnv("NETLIFY", "true");
+    vi.stubEnv("JPSCENTS_NETLIFY_BUILD_CONTEXT", "deploy-preview");
+    expect(canStartPaystackPayment()).toBeNull();
+    vi.stubEnv("JPSCENTS_DEPLOYMENT", "preview");
+    expect(canStartPaystackPayment()).toBe("TEST");
+    vi.stubEnv("JPSCENTS_DEPLOYMENT", "production");
+    vi.stubEnv("PAYSTACK_MODE", "LIVE");
+    vi.stubEnv("PAYSTACK_SECRET_KEY", "sk_live_fixture");
+    expect(canStartPaystackPayment()).toBeNull();
+    vi.stubEnv("JPSCENTS_NETLIFY_BUILD_CONTEXT", "production");
+    expect(canStartPaystackPayment()).toBe("LIVE");
+  });
+
+  it("keeps the Netlify function runtime in its configured mode and requires HTTPS", () => {
+    vi.stubEnv("VERCEL_ENV", undefined);
+    vi.stubEnv("SITE_ID", "synthetic-site-id");
+    vi.stubEnv("JPSCENTS_DEPLOYMENT", "preview");
+    expect(canStartPaystackPayment()).toBeNull();
+    vi.stubEnv("JPSCENTS_NETLIFY_BUILD_CONTEXT", "deploy-preview");
+    expect(canStartPaystackPayment()).toBe("TEST");
+    vi.stubEnv("PAYSTACK_MODE", "LIVE");
+    vi.stubEnv("PAYSTACK_SECRET_KEY", "sk_live_fixture");
+    expect(canStartPaystackPayment()).toBeNull();
+    vi.stubEnv("JPSCENTS_DEPLOYMENT", "production");
+    expect(canStartPaystackPayment()).toBeNull();
+    vi.stubEnv("JPSCENTS_NETLIFY_BUILD_CONTEXT", "production");
+    expect(canStartPaystackPayment()).toBe("LIVE");
+    vi.stubEnv("PAYSTACK_RETURN_ORIGIN", "http://localhost:3000");
+    expect(getPaystackReturnOrigin()).toBeNull();
     expect(canStartPaystackPayment()).toBeNull();
   });
 

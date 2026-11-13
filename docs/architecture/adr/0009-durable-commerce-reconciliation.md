@@ -4,6 +4,8 @@
 - **Proposal** — [v1, 13 November 2026](https://github.com/JPScents/JPScents/blob/b02113b0c625fd538d41be42a74e50e6e7765f66/docs/architecture/adr/0009-durable-commerce-reconciliation.md)
 - **Approval** — 13 November 2026. The owner selected “Approve ADR-0005–0010 v1” in response to the exact v1 brief. [Decision brief](https://github.com/JPScents/JPScents/pull/3#issuecomment-6848070229) · [Owner decision record](https://github.com/JPScents/JPScents/pull/3#issuecomment-6848173613)
 
+The hosting and scheduling clauses below are superseded for Milestone 7 by [ADR-0011](0011-free-hosting-and-scheduled-commerce-recovery.md). The rest of this decision remains operative.
+
 ## Context
 
 Provider timeouts, webhook redelivery, refund status changes and lost browser callbacks can outlive a request. Reservation expiry has a server deadline even when the scheduler runs late. The required hosted cadence and Preview evidence matter when choosing Vercel's scheduling mechanism. Legacy Cron Jobs run on Production only. Vercel Schedules supports a scoped Preview branch and a one-minute cadence on Pro or Enterprise. [Vercel scheduling comparison](https://vercel.com/docs/schedules) · [Plan limits](https://vercel.com/docs/schedules/limits)

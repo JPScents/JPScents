@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Netlify provides CONTEXT at build time only. Keep it in the deployed build
+  // so a mis-scoped runtime variable cannot enable live payments on a Preview.
+  env: {
+    JPSCENTS_NETLIFY_BUILD_CONTEXT:
+      process.env.NETLIFY === "true" ? (process.env.CONTEXT ?? "unknown") : "",
+  },
   allowedDevOrigins: ["127.0.0.1"],
   async headers() {
     return [

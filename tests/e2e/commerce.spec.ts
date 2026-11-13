@@ -236,6 +236,22 @@ test("signed delivery is durable and the protected scheduler verifies it without
     }),
   ).toBe(1);
   expect((await request.post("/api/commerce/reconcile")).status()).toBe(401);
+  const receipt = { providerReference: attempt.providerReference };
+  // Use a window before other fixtures became due to isolate this receipt's lease.
+  const nextCheckAt = new Date(Date.now() - 24 * 60 * 60_000);
+  const leaseUntil = new Date(nextCheckAt.getTime() + 60_000);
+  await db.paystackReceipt.updateMany({
+    where: receipt,
+    data: { nextCheckAt, leaseId: randomUUID(), leaseUntil },
+  });
+  const due = async (at: Date) => {
+    const [result] = await db.$queryRaw<{ due: boolean }[]>`
+      SELECT commerce_scheduler.has_due_work(${at}::timestamp) AS due
+    `;
+    return result.due;
+  };
+  expect(await due(nextCheckAt)).toBe(false);
+  expect(await due(leaseUntil)).toBe(true);
   const reconciled = await request.post("/api/commerce/reconcile", {
     headers: { Authorization: "Bearer synthetic-scheduler-fixture" },
   });

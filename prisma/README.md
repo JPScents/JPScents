@@ -23,7 +23,7 @@ The seed entry point is `prisma/seed.ts`. It owns process setup/cleanup and call
 
 ## Hosted Supabase
 
-- `DATABASE_URL` is the application runtime connection. For Vercel, use the Supavisor transaction pooler connection (port `6543`).
+- `DATABASE_URL` is the application runtime connection. For Netlify or the existing rollout host, use the Supavisor transaction pooler connection (port `6543`).
 - `DIRECT_URL` is the operator-only migration connection. Use the direct connection when IPv6 is available, or the Supavisor session pooler (port `5432`) otherwise.
 - Select the target deliberately with `APP_ENV_FILE=.env.production.local npm run db:migrate:status` and then `APP_ENV_FILE=.env.production.local npm run db:migrate:deploy`.
 - Never run `prisma migrate dev`, reset, or the demo seed against production.

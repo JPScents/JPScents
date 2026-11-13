@@ -1,6 +1,12 @@
 # Commerce deployment and recovery
 
-The commerce branch uses the required `JPScents quality` check. Merging the PR into `main` deploys automatically. The release rehearsal and live activation follow ADR-0010. [Release evidence](../architecture/adr/0010-commerce-release-and-recovery-evidence.md)
+The commerce branch uses the required `JPScents quality` check. The Git-connected Netlify Free project publishes `main` automatically after the human merge. The release rehearsal and live activation follow ADR-0010 and ADR-0011. [Release evidence](../architecture/adr/0010-commerce-release-and-recovery-evidence.md) · [Hosting decision](../architecture/adr/0011-free-hosting-and-scheduled-commerce-recovery.md)
+
+## Netlify deployment
+
+- Connect `JPScents/JPScents` to the owner’s Free Netlify project with `main` as the production branch. Retain automatic publishing and the default approval policy for untrusted deploys. Use the repository build settings and enable Deploy Previews. The interim Freeman Free project can host a draft of the exact PR revision while the GitHub App installation is pending. Record the source commit and use the client project for the final Git-connected release. [Deploy Previews](https://docs.netlify.com/deploy/deploy-types/deploy-previews/) · [Git repository permissions](https://docs.netlify.com/build/git-workflows/repo-permissions-linking/)
+- Scope `JPSCENTS_DEPLOYMENT=preview` to Deploy Previews and `JPSCENTS_DEPLOYMENT=production` to Production in the project UI. The server checks the value against the build's Netlify context before enabling Paystack. Scope the database URL, public Supabase settings, site and return origins, webhook secret, status secret and scheduler secret separately for each environment. Put the exact HTTPS `/auth/confirm` URL in that environment's Supabase allowlist. Keep `DIRECT_URL` and `SUPABASE_SECRET_KEY` with the operator. [Contextual environment values](https://docs.netlify.com/build/environment-variables/overview/)
+- Confirm the team stays on Free, review actual request, compute, bandwidth and deploy usage, and test the hosted Admin image upload before cutover. Netlify documents an effective binary request limit of about 4.5 MB. Test the current 5 MiB image allowance through the deployed action. Record the actual result and any required compatibility fix before moving the domain. [Free credits](https://docs.netlify.com/manage/accounts-and-billing/billing/billing-for-credit-based-plans/credit-based-pricing-plans/) · [Function limits](https://docs.netlify.com/build/functions/configuration/)
 
 ## Isolated checkout
 
@@ -13,28 +19,17 @@ The commerce branch uses the required `JPScents quality` check. Merging the PR i
 
 ## Address suggestions and email
 
-- Enable `GOOGLE_PLACES_ADDRESS_ASSISTANCE` after configuring the server-only `GOOGLE_PLACES_API_KEY` for Places API (New). Restrict the key to that API, set a quota and budget alert for the scoped environment, and limit `POST /api/commerce/address-suggestions` at the Vercel firewall. The route requests up to five Nigerian predictions. State, city and street remain editable, and delivery fees still come from Admin Delivery. [Google Places policies](https://developers.google.com/maps/documentation/places/web-service/policies) · [Vercel rate limiting](https://vercel.com/docs/vercel-firewall/vercel-waf/rate-limiting)
+- Enable `GOOGLE_PLACES_ADDRESS_ASSISTANCE` after configuring the server-only `GOOGLE_PLACES_API_KEY` for Places API (New). Restrict the key to that API and keep the route disabled until the operator can enforce usage within the no-cost allowance. Budget alerts notify the operator and do not cap spending. Verify the host’s rate limit for `POST /api/commerce/address-suggestions` before enabling it. The route requests up to five Nigerian predictions. State, city and street remain editable, and delivery fees still come from Admin Delivery. [Google Places policies](https://developers.google.com/maps/documentation/places/web-service/policies) · [Netlify rate limiting](https://docs.netlify.com/manage/security/secure-access-to-sites/rate-limiting/)
 - Configure `RESEND_API_KEY` and a verified sender address in `RESEND_FROM`. Use a separate scoped sender and controlled inboxes for Preview. Disable click tracking on both sending domains so the status capability goes directly to JPScents. Use the deployment's configured HTTPS return origin for links. Verify actual receipt and direct link navigation in each environment. [Verified sender domains](https://resend.com/docs/dashboard/domains/introduction)
 - Email requests commit with the order event. Admin Operations displays provider acceptance and failures. It records an identical sender, body and status link across retries. When rotating `COMMERCE_STATUS_SECRET`, update `COMMERCE_STATUS_KEY_VERSION` and retain the outgoing pair in `COMMERCE_PREVIOUS_STATUS_KEY_VERSION` and `COMMERCE_PREVIOUS_STATUS_SECRET` until outstanding sends have either settled or passed the replay window.
 - After an uncertain email reaches 23 hours from its first attempt, check Resend's record before contacting the buyer. Recovery within the window uses the same message identity. [Resend idempotency](https://resend.com/docs/dashboard/emails/idempotency-keys)
 
 ## Scheduled recovery
 
-Use the protected `POST /api/commerce/reconcile` path for the approved minute-level Vercel Schedule. Configure a random deployment-scoped `CRON_SECRET` of at least 16 characters. The route verifies the bearer before reading or writing data. Vercel supplies the deployment's secret with each path invocation. Confirm account capability, explicit hosting authorisation and isolated target configuration before enabling the schedule. Hobby has a 15-minute minimum. [Path authentication](https://vercel.com/docs/schedules/handle-runs#which-cron_secret-value-vercel-sends) · [Schedule limits](https://vercel.com/docs/schedules/limits)
-
-The static schedule belongs under `schedules` in `vercel.json`. After the team can run a one-minute interval and the hosted setup is authorised, use this target and enable it on the isolated Preview branch. A new static schedule starts inactive on Preview and active in Production. [Static schedules](https://vercel.com/docs/schedules/configuration) · [Environment defaults](https://vercel.com/docs/schedules/concepts#static-schedules-and-deployments)
-
-```json
-{
-  "schedules": {
-    "commerce-reconciliation": {
-      "schedule": "* * * * *",
-      "path": "/api/commerce/reconcile",
-      "requestMethod": "POST"
-    }
-  }
-}
-```
+1. Apply the Prisma migrations to the selected environment. Run [commerce-scheduler.sql](../../supabase/commerce-scheduler.sql) as that Supabase project's database operator. It enables `pg_cron` and `pg_net` and installs two inactive jobs, `jpscents-commerce-reconcile` and `jpscents-commerce-history-cleanup`. Run the script in each authorised project. It does not change an already configured job's activation state.
+2. In that project's Vault, use `jpscents_commerce_reconcile_url` for the exact HTTPS Netlify or `jpscents.shop` URL ending in `/api/commerce/reconcile`. Put the deployment’s random `CRON_SECRET` in Vault as `jpscents_commerce_cron_secret` and in the matching Netlify environment. Store it directly in the provider’s secret interface. Keep secret values out of source, SQL job commands and logs. Redeploy after updating Netlify variables.
+3. Verify the request without a bearer returns 401. Enable both jobs in Supabase Cron. Reconciliation checks for due work each minute and queues HTTP only when work is due or at the top of the UTC hour. Confirm an idle skip, an hourly heartbeat, and a run that recovers a synthetic expired reservation or claim. Compare `cron.job_run_details`, the response status and timeout flag in `net._http_response`, and the app’s completed scheduled run. Query only response metadata. The queue and response tables can contain private request or response data.
+4. Disable both Preview jobs after milestone verification. In Production leave one reconciliation target active. The cleanup job retains seven days of these Cron runs and 30 days of app reconciliation runs. Financial events, orders, refunds and notification intents have their own lifecycle. [Supabase Cron](https://supabase.com/docs/guides/cron) · [pg_net](https://supabase.com/docs/guides/database/extensions/pg_net) · [Vault](https://supabase.com/docs/guides/database/vault)
 
 The protected endpoint releases due reservations and processes bounded payment, webhook, refund and email work. Admin Operations shows the last successful scheduled run, recent run counts and errors, and the oldest unresolved entries. Work claimed by an interrupted invocation becomes eligible again after the lease expires. Paystack verification applies financial effects only when the reference, environment, currency, amount and local attempt agree. For a failed or action-required refund, resolve it in Paystack using its existing reference, then select **Check provider** in Admin Operations. The check verifies the existing refund, and its amount stays reserved while the outcome is unresolved. [Refund references and recovery](https://paystack.com/docs/payments/refunds/)
 
@@ -43,6 +38,6 @@ To pause new payment initiation, retain `COMMERCE_CHECKOUT_ACTIVE=true` and set 
 ## Production sequence
 
 1. Verify the isolated Preview's database, test-only merchant, signed webhook, Places, inbox and scheduled run on the candidate. Keep the database connection, webhook credentials and schedule secret scoped to that environment.
-2. Before the human merges, prepare the approved Production recovery point and apply the committed forward migrations to the confirmed Production database. Verify the migration history and representative legacy orders. Leave Paystack initiation disabled until the deployed prerequisites pass.
-3. Verify the automatic deployment from `main`, the production domain, Admin access, delivery settings and protected schedule. Confirm the merchant account's live channels, settlement and refund funding, the signed webhook and verified Resend sender, and the Places restriction and quota.
+2. Verify Git-connected automatic production deploys and the Free budget. Before the human merges, prepare the approved Production recovery point and apply the committed forward migrations to the confirmed Production database. Verify the migration history and representative legacy orders. Leave Paystack initiation disabled until the deployed prerequisites pass.
+3. Verify the automatic Netlify deployment from `main`, the approved domain cutover, Admin access, delivery settings and protected schedule. Confirm the merchant account's live channels, settlement and refund funding, the signed webhook and verified Resend sender, and the Places restriction and quota.
 4. After explicit live-test approval, enable initiation and exercise the agreed purchase and refund on the deployed revision. Verify the status, allocation, receipt, refund and scheduled recovery. If initiation needs to pause, deploy the compatible recovery configuration above and leave in-flight work on the forward schema.

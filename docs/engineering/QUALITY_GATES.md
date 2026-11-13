@@ -8,7 +8,7 @@ GitHub requires the `JPScents quality` check on the merge candidate. The job run
 | GitHub Actions quality    | PRs and merge groups targeting `main`, plus pushes to `main` | The required job ran all three verification commands on the Milestone 7 merge candidate. [Executed evidence](INTEGRATION_VERIFICATION.md#milestone-7-commerce-verification) | Verify the complete result on the current eligible revision.                |
 | GitHub merge protection   | Merge or direct update to `main`                             | [Active ruleset 27132499](https://github.com/JPScents/JPScents/rules/27132499) requires a PR and the up-to-date GitHub Actions check.                                       | Verify the required status on the merge candidate.                          |
 | Approved acceptance       | Required CI and local `npm run verify:acceptance`            | D2–D4 and the commerce acceptance cases run on disposable migrated PostgreSQL.                                                                                              | Verify the complete result on the current eligible revision.                |
-| Production promotion      | Merge to `main`                                              | Vercel tracks `main` and auto-assigns production domains.                                                                                                                   | Complete the release checks and required migration before merge.            |
+| Production promotion      | Merge to `main`                                              | The existing Vercel deployment tracks `main`. ADR-0011 sets Netlify Git deployment as the commerce target.                                                                  | Complete the release checks and required migration before merge.            |
 | Optional Codex safeguards | Future post-edit or task-completion events                   | Deferred to agent-workflow integration.                                                                                                                                     | Decide separately whether to enable scoped feedback or evidence collection. |
 
 ## Local pre-commit
@@ -50,11 +50,11 @@ The [active ruleset](https://github.com/JPScents/JPScents/rules/27132499) now re
 
 ## Acceptance and release promotion
 
-GitHub runs database acceptance and Chromium E2E as part of the same required job. Verify that required checks clear on the current candidate and finish the migration and recovery rehearsal before the owner decides to merge. With automatic Vercel promotion enabled, finish any required backward-compatible production migration before the merge. [Verification contract](VERIFICATION_CONTRACT.md#release-decision)
+GitHub runs database acceptance and Chromium E2E as part of the same required job. Verify that required checks clear on the current candidate and finish the migration and recovery rehearsal before the owner decides to merge. With automatic production deployment enabled, finish any required backward-compatible production migration before the merge. [Verification contract](VERIFICATION_CONTRACT.md#release-decision)
 
 For the Milestone 6 order snapshots migration, confirm the production recovery point and apply the authorised forward migration while the old app is still live. Verify migration status, then merge the reviewed candidate. Record the Vercel deployment SHA and smoke checkout, confirmation and Admin access. If the new app needs rollback, the rehearsal verifies the old app can use the expanded schema, so the additive migration can stay in place.
 
-For commerce, verify old and new builds on the migrated schema and rehearse pausing new initiation while recovery continues. The milestone PR records isolated provider evidence and independent review before merge, then automatic deployment and live verification. [ADR-0010](../architecture/adr/0010-commerce-release-and-recovery-evidence.md) · [Commerce operations](COMMERCE_OPERATIONS.md#production-sequence)
+For commerce, verify old and new builds on the migrated schema and rehearse pausing new initiation while recovery continues. The milestone PR records the isolated Netlify and Supabase Cron evidence and independent review before merge, then automatic Netlify deployment and live verification. [ADR-0010](../architecture/adr/0010-commerce-release-and-recovery-evidence.md) · [Commerce operations](COMMERCE_OPERATIONS.md#production-sequence)
 
 ## Optional agent safeguards
 

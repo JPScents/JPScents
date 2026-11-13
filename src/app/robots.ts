@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
 
-import { absoluteUrl, isProductionDeployment } from "@/config/site";
+import { deploymentContext } from "@/config/deployment";
+import { absoluteUrl } from "@/config/site";
 
 export default function robots(): MetadataRoute.Robots {
-  if (!isProductionDeployment()) {
+  if (deploymentContext() !== "production") {
     return { rules: { userAgent: "*", disallow: "/" } };
   }
 
