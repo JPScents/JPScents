@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { crc32 } from "node:zlib";
 
 import { expect, test, type Page } from "@playwright/test";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -15,6 +16,23 @@ const photo = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGPY2OUHAAN5AYrqfl0rAAAAAElFTkSuQmCC",
   "base64",
 );
+
+function photoAtSize(size: number) {
+  const text = Buffer.alloc(size - photo.length - 12, 0x78);
+  text.write("Fixture\0");
+  const chunk = Buffer.alloc(12);
+  chunk.writeUInt32BE(text.length);
+  chunk.write("tEXt", 4);
+  chunk.writeUInt32BE(crc32(Buffer.concat([chunk.subarray(4, 8), text])), 8);
+  // Insert a text chunk before IEND so the padded file remains a valid PNG.
+  return Buffer.concat([
+    photo.subarray(0, -12),
+    chunk.subarray(0, 8),
+    text,
+    chunk.subarray(8),
+    photo.subarray(-12),
+  ]);
+}
 
 function setting(name: string) {
   const value = process.env[name];
@@ -240,16 +258,26 @@ test("Admin magic link allows delivery settings, image upload, stock conflict ha
 
   const editUrl = `/admin/perfumes/${product.id}`;
   await page.goto(editUrl);
-  await page.locator('input[type="file"]').setInputFiles({
+  const imageInput = page.locator('input[type="file"]');
+  const imageLimit = 1024 * 1024;
+  const uploadImage = page.getByRole("button", { name: "Upload image", exact: true }).last();
+  await imageInput.setInputFiles({
+    name: "too-large.png",
+    mimeType: "image/png",
+    buffer: photoAtSize(imageLimit + 1),
+  });
+  await expect(page.getByRole("alert")).toHaveText("Choose an image up to 1 MiB.");
+  await expect(uploadImage).toBeDisabled();
+  expect(await db.perfumeImage.count({ where: { perfumeId: product.id } })).toBe(0);
+
+  await imageInput.setInputFiles({
     name: "bottle.png",
     mimeType: "image/png",
-    buffer: photo,
+    buffer: photoAtSize(imageLimit),
   });
   await page.getByLabel(/Alt text/i).fill("Synthetic bottle");
-  await page
-    .locator('button[type="submit"]')
-    .filter({ hasText: /^Upload image$/ })
-    .click();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await uploadImage.click();
   await expect.poll(() => db.perfumeImage.count({ where: { perfumeId: product.id } })).toBe(1);
 
   const storefront = await page.context().browser()!.newPage();
