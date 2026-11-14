@@ -8,10 +8,6 @@ import { checkSuppressions } from "./check-suppressions.mjs";
 const kebab = "[a-z][a-z0-9]*(?:-[a-z0-9]+)*";
 const named = (suffix) => new RegExp(`^${kebab}${suffix}\\.ts$`);
 const fileRules = {
-  actions: named("(?:\\.admin)?\\.action"),
-  components: /^[A-Z][A-Za-z0-9]*\.(?:tsx|module\.css)$/,
-  hooks: /^use[A-Z][A-Za-z0-9]*\.ts$/,
-  providers: /^[A-Z][A-Za-z0-9]*Provider\.tsx$/,
   repositories: named("\\.repository"),
   services: named("\\.service"),
   mappers: named("\\.mapper"),
@@ -21,10 +17,16 @@ const fileRules = {
   types: named("\\.types"),
   utils: named(""),
   constants: named(""),
-  storage: named("-storage"),
-  server: named(""),
 };
-const rootFiles = new Set(["index.ts", "server.ts", "client.ts", "README.md", "AGENTS.md"]);
+const routeFileRules = {
+  actions: named("\\.action"),
+  components: /^[A-Z][A-Za-z0-9]*\.(?:tsx|module\.css)$/,
+  hooks: /^use[A-Z][A-Za-z0-9]*\.ts$/,
+  providers: /^[A-Z][A-Za-z0-9]*Provider\.tsx$/,
+  server: named(""),
+  storage: named("-storage"),
+};
+const rootFiles = new Set(["index.ts", "server.ts", "README.md", "AGENTS.md"]);
 const sourceExtension = /\.(?:[cm]?[jt]s|[jt]sx)$/;
 const vagueNames = new Set(["helpers.ts", "common.ts", "utils.ts"]);
 const prismaSymbols = new Set(["Prisma", "PrismaClient", "TransactionClient"]);
@@ -87,11 +89,16 @@ function moduleReferences(file) {
       literal = node.arguments[0];
     }
     if (literal && ts.isStringLiteralLike(literal)) {
+      const onlyTypeBindings =
+        bindings &&
+        (ts.isNamedImports(bindings) || ts.isNamedExports(bindings)) &&
+        bindings.elements.length > 0 &&
+        bindings.elements.every((binding) => binding.isTypeOnly);
       references.push({
         target: sourceTarget(file.fileName, literal.text),
         location: location(file, literal.getStart(file)),
         bindings,
-        typeOnly,
+        typeOnly: typeOnly || Boolean(onlyTypeBindings),
         reexport: ts.isExportDeclaration(node),
       });
     }
@@ -120,15 +127,16 @@ function generatedSymbols(bindings, typeOnly) {
 function prismaBoundaryViolations(file, references) {
   const violations = [];
   const seed = file.fileName === "prisma/seed.ts";
-  const lifecycle = seed || file.fileName === "src/db/prisma.ts";
+  const lifecycle = seed || file.fileName === "src/infrastructure/database/prisma.ts";
   const repository =
-    /^(?:src\/features\/[^/]+|prisma|scripts)\/repositories\//.test(file.fileName) &&
+    /^(?:src\/modules\/[^/]+|prisma|scripts)\/repositories\//.test(file.fileName) &&
     fileRules.repositories.test(path.posix.basename(file.fileName));
   for (const reference of references) {
     const name = reference.target.replace(sourceExtension, "");
-    const shared = /(?:^|\/)db\/prisma$/.test(name);
+    const shared = /(?:^|\/)infrastructure\/database\/prisma$/.test(name);
     const generated =
-      /^@prisma\/client(?:\/|$)/.test(name) || /(?:^|\/)db\/generated(?:\/|$)/.test(name);
+      /^@prisma\/client(?:\/|$)/.test(name) ||
+      /(?:^|\/)infrastructure\/database\/generated(?:\/|$)/.test(name);
     const symbols = generatedSymbols(reference.bindings, reference.typeOnly);
     const allowed = symbols?.every((symbol) =>
       repository
@@ -173,7 +181,7 @@ function prismaBoundaryViolations(file, references) {
   return violations;
 }
 
-async function inspectFeature(directory, scoped) {
+async function inspectModule(directory, scoped) {
   const errors = [];
   const report = (relative, message) => errors.push(`${relative}: ${message}`);
 
@@ -190,11 +198,8 @@ async function inspectFeature(directory, scoped) {
         statement.moduleSpecifier &&
         statement.exportClause &&
         ts.isNamedExports(statement.exportClause);
-      const clientMarker =
-        ts.isExpressionStatement(statement) &&
-        ts.isStringLiteral(statement.expression) &&
-        statement.expression.text === "use client";
-      if (!reexport && !clientMarker && !isServerMarker(statement)) {
+      const serverMarker = relative === "server.ts" && isServerMarker(statement);
+      if (!reexport && !serverMarker) {
         report(
           relative,
           "[ARC-02] entry points allow explicit re-exports and runtime markers only",
@@ -235,7 +240,7 @@ async function inspectFeature(directory, scoped) {
     for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
       const child = relative ? `${relative}/${entry.name}` : entry.name;
       if (entry.isSymbolicLink()) {
-        report(child, "[ARC-02] symlinks cannot bypass feature ownership checks");
+        report(child, "[ARC-02] symlinks cannot bypass module ownership checks");
       } else if (entry.isDirectory()) {
         if (!relative && !Object.hasOwn(fileRules, entry.name)) {
           report(child, "[ARC-02] folder is not a defined responsibility; inspect its contents");
@@ -248,7 +253,7 @@ async function inspectFeature(directory, scoped) {
         if (!rootFiles.has(entry.name)) {
           report(
             child,
-            "[ARC-02] implementation belongs in its responsibility folder, not the feature root",
+            "[ARC-02] implementation belongs in its responsibility folder, not the module root",
           );
         }
       } else if (
@@ -267,36 +272,155 @@ async function inspectFeature(directory, scoped) {
   return errors;
 }
 
+function inFolder(target, folder) {
+  return target === folder || target.startsWith(folder + "/");
+}
+
 function inspectDependencies(file, references, graph) {
   const errors = [];
-  const owner = /^src\/features\/([^/]+)\//.exec(file.fileName)?.[1];
-  for (const { target, location } of references) {
-    const feature = /^src\/features\/([^/]+)(.*)$/.exec(target);
-    if (feature) {
-      const [, targetOwner, subpath] = feature;
+  const filename = file.fileName;
+  const owner = /^src\/modules\/([^/]+)\//.exec(filename)?.[1];
+  const generic = /^src\/(?:infrastructure|ui|shared|config)\//.test(filename);
+  const infrastructure = inFolder(filename, "src/infrastructure");
+  for (const { target, location, typeOnly } of references) {
+    const targetModule = /^src\/modules\/([^/]+)(.*)$/.exec(target);
+    if (targetModule) {
+      const [, targetOwner, subpath] = targetModule;
       const entry = subpath.replace(/\/$/, "").replace(sourceExtension, "");
-      const publicEntry = ["", "/index", "/client", "/server"].includes(entry);
+      const publicEntry = ["", "/index", "/server"].includes(entry);
       if (owner !== targetOwner && !publicEntry) {
         errors.push(`${location} [ARC-07] consume ${targetOwner} through its public entry points`);
       }
       if (owner === targetOwner && publicEntry) {
-        errors.push(
-          `${location} [ARC-07] feature internals must not import their own barrel. Import the owning module directly.`,
-        );
+        errors.push(`${location} [ARC-07] module internals must import the owning file directly.`);
       }
-      if (/^src\/(?:components|shared|lib|db|config)\//.test(file.fileName)) {
+      if (generic) {
         errors.push(
-          `${location} [ARC-07] generic shared code must not depend on features. Compose features at the route.`,
+          `${location} [ARC-07] infrastructure and generic shared code must not depend on business modules.`,
         );
       }
       if (owner !== targetOwner && graph.has(targetOwner)) {
         graph.get(owner)?.set(targetOwner, location);
       }
     }
-    if (owner && (target === "src/app" || target.startsWith("src/app/"))) {
+    if (
+      owner &&
+      (inFolder(target, "src/app") ||
+        inFolder(target, "src/ui") ||
+        /^(?:next|react(?:-dom)?|motion)(?:\/|$)/.test(target))
+    ) {
       errors.push(
-        `${location} [ARC-07] features must not depend on routes. Move shared behavior to its owning feature.`,
+        `${location} [ARC-07] business modules must not depend on app routes, presentation, or React.`,
       );
+    }
+    if (generic && inFolder(target, "src/app")) {
+      errors.push(
+        `${location} [ARC-07] infrastructure and generic shared code must not depend on app routes.`,
+      );
+    }
+    if (infrastructure && inFolder(target, "src/ui")) {
+      errors.push(`${location} [ARC-07] infrastructure must not depend on presentation.`);
+    }
+    if (!typeOnly && target === "client-only" && owner) {
+      errors.push(`${location} [ARC-08] business modules must not depend on client-only code.`);
+    }
+    if (inFolder(target, "src/features")) {
+      errors.push(`${location} [ARC-01] use the owning app route or business module.`);
+    }
+  }
+  if (inFolder(filename, "src/features")) {
+    errors.push(
+      `${filename} [ARC-01] move legacy feature source to its app or business module owner.`,
+    );
+  }
+  if (owner && (hasDirective(file, "use client") || hasDirective(file, "use server"))) {
+    errors.push(`${filename} [ARC-08] client boundaries and Server Actions belong in the app.`);
+  }
+  return errors;
+}
+
+function routeNamingViolations(filename) {
+  const folder = /^src\/app\/(?:.*\/)?_(actions|components|hooks|server)\//.exec(filename)?.[1];
+  const cartFolder = /^src\/app\/\(public\)\/_cart\/([^/]+)\//.exec(filename)?.[1];
+  const category = cartFolder ?? folder;
+  const rule = Object.hasOwn(routeFileRules, category) ? routeFileRules[category] : undefined;
+  return rule && !rule.test(path.posix.basename(filename))
+    ? [`${filename} [STD-001] name does not follow the ${category}/ responsibility convention`]
+    : [];
+}
+
+function hasDirective(file, directive) {
+  for (const statement of file.statements) {
+    if (!ts.isExpressionStatement(statement) || !ts.isStringLiteral(statement.expression)) {
+      return false;
+    }
+    if (statement.expression.text === directive) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function isGeneratedClient(target) {
+  const name = target.replace(sourceExtension, "");
+  return (
+    /^@prisma\/(?:client|adapter-[^/]+)(?:\/|$)/.test(name) ||
+    (inFolder(name, "src/infrastructure/database/generated") &&
+      name !== "src/infrastructure/database/generated/enums")
+  );
+}
+
+function inspectBrowserBoundaries(files, references) {
+  const errors = [];
+  const resolved = new Map();
+  for (const name of files.keys()) {
+    const stem = name.replace(sourceExtension, "");
+    resolved.set(name, name);
+    resolved.set(stem, name);
+    if (stem.endsWith("/index")) {
+      resolved.set(stem.slice(0, -6), name);
+    }
+  }
+
+  const visited = new Set();
+  function visit(name) {
+    if (visited.has(name)) {
+      return;
+    }
+    visited.add(name);
+    for (const { target, typeOnly, location } of references.get(name) ?? []) {
+      if (typeOnly) {
+        continue;
+      }
+      const destination = resolved.get(target);
+      if (
+        destination &&
+        inFolder(destination, "src/app") &&
+        hasDirective(files.get(destination), "use server")
+      ) {
+        continue;
+      }
+      if (
+        target === "server-only" ||
+        /^next\/(?:headers|server)(?:\/|$)/.test(target) ||
+        /^(?:node:|pg(?:\/|$))/.test(target) ||
+        isGeneratedClient(target) ||
+        (inFolder(target, "src/infrastructure") &&
+          target.replace(sourceExtension, "") !== "src/infrastructure/database/generated/enums")
+      ) {
+        errors.push(
+          `${location} [ARC-08] browser-safe code reaches a privileged runtime: ${target}`,
+        );
+        continue;
+      }
+      if (destination) {
+        visit(destination);
+      }
+    }
+  }
+  for (const [name, file] of files) {
+    if (/^src\/modules\/[^/]+\/index\.ts$/.test(name) || hasDirective(file, "use client")) {
+      visit(name);
     }
   }
   return errors;
@@ -314,7 +438,7 @@ function findCycles(graph) {
         const chain = [...active];
         const cycle = [...chain.slice(chain.indexOf(target)), target].join(" → ");
         errors.push(
-          `${location} [ARC-07] feature dependency cycle: ${cycle}. Remove the reverse dependency or compose the features at a route.`,
+          `${location} [ARC-07] module dependency cycle: ${cycle}. Remove the reverse dependency or compose the modules at a route.`,
         );
       } else if (!visited.has(target)) {
         visit(target);
@@ -338,7 +462,7 @@ async function readSources(directory, sources, errors) {
     }
     const filename = path.posix.join(directory, entry.name);
     if (entry.isDirectory()) {
-      if (filename !== "src/db/generated") {
+      if (filename !== "src/infrastructure/database/generated") {
         await readSources(filename, sources, errors);
       }
     } else if (sourceExtension.test(entry.name)) {
@@ -362,14 +486,14 @@ async function readSources(directory, sources, errors) {
 
 async function main() {
   const errors = [];
-  const entries = await readdir("src/features", { withFileTypes: true });
+  const entries = await readdir("src/modules", { withFileTypes: true });
   const owners = entries
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     .sort();
   const args = process.argv.slice(2);
   const scoped = args.length > 0;
-  const features = scoped
+  const modules = scoped
     ? [
         ...new Set(
           args.map((arg) =>
@@ -377,20 +501,20 @@ async function main() {
           ),
         ),
       ]
-    : owners.map((name) => `src/features/${name}`);
-  for (const directory of features) {
-    const owner = /^src\/features\/([^/]+)$/.exec(directory)?.[1];
+    : owners.map((name) => `src/modules/${name}`);
+  for (const directory of modules) {
+    const owner = /^src\/modules\/([^/]+)$/.exec(directory)?.[1];
     if (!owners.includes(owner)) {
       errors.push(
-        `${directory} [ARC-02] unsupported scan target. Use a direct child of src/features or omit arguments for the full check.`,
+        `${directory} [ARC-02] unsupported scan target. Use a direct child of src/modules or omit arguments for the full check.`,
       );
       continue;
     }
     if (!new RegExp(`^${kebab}$`).test(owner)) {
-      errors.push(`${directory} [STD-001] feature directories must use kebab-case.`);
+      errors.push(`${directory} [STD-001] module directories must use kebab-case.`);
       continue;
     }
-    const violations = await inspectFeature(directory, scoped);
+    const violations = await inspectModule(directory, scoped);
     if (violations.length) {
       errors.push(`${directory}:\n${violations.map((error) => `  ${error}`).join("\n")}`);
     }
@@ -399,7 +523,7 @@ async function main() {
     for (const entry of entries) {
       if (entry.isSymbolicLink()) {
         errors.push(
-          `src/features/${entry.name} [ARC-02] symlinks cannot bypass feature ownership checks.`,
+          `src/modules/${entry.name} [ARC-02] symlinks cannot bypass module ownership checks.`,
         );
       }
     }
@@ -408,16 +532,20 @@ async function main() {
       await readSources(directory, sources, errors);
     }
     const graph = new Map(owners.map((owner) => [owner, new Map()]));
+    const referencesByFile = new Map();
     for (const file of sources.values()) {
       if (file.fileName.startsWith("tests/")) {
         continue;
       }
       const references = moduleReferences(file);
+      referencesByFile.set(file.fileName, references);
       errors.push(...prismaBoundaryViolations(file, references));
       errors.push(...inspectDependencies(file, references, graph));
+      errors.push(...routeNamingViolations(file.fileName));
     }
     errors.push(...findCycles(graph));
-    errors.push(...(await checkSuppressions(sources)));
+    errors.push(...inspectBrowserBoundaries(sources, referencesByFile));
+    errors.push(...checkSuppressions(sources));
   }
   if (errors.length) {
     console.error(errors.join("\n"));
@@ -425,7 +553,7 @@ async function main() {
     return;
   }
   const scope = scoped
-    ? `${features.join(", ")}: scoped structure and Prisma checks`
+    ? `${modules.join(", ")}: scoped structure and Prisma checks`
     : "Architecture and suppression checks";
   console.log(`${scope} passed. Semantic responsibility review still required.`);
 }

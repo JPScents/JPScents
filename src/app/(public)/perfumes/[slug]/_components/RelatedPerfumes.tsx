@@ -1,6 +1,6 @@
-import { MotionReveal } from "@/components/shared/MotionReveal";
-import { ProductCard } from "@/features/catalogue/client";
-import type { PublicPerfumeCard } from "@/features/catalogue";
+import { MotionReveal } from "@/ui/MotionReveal";
+import { ProductCard } from "@/app/(public)/_components/ProductCard";
+import type { PublicPerfumeCard } from "@/modules/catalogue";
 
 export function RelatedPerfumes({ perfumes }: { perfumes: PublicPerfumeCard[] }) {
   if (!perfumes.length) {

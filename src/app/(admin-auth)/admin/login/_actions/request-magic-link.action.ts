@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 
 import { isTrustedAdminEmail } from "@/config/admin";
 import { siteConfig } from "@/config/site";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/app/_server/supabase-session";
 
 export type LoginState = {
   status?: "error" | "sent";

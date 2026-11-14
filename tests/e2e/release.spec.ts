@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
+import { crc32 } from "node:zlib";
 
 import { expect, test, type Page } from "@playwright/test";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { createClient } from "@supabase/supabase-js";
 
-import { PrismaClient } from "../../src/db/generated/client";
+import { PrismaClient } from "../../src/infrastructure/database/generated/client";
 
 const origin = "http://localhost:3000";
 const inbox = "http://127.0.0.1:56324";
@@ -15,6 +16,23 @@ const photo = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGPY2OUHAAN5AYrqfl0rAAAAAElFTkSuQmCC",
   "base64",
 );
+
+function photoAtSize(size: number) {
+  const text = Buffer.alloc(size - photo.length - 12, 0x78);
+  text.write("Fixture\0");
+  const chunk = Buffer.alloc(12);
+  chunk.writeUInt32BE(text.length);
+  chunk.write("tEXt", 4);
+  chunk.writeUInt32BE(crc32(Buffer.concat([chunk.subarray(4, 8), text])), 8);
+  // Insert a text chunk before IEND so the padded file remains a valid PNG.
+  return Buffer.concat([
+    photo.subarray(0, -12),
+    chunk.subarray(0, 8),
+    text,
+    chunk.subarray(8),
+    photo.subarray(-12),
+  ]);
+}
 
 function setting(name: string) {
   const value = process.env[name];
@@ -171,7 +189,7 @@ test("guest can retry checkout without a second order and confirmation is privat
   }
 });
 
-test("Admin magic link allows image upload, stock conflict handling and cancellation", async ({
+test("Admin magic link allows delivery settings, image upload, stock conflict handling and cancellation", async ({
   page,
 }) => {
   const product = await perfume("admin-amber", 1);
@@ -204,18 +222,64 @@ test("Admin magic link allows image upload, stock conflict handling and cancella
   const callbackDestination = new URL(page.url());
   expect(callbackDestination.pathname, "Admin magic link callback destination").toBe("/admin");
 
+  await page.goto("/admin/delivery");
+  await expect(page.getByRole("heading", { name: "Delivery" })).toBeVisible();
+  const deliveryFee = page.getByRole("textbox", { name: "Lagos delivery fee (NGN)" });
+  const saveDelivery = page.getByRole("button", { name: "Save delivery settings" });
+  await page.getByRole("checkbox", { name: "Lagos", exact: true }).check();
+  await deliveryFee.fill("1500.25");
+  await saveDelivery.click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Delivery settings saved" }),
+  ).toBeVisible();
+  expect(
+    await db.deliveryDestination.findUniqueOrThrow({ where: { state: "Lagos" } }),
+  ).toMatchObject({
+    enabled: true,
+    feeMinor: 150_025,
+    version: 1,
+  });
+  await db.deliveryDestination.update({
+    where: { state: "Lagos" },
+    data: { feeMinor: 160_000, version: { increment: 1 } },
+  });
+  await deliveryFee.fill("1400");
+  await saveDelivery.click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Delivery settings changed" }),
+  ).toBeVisible();
+  await expect(deliveryFee).toHaveValue("1400");
+  expect(
+    await db.deliveryDestination.findUniqueOrThrow({ where: { state: "Lagos" } }),
+  ).toMatchObject({
+    feeMinor: 160_000,
+    version: 2,
+  });
+
   const editUrl = `/admin/perfumes/${product.id}`;
   await page.goto(editUrl);
-  await page.locator('input[type="file"]').setInputFiles({
+  const imageForm = page.locator("form").filter({ has: page.locator('input[name="image"]') });
+  const imageInput = imageForm.locator('input[type="file"]');
+  const imageLimit = 1024 * 1024;
+  const uploadImage = imageForm.locator('button[type="submit"]');
+  const sizeError = imageForm.getByRole("alert");
+  await imageInput.setInputFiles({
+    name: "too-large.png",
+    mimeType: "image/png",
+    buffer: photoAtSize(imageLimit + 1),
+  });
+  await expect(sizeError).toHaveText("Choose an image up to 1 MiB.");
+  await expect(uploadImage).toBeDisabled();
+  expect(await db.perfumeImage.count({ where: { perfumeId: product.id } })).toBe(0);
+
+  await imageInput.setInputFiles({
     name: "bottle.png",
     mimeType: "image/png",
-    buffer: photo,
+    buffer: photoAtSize(imageLimit),
   });
-  await page.getByLabel(/Alt text/i).fill("Synthetic bottle");
-  await page
-    .locator('button[type="submit"]')
-    .filter({ hasText: /^Upload image$/ })
-    .click();
+  await imageForm.getByLabel("Alt text").fill("Synthetic bottle");
+  await expect(sizeError).toHaveCount(0);
+  await uploadImage.click();
   await expect.poll(() => db.perfumeImage.count({ where: { perfumeId: product.id } })).toBe(1);
 
   const storefront = await page.context().browser()!.newPage();

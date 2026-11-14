@@ -1,11 +1,12 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 
-import { EmptyState } from "@/components/shared/EmptyState";
-import { MotionReveal } from "@/components/shared/MotionReveal";
-import { ProductCard } from "@/features/catalogue/client";
-import { hasPublishedPerfumes, listPerfumes, parseScent } from "@/features/catalogue/server";
-import { scentCharacterContent, scentCharacters } from "@/features/catalogue";
+import { EmptyState } from "@/ui/EmptyState";
+import { MotionReveal } from "@/ui/MotionReveal";
+import { ProductCard } from "@/app/(public)/_components/ProductCard";
+import { hasPublishedPerfumes, listPerfumes, parseScent } from "@/modules/catalogue/server";
+import { scentCharacterContent } from "@/app/(public)/_lib/scent-character-content";
+import { scentCharacters } from "@/modules/catalogue";
 import { siteConfig } from "@/config/site";
 
 export const dynamic = "force-dynamic";

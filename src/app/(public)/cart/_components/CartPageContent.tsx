@@ -5,7 +5,9 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { siteConfig } from "@/config/site";
 
-import { CartItem, CartCheckoutSummary, useCart } from "@/features/cart";
+import { CartItem } from "@/app/(public)/_cart/components/CartItem";
+import { CartCheckoutSummary } from "@/app/(public)/_cart/components/CartCheckoutSummary";
+import { useCart } from "@/app/(public)/_cart/providers/CartProvider";
 
 export function CartPageContent() {
   const { lines, count, resolutionState, isHydrated } = useCart();

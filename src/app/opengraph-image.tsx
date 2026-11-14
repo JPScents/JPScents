@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 import { siteConfig } from "@/config/site";
-import { getBrandLogoDataUrl } from "@/lib/metadata/brand-image";
+import { getBrandLogoDataUrl } from "@/app/_lib/brand-image";
 
 export const alt = "JPScents — Perfume, chosen with care.";
 export const size = { width: 1200, height: 630 };

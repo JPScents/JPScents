@@ -23,7 +23,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Use the global `milestone-authoring` skill for an explicit milestone creation or revision request. Use `milestone-workflow` for **Run Active Milestone** or **Resume Active Milestone**. Preserve the existing branch, PR history and review count on resume. The workflow requires independent review and only the human merges.
 - During authoring, run and resume, apply the repository's [milestone completion checkpoints](docs/engineering/MILESTONE_INTEGRATION.md) through the existing skills. Require snapshot-matched verification evidence and a separate `independent-review` PASS for READY. The checkpoint applies to JPScents, including resumed contracts, without altering approved scope.
 - **Sync After Merge** uses the milestone skill's synchronization path only. Verify the merged PR, then safely fast-forward or switch to its base while preserving local changes. Keep the active contract at the locally ignored `.agents/milestones/active.md`. Ordinary changes use the delivery workflow. Milestone and release workflows require an explicit request.
-- “Catalog” means `src/features/catalogue`. A full feature refactor covers every module and affected consumer. A whole-codebase refactor also covers routes, shared code, infrastructure, scripts, tests and tooling. Keep the scope of focused changes and retain compliant code.
+- “Catalog” means `src/modules/catalogue` and its affected route consumers. A full feature refactor covers every module and affected consumer. A whole-codebase refactor also covers routes, shared code, infrastructure, scripts, tests and tooling. Keep the scope of focused changes and retain compliant code.
 
 ## Before changing code
 
@@ -33,6 +33,8 @@ Agents MUST complete both steps before editing code.
 2. Trace the normal entry points and consumers. Identify effects on dependencies, data flow, authorization, transactions, client projections and tests. Reuse the existing owner and plan verification at each affected boundary.
 
 ## Implementation and approval
+
+- Apply ADR-0005 to business modules, route-local presentation and actions, infrastructure transport, UI and shared code. Use the structure skill for the path migration and checker. The accepted commerce ADRs define the lifecycle, provider, reconciliation and release boundaries for the corresponding Milestone 7 tasks. [Accepted decisions](docs/architecture/adr/README.md#accepted-decisions-for-milestone-7)
 
 - Follow approved ownership, dependencies and product invariants. Keep new layers proportional to current requirements. Preserve the architecture's authorization, data projection, atomicity, idempotency and cancellation guarantees. Keep existing violations visible by finding ID and avoid expanding them.
 - Agents MUST NOT silently introduce a new architecture, exception, suppression or rule override. If a request conflicts with an approved rule, identify the rule and proposed change. Obtain explicit approval for a [new ADR](docs/architecture/adr/README.md#naming-and-lifecycle) or [scoped exception](docs/engineering/EXCEPTIONS.md#recording-review-and-supersession) before proceeding with the conflicting part. Approval applies to the documented scope.

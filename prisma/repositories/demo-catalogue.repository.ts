@@ -1,4 +1,4 @@
-import type { PrismaClient } from "../../src/db/generated/client";
+import type { PrismaClient } from "../../src/infrastructure/database/generated/client";
 
 const perfumes = [
   {

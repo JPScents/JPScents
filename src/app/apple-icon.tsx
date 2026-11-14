@@ -1,1 +1,1 @@
-export { contentType, default, size } from "./icon";
+export { contentType, default, size } from "@/app/icon";

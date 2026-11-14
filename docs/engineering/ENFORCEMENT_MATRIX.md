@@ -14,6 +14,12 @@ Task 9 extends the existing local checker. The code and contract baseline is `cd
 
 The status column classifies the primary mechanism. **Already Enforced** and **New Deterministic Check** refer to the stated coverage only. **Test/Integration Required** and **Review Required** describe evidence still needed. **Not Yet Enforceable** identifies a gate with no verified automatic execution. The coverage column states the limits for each rule.
 
+## Milestone 7 adoption
+
+Stage A implements deterministic checks for business module roots and import edges, infrastructure independence, browser reachability, Prisma placement and the two moved image exceptions. T-02 requires positive and negative fixtures. T-04 and T-05 cover the isolated production build and affected browser, Auth and Storage routes. The tables below record the earlier baseline. [ADR-0005](../architecture/adr/0005-commerce-module-and-route-boundaries.md)
+
+For Stages B–F, retain the same required quality check and apply the additional database, provider and release evidence in the verification contract. Hosted provider and schedule observations remain independent of mocked tests. [Commerce verification](VERIFICATION_CONTRACT.md#milestone-7-commerce-evidence)
+
 ## Architecture and verification
 
 | Rule   | Status                    | Coverage, proof and limits                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -71,13 +77,9 @@ The status column classifies the primary mechanism. **Already Enforced** and **N
 | STD-024 | Review Required           | Confirm the report matches executed commands, evidence boundaries and limitations.                                                                                                                                                                                                                  |
 | STD-025 | New Deterministic Check   | Architecture rejects covered inline ESLint and TypeScript bypass directives in scanned source. Fixtures cover approved scoped use, new blanket directives, changed assets, added rules, and stale or reintroduced legacy entries. Documented approvals beyond the two known exceptions need review. |
 
-## Suppression scope and non-regression baseline
+## Suppression scope
 
-The full checker parses authored JavaScript and TypeScript under `src`, `scripts`, `prisma`, and `tests`, excluding generated Prisma sources and environment files. Tests retain their allowed imports of owned internals. The suppression scan examines source comments for ESLint disable, enable, inline rule and environment directives, and TypeScript ignore, expect-error and nocheck directives. String and JSX text examples do not count as directives. Root config and tooling changes, indirect imports and behaviour through unanalysed runtime paths still need review. [Implementation](../../.agents/skills/feature-structure/scripts/check-structure.mjs) · [Suppression scan](../../.agents/skills/feature-structure/scripts/check-suppressions.mjs)
-
-EXC-001 and EXC-002 remain limited to one existing decorative image element in each approved component. The checker matches the component, image syntax, label reference, parent control, and the existing four asset paths. A scoped directive must apply only to that image's lint rule. Browser accessibility remains a separate verification requirement. The two older module-level directives remain reported as GAP-006 debt. Each baseline entry identifies the path, component, exact directive, lint rule and finding ID. Additional directives or images fail, and a stale baseline entry fails after the old directive is removed. Remove a resolved entry in the same authorized change that narrows the directive. A later reintroduction fails without the entry. The checker never writes the baseline. [Baseline data](../../.agents/skills/feature-structure/scripts/suppression-baseline.json) · [Approved exceptions](EXCEPTIONS.md#approved-exceptions)
-
-Other recorded debt stays in the compliance baseline. There is no automatic ratchet for arbitrary typing assertions, import grouping, semantic ownership, or the review thresholds. Passing the checked subset does not close those findings. [Compliance findings](COMPLIANCE_BASELINE.md#findings-register)
+The checker accepts one line-scoped `@next/next/no-img-element` directive at each of the two approved images. It verifies the asset map, local import, decorative alt text and the visible label inside the expected control. Stage A removes the file-wide GAP-006 allowances. Fixtures cover valid relocated elements, blanket and inline overrides, changed artwork and expanded scope. [Exceptions](EXCEPTIONS.md#approved-exceptions) · [Checker fixtures](../../tests/architecture/feature-structure.test.ts)
 
 ## Executed verification
 

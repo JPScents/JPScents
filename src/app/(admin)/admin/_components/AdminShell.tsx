@@ -5,9 +5,9 @@ import { Menu, Store } from "lucide-react";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { BrandLogo } from "@/components/shared/BrandLogo";
+import { BrandLogo } from "@/ui/BrandLogo";
 import { signOutAdmin } from "@/app/(admin)/admin/_actions/logout.action";
-import { MotionPage } from "@/components/shared/MotionPage";
+import { MotionPage } from "@/ui/MotionPage";
 import {
   Dialog,
   DialogClose,
@@ -16,15 +16,17 @@ import {
   DialogDescription,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@/ui/primitives/dialog";
 import { siteConfig } from "@/config/site";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/utils/class-names";
 
 const navigation = [
   { href: siteConfig.routes.admin, label: "Overview" },
   { href: siteConfig.routes.adminPerfumes, label: "Perfumes" },
   { href: siteConfig.routes.adminOrders, label: "Orders" },
   { href: siteConfig.routes.adminCustomers, label: "Customers" },
+  { href: siteConfig.routes.adminDelivery, label: "Delivery" },
+  { href: siteConfig.routes.adminOperations, label: "Operations" },
 ];
 
 export function AdminShell({ children, email }: { children: ReactNode; email: string | null }) {

@@ -1,5 +1,5 @@
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../src/db/generated/client";
+import { PrismaClient } from "../src/infrastructure/database/generated/client";
 
 import { seedDemoCatalogue } from "./repositories/demo-catalogue.repository";
 

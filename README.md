@@ -1,8 +1,8 @@
 # JPScents
 
-JPScents is a responsive perfume-ordering application for [jpscents.shop](https://jpscents.shop). Customers can discover perfumes, choose a size, manage a cart, place a saved order, receive a human-readable reference, and continue on WhatsApp for manual payment and fulfilment. No online payment is taken in the current release.
+JPScents is a perfume store. Customers browse variants and order for delivery within Nigeria. When commerce is active, guests review their delivery fee and pay through Paystack. They can follow payment, dispatch and refunds through secure order status. The earlier WhatsApp checkout remains available until commerce is activated. [Live storefront](https://jpscents.shop)
 
-The protected Admin manages customers, perfumes, variants, images, merchandising and orders. New orders begin as **Awaiting Payment** and may progress to **Paid**, **Delivered**, or **Cancelled**. Cancelling an order restores its deducted variant quantities exactly once.
+The protected Admin manages the catalogue, customers, delivery fees, order links and fulfilment. Commerce reserves stock when the buyer starts payment. Verified payment consumes the reservation. Admin manages refunds and received returns as separate actions.
 
 ## Technology
 
@@ -11,7 +11,7 @@ The protected Admin manages customers, perfumes, variants, images, merchandising
 - Motion for interface transitions
 - Prisma for schema declarations, migrations and database access
 - Supabase for PostgreSQL, passwordless Admin authentication and private product-image storage
-- Vercel for production hosting
+- Netlify Free for the commerce storefront and isolated previews
 
 ## Application routes
 
@@ -24,6 +24,8 @@ Public:
 - `/cart` — full cart
 - `/checkout` — customer and delivery details
 - `/checkout/confirm` — saved-order confirmation and WhatsApp handoff
+- `/checkout/quote` — guest checkout from an Admin-issued link
+- `/checkout/status` — secure commerce order status
 
 Admin:
 
@@ -32,26 +34,22 @@ Admin:
 - `/admin/perfumes`, `/admin/perfumes/new`, `/admin/perfumes/[id]`
 - `/admin/customers`, `/admin/customers/new`, `/admin/customers/[id]`
 - `/admin/orders`, `/admin/orders/[reference]`
+- `/admin/delivery`, `/admin/orders/drafts`, `/admin/operations`
 
 The application supports an empty production database. Public and Admin pages show deliberate empty states until real catalogue and order data exists.
 
 ## Project structure
 
-- `src/app` — public and protected route composition
-- `src/components` — shared UI, public and Admin components
-- `src/features/catalogue` — perfumes, variants, merchandising and recommendations
-- `src/features/cart` — cart state hook, browser persistence, preview, items and checkout summary; its server action resolves published variants through catalogue’s public API
-- `src/features/customers` — customer persistence and Admin operations
-- `src/features/orders` — checkout, order creation, status history and cancellation
-- `src/config` — typed, non-secret application configuration
-- `src/lib` — shared infrastructure utilities
-- `prisma` — schema, forward-only migrations and optional demo seed
-- `supabase` — reproducible local Supabase configuration and Auth template
-- `.agents/skills` — focused repository workflows and structural rules
+- `src/app` owns public and Admin routes, framework entry points, route-local UI and actions. `src/app/(public)/_cart` owns browser cart state and its published-variant resolver.
+- `src/modules` owns backend Catalogue, Customers, Orders and Access. Commerce adds Payments, Delivery and Notifications with their first operations.
+- `src/infrastructure` owns client lifetime, generated Prisma and concrete provider transport.
+- `src/ui` contains cross-group presentation and primitives. `src/shared` contains small runtime-neutral helpers.
+- `src/config` contains typed, non-secret application configuration.
+- `prisma` contains the schema, forward migrations and optional demo seed.
+- `supabase` contains the reproducible local Supabase configuration and Auth template.
+- `.agents/skills` contains focused repository workflows and the structural rules.
 
-Cart page composition lives in `src/app/(public)/cart/_components`; the checkout route owns its cart-to-orders integration in `_components`. Feature layers follow actual responsibilities: frontend features do not need services or repositories just for symmetry.
-
-Orders exposes interactive components through `client.ts`, protected Admin reads and confirmation access through `server.ts`, and shared row types through `index.ts`. Its checkout hook owns form updates and submission retries; the order repository owns atomic order/stock/customer operations, while the service resolves image URLs outside transactions and maps responses. Database operations live in the order repository, public/Admin transformations stay in pure mappers, and shared confirmation-cookie access stays server-only.
+Orders owns the atomic order operation. The checkout route owns its form, Cart integration, callable input boundary and confirmation cookie. Access evaluates Admin identity supplied by the app request adapter. [Approved structure](docs/architecture/adr/0005-commerce-module-and-route-boundaries.md)
 
 ## Local setup
 
@@ -82,17 +80,17 @@ Application startup and deployment never seed data automatically.
 
 Use `.env.example` for local development and `.env.production.example` for a private operator production file. Never commit real credentials.
 
-| Variable                               | Purpose                                                                    | Configure in Vercel |
-| -------------------------------------- | -------------------------------------------------------------------------- | ------------------- |
-| `DATABASE_URL`                         | Application connection; use the Supavisor transaction pooler in production | Yes                 |
-| `DIRECT_URL`                           | Direct or session-pooler connection used only for migrations               | No                  |
-| `NEXT_PUBLIC_SITE_URL`                 | Canonical origin; production is `https://jpscents.shop`                    | Yes                 |
-| `NEXT_PUBLIC_SUPABASE_URL`             | Supabase project URL                                                       | Yes                 |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser-safe Supabase key                                                  | Yes                 |
-| `SUPABASE_SECRET_KEY`                  | Operator-only Admin provisioning credential                                | No                  |
-| `JP_SCENTS_ADMIN_EMAIL`                | Primary trusted Admin email                                                | Yes                 |
-| `JP_SCENTS_SECONDARY_ADMIN_EMAIL`      | Optional temporary trusted Admin email                                     | When used           |
-| `JP_SCENTS_WHATSAPP_NUMBER`            | International digits-only business number                                  | Yes                 |
+| Variable                               | Purpose                                                                    | Configure in Netlify |
+| -------------------------------------- | -------------------------------------------------------------------------- | -------------------- |
+| `DATABASE_URL`                         | Application connection; use the Supavisor transaction pooler in production | Yes                  |
+| `DIRECT_URL`                           | Direct or session-pooler connection used only for migrations               | No                   |
+| `NEXT_PUBLIC_SITE_URL`                 | Canonical origin; production is `https://jpscents.shop`                    | Yes                  |
+| `NEXT_PUBLIC_SUPABASE_URL`             | Supabase project URL                                                       | Yes                  |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser-safe Supabase key                                                  | Yes                  |
+| `SUPABASE_SECRET_KEY`                  | Operator-only Admin provisioning credential                                | No                   |
+| `JP_SCENTS_ADMIN_EMAIL`                | Primary trusted Admin email                                                | Yes                  |
+| `JP_SCENTS_SECONDARY_ADMIN_EMAIL`      | Optional temporary trusted Admin email                                     | When used            |
+| `JP_SCENTS_WHATSAPP_NUMBER`            | International digits-only business number                                  | Yes                  |
 
 ## Database and Supabase
 
@@ -130,15 +128,9 @@ Production Supabase must have:
 - The private `perfume-images` Storage bucket and policies installed by the Prisma migration history
 - Trusted Admin users provisioned with server-controlled `app_metadata.role=admin`
 
-## Vercel deployment
+## Netlify deployment
 
-1. Apply production Prisma migrations before deploying code that depends on them.
-2. Import the repository into the client-owned Vercel project.
-3. Use Vercel's standard Next.js settings and `npm run build`.
-4. Add only the variables marked for Vercel above.
-5. Deploy from `main`, then verify the public routes, Magic Link callback, Admin image access and a complete order through `/checkout/confirm`.
-
-Do not configure `DIRECT_URL` or `SUPABASE_SECRET_KEY` in Vercel. Preview deployments should not point at the production Supabase project. No `vercel.json` is required.
+Use the [commerce operations guide](docs/engineering/COMMERCE_OPERATIONS.md#netlify-deployment) to connect the repository, isolate Preview from Production, configure Supabase Cron and verify the Free credit budget. Git deploys and publishes `main` automatically after the human merge. Apply compatible Production migrations before code that depends on them. Keep operator credentials out of Netlify.
 
 ## Quality commands
 
@@ -180,6 +172,6 @@ Build or database verification requires an environment that complies with the ta
 
 The feature skill defines this repository's required folder semantics, filename conventions, and root-file allowlist. All Prisma database operations, including transactions and raw SQL, belong in repositories; services/actions must not import the client, receive transaction clients, or control transactions indirectly. Atomic database checks stay with their writes in meaningful repository operations. Client initialization remains in database infrastructure. Create only the responsibility folders a feature needs; do not preserve a root query/mutation/projection module or introduce pass-through layers for symmetry. Customers is the structural reference, with its existing abstractions still subject to review. These current rules supersede historical structural choices, not established product behavior.
 
-`npm run architecture:check` discovers every feature and enforces file/folder names, export-only root entry points, and recognizable Prisma imports/API access outside repositories. It also checks application, script, and seed boundaries, private cross-feature imports, feature-to-route dependencies, and feature-dependent generic shared code. It runs automatically as the first step of `npm run check`. The scoped command `node .agents/skills/feature-structure/scripts/check-structure.mjs src/features/<feature>` is useful during implementation; the full check is required before completion.
+`npm run architecture:check` checks business module structure and imports, browser reachability, Prisma ownership and the scoped image exceptions. It runs first in `npm run check`. For scoped development use `node .agents/skills/feature-structure/scripts/check-structure.mjs src/modules/<domain>`. Run the full check before completion.
 
 These checks cannot establish semantic responsibility or trace arbitrary indirect client access. Review contents, unnecessary abstractions, runtime projections, readability and behavior as well. A file named `*.schema.ts` still needs a real declarative contract; naming alone cannot prove that. Do not add exceptions or change rules to preserve an unjustified abstraction.

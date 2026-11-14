@@ -5,9 +5,13 @@
 - **Recording date** — 12 November 2026
 - **Approval evidence** — The approved architecture defines transaction ownership, inventory invariants, and D2/D4. [Approved decisions](../ARCHITECTURE.md#approved-decisions) · [Stock participation](../ARCHITECTURE.md#stock-participation-in-orders-transactions)
 
+## Milestone 7 successor
+
+[ADR-0006](0006-commerce-orders-payments-and-stock-lifecycle.md) governs the reservation, payment, refund and return lifecycle for new commerce orders. The original order transaction, legacy treatment, terminal cancellation and D2/D4 stock safeguards retain their approved scope.
+
 ## Context and problem
 
-Orders already saves customer resolution, stock deduction, order lines, and status history together. It also writes Catalogue variant quantities directly. The database bestseller trigger can reject checkout when a decrement consumes the last in-stock unit of the active bestseller. Separately, the Admin variant editor submits an absolute quantity with other edits. That value can overwrite a concurrent checkout deduction or cancellation restoration. [Checkout repository](../../../src/features/orders/repositories/order.repository.ts#L89) · [Bestseller trigger](../../../prisma/migrations/20260828201815_harden_bestseller_search_path/migration.sql#L20) · [Variant write](../../../src/features/catalogue/repositories/variant.repository.ts#L33)
+Orders already saves customer resolution, stock deduction, order lines, and status history together. It also writes Catalogue variant quantities directly. The database bestseller trigger can reject checkout when a decrement consumes the last in-stock unit of the active bestseller. Separately, the Admin variant editor submits an absolute quantity with other edits. That value can overwrite a concurrent checkout deduction or cancellation restoration. [Checkout repository](https://github.com/JPScents/JPScents/blob/b02113b0c625fd538d41be42a74e50e6e7765f66/src/features/orders/repositories/order.repository.ts#L89) · [Bestseller trigger](../../../prisma/migrations/20260828201815_harden_bestseller_search_path/migration.sql#L20) · [Variant write](https://github.com/JPScents/JPScents/blob/b02113b0c625fd538d41be42a74e50e6e7765f66/src/features/catalogue/repositories/variant.repository.ts#L33)
 
 ## Decision
 
@@ -35,7 +39,7 @@ ARC-05, ARC-07–11, INV-03–05, INV-07, and VER-02. STD-007, STD-015–017, an
 
 ## Implementation and enforcement
 
-The current source has transactional checkout, conditional stock updates, duplicate lookup, and conditional cancellation. Catalogue's stock participation, last-unit bestseller clearance and optimistic Admin adjustment are open. The checker can catch known direct Prisma access outside repositories. Correct transaction propagation and database consistency require review and disposable migrated PostgreSQL tests for final-unit sale, rollback, duplicate checkout, concurrent updates and repeat cancellation. Existing mocked tests do not prove those database behaviours. [Current cancellation](../../../src/features/orders/repositories/order.repository.ts#L219) · [Architecture gaps](../ARCHITECTURE.md#implementation-and-enforcement-gaps) · [Transaction tests](../../../tests/src/features/orders/services/order.service.test.ts#L22)
+The current source has transactional checkout, conditional stock updates, duplicate lookup, and conditional cancellation. Catalogue's stock participation, last-unit bestseller clearance and optimistic Admin adjustment are open. The checker can catch known direct Prisma access outside repositories. Correct transaction propagation and database consistency require review and disposable migrated PostgreSQL tests for final-unit sale, rollback, duplicate checkout, concurrent updates and repeat cancellation. Existing mocked tests do not prove those database behaviours. [Current cancellation](https://github.com/JPScents/JPScents/blob/b02113b0c625fd538d41be42a74e50e6e7765f66/src/features/orders/repositories/order.repository.ts#L219) · [Architecture gaps](../ARCHITECTURE.md#implementation-and-enforcement-gaps) · [Transaction tests](https://github.com/JPScents/JPScents/blob/b02113b0c625fd538d41be42a74e50e6e7765f66/tests/src/features/orders/services/order.service.test.ts#L22)
 
 ## Related ADRs
 

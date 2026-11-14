@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
-import { AdminShell } from "@/app/(admin)/admin/_components/AdminShell";
+import { AdminShell } from "./_components/AdminShell";
 import { siteConfig } from "@/config/site";
-import { getCurrentAdmin } from "@/lib/auth/admin";
+import { getCurrentAdmin } from "@/app/_server/admin-session";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {

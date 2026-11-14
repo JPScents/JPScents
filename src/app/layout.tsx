@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
 import { absoluteUrl, siteConfig } from "@/config/site";
-import { cormorantGaramond, inter } from "@/lib/fonts";
+import { cormorantGaramond, inter } from "@/app/_lib/fonts";
 
-import "./globals.css";
+import "@/app/globals.css";
 
 export const metadata: Metadata = {
   metadataBase: siteConfig.url,

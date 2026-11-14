@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MotionReveal } from "@/components/shared/MotionReveal";
+import { MotionReveal } from "@/ui/MotionReveal";
 import { siteConfig } from "@/config/site";
 
 export function ClosingCta() {

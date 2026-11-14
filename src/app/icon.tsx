@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-import { getBrandLogoDataUrl } from "@/lib/metadata/brand-image";
+import { getBrandLogoDataUrl } from "@/app/_lib/brand-image";
 
 export const size = { width: 512, height: 512 };
 export const contentType = "image/png";

@@ -34,6 +34,8 @@ export const siteConfig = {
     adminOrders: "/admin/orders",
     adminOrder: (reference: string) => `/admin/orders/${reference}` as const,
     adminCustomers: "/admin/customers",
+    adminDelivery: "/admin/delivery",
+    adminOperations: "/admin/operations",
     adminNewCustomer: "/admin/customers/new",
     adminCustomer: (id: string) => `/admin/customers/${id}` as const,
   },
@@ -41,12 +43,6 @@ export const siteConfig = {
 
 export function absoluteUrl(path = "/") {
   return new URL(path, siteConfig.url).toString();
-}
-
-export function isProductionDeployment() {
-  return process.env.VERCEL_ENV
-    ? process.env.VERCEL_ENV === "production"
-    : process.env.NODE_ENV === "production";
 }
 
 export type SiteConfig = typeof siteConfig;

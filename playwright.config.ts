@@ -9,6 +9,10 @@ export default defineConfig({
   forbidOnly: true,
   reporter: "./tests/e2e/reporter.ts",
   outputDir: "output/e2e",
+  projects: [
+    { name: "legacy", testMatch: "release.spec.ts" },
+    { name: "commerce", testMatch: "commerce.spec.ts" },
+  ],
   use: {
     ...devices["Desktop Chrome"],
     actionTimeout: 8_000,

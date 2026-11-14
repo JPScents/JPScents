@@ -1,5 +1,13 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -7,11 +15,14 @@ const migrations = fileURLToPath(new URL("../../prisma/migrations/", import.meta
 const prerequisites = fileURLToPath(
   new URL("./fixtures/supabase-sql-prerequisites.sql", import.meta.url),
 );
+const schema = fileURLToPath(new URL("../../prisma/schema.prisma", import.meta.url));
 const POSTGRES_USER = "jpscents_test";
 const POSTGRES_PORT = "5432";
 export const APPLICATION_NAME = "jpscents_integration_app";
 
-export function startDisposablePostgres({ replayMigrations = true } = {}) {
+export function startDisposablePostgres({
+  replayMigrations = true,
+}: { replayMigrations?: boolean } = {}) {
   for (const name of ["DATABASE_URL", "DIRECT_URL", "APP_ENV_FILE"]) {
     if (Object.hasOwn(process.env, name)) {
       throw new Error(`Unset ${name} before running the disposable PostgreSQL suite.`);
@@ -104,7 +115,35 @@ export function startDisposablePostgres({ replayMigrations = true } = {}) {
     const url = new URL(`postgresql://${POSTGRES_USER}@localhost:${POSTGRES_PORT}/postgres`);
     url.searchParams.set("host", directory);
     url.searchParams.set("application_name", APPLICATION_NAME);
-    return { connectionString: url.toString(), directory, stop };
+    function deployMigrations(to?: string) {
+      const config = join(directory, "prisma.config.ts");
+      const staged = join(directory, "migrations");
+      mkdirSync(staged, { recursive: true });
+      for (const entry of readdirSync(migrations, { withFileTypes: true })) {
+        if (entry.isDirectory() && (!to || entry.name <= to)) {
+          const target = join(staged, entry.name);
+          mkdirSync(target, { recursive: true });
+          copyFileSync(
+            join(migrations, entry.name, "migration.sql"),
+            join(target, "migration.sql"),
+          );
+        }
+      }
+      writeFileSync(join(staged, "migration_lock.toml"), 'provider = "postgresql"\n');
+      writeFileSync(
+        config,
+        `export default ${JSON.stringify({ schema, migrations: { path: staged }, datasource: { url: url.toString() } })};\n`,
+        { mode: 0o600 },
+      );
+      run(process.execPath, [
+        fileURLToPath(new URL("../../node_modules/prisma/build/index.js", import.meta.url)),
+        "migrate",
+        "deploy",
+        "--config",
+        config,
+      ]);
+    }
+    return { connectionString: url.toString(), directory, deployMigrations, stop };
   } catch (setupError) {
     try {
       stop();

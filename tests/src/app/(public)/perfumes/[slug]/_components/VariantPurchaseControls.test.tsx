@@ -1,10 +1,10 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { PublicPerfumeDetail } from "@/features/catalogue";
+import type { PublicPerfumeDetail } from "@/modules/catalogue";
 
 const { addItem } = vi.hoisted(() => ({ addItem: vi.fn() }));
-vi.mock("@/features/cart", () => ({ useCart: () => ({ addItem }) }));
+vi.mock("@/app/(public)/_cart/providers/CartProvider", () => ({ useCart: () => ({ addItem }) }));
 
 import { VariantPurchaseControls } from "@/app/(public)/perfumes/[slug]/_components/VariantPurchaseControls";
 

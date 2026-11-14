@@ -5,9 +5,13 @@
 - **Recording date** — 12 November 2026
 - **Approval evidence** — D3 and INV-06 define the accepted snapshot and legacy fallback requirements. [Approved decisions](../ARCHITECTURE.md#approved-decisions) · [Security and product invariants](../ARCHITECTURE.md#security-and-product-invariants)
 
+## Milestone 7 successor
+
+[ADR-0007](0007-commerce-order-facts-and-guest-capabilities.md) extends the order-time facts and access rules for commerce orders. Preserve the original snapshots and legacy fallback.
+
 ## Context and problem
 
-Orders already store placed unit price and quantity. The order mapper reads fulfilment contact and address from the current Customer row and the product name and size from the current Catalogue variant. Later customer or catalogue edits can therefore change the facts displayed for an existing order. [Order schema](../../../prisma/schema.prisma#L105) · [Order mapping](../../../src/features/orders/mappers/order.mapper.ts#L10) · [Assessment](../../CODEBASE_INTELLIGENCE.md#6-technical-health)
+Orders already store placed unit price and quantity. The order mapper reads fulfilment contact and address from the current Customer row and the product name and size from the current Catalogue variant. Later customer or catalogue edits can therefore change the facts displayed for an existing order. [Order schema](../../../prisma/schema.prisma#L105) · [Order mapping](https://github.com/JPScents/JPScents/blob/b02113b0c625fd538d41be42a74e50e6e7765f66/src/features/orders/mappers/order.mapper.ts#L10) · [Assessment](../../CODEBASE_INTELLIGENCE.md#6-technical-health)
 
 ## Decision
 
@@ -23,7 +27,7 @@ Historical facts support fulfilment and preserve the identity of what was sold e
 
 ## Consequences and affected components
 
-The Prisma schema and forward migrations, Orders creation and projections, and public and Admin order views are affected. Customers continues to own the mutable profile. Catalogue continues to own product and stock records. The Orders snapshot represents the transaction's historical facts. A new retention or backfill policy that changes the approved contract would need a separate decision. [Domain ownership](../ARCHITECTURE.md#1-system-model-and-domain-boundaries) · [Current mutable profile write](../../../src/features/customers/repositories/customer.repository.ts#L88)
+The Prisma schema and forward migrations, Orders creation and projections, and public and Admin order views are affected. Customers continues to own the mutable profile. Catalogue continues to own product and stock records. The Orders snapshot represents the transaction's historical facts. A new retention or backfill policy that changes the approved contract would need a separate decision. [Domain ownership](../ARCHITECTURE.md#1-system-model-and-domain-boundaries) · [Current mutable profile write](https://github.com/JPScents/JPScents/blob/b02113b0c625fd538d41be42a74e50e6e7765f66/src/features/customers/repositories/customer.repository.ts#L88)
 
 ## Related rules and standards
 
@@ -31,7 +35,7 @@ ARC-06, ARC-10, ARC-11, INV-01, INV-03, INV-04, INV-06, and VER-02. STD-008, STD
 
 ## Implementation and enforcement
 
-The inspected schema stores prices and quantities, while the mapper still reads live customer and product values. Snapshot persistence and legacy handling remain open. Verify existing and new orders on a migrated database, change the related records after placement, and check both the Admin and public projections. Current unit projections establish the inspected response shape, with no evidence that the historical snapshot is stored. [Architecture gaps](../ARCHITECTURE.md#implementation-and-enforcement-gaps) · [Projection test](../../../tests/src/features/orders/services/order.service.test.ts#L250)
+The inspected schema stores prices and quantities, while the mapper still reads live customer and product values. Snapshot persistence and legacy handling remain open. Verify existing and new orders on a migrated database, change the related records after placement, and check both the Admin and public projections. Current unit projections establish the inspected response shape, with no evidence that the historical snapshot is stored. [Architecture gaps](../ARCHITECTURE.md#implementation-and-enforcement-gaps) · [Projection test](https://github.com/JPScents/JPScents/blob/b02113b0c625fd538d41be42a74e50e6e7765f66/tests/src/features/orders/services/order.service.test.ts#L250)
 
 ## Related ADRs
 

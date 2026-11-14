@@ -5,7 +5,7 @@ build
 coverage
 output
 .playwright-cli
-src/db/generated
+src/infrastructure/database/generated
 supabase/.temp
 next-env.d.ts
 *.tsbuildinfo
