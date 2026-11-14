@@ -258,15 +258,17 @@ test("Admin magic link allows delivery settings, image upload, stock conflict ha
 
   const editUrl = `/admin/perfumes/${product.id}`;
   await page.goto(editUrl);
-  const imageInput = page.locator('input[type="file"]');
+  const imageForm = page.locator("form").filter({ has: page.locator('input[name="image"]') });
+  const imageInput = imageForm.locator('input[type="file"]');
   const imageLimit = 1024 * 1024;
-  const uploadImage = page.getByRole("button", { name: "Upload image", exact: true }).last();
+  const uploadImage = imageForm.locator('button[type="submit"]');
+  const sizeError = imageForm.getByRole("alert");
   await imageInput.setInputFiles({
     name: "too-large.png",
     mimeType: "image/png",
     buffer: photoAtSize(imageLimit + 1),
   });
-  await expect(page.getByRole("alert")).toHaveText("Choose an image up to 1 MiB.");
+  await expect(sizeError).toHaveText("Choose an image up to 1 MiB.");
   await expect(uploadImage).toBeDisabled();
   expect(await db.perfumeImage.count({ where: { perfumeId: product.id } })).toBe(0);
 
@@ -275,8 +277,8 @@ test("Admin magic link allows delivery settings, image upload, stock conflict ha
     mimeType: "image/png",
     buffer: photoAtSize(imageLimit),
   });
-  await page.getByLabel(/Alt text/i).fill("Synthetic bottle");
-  await expect(page.getByRole("alert")).toHaveCount(0);
+  await imageForm.getByLabel("Alt text").fill("Synthetic bottle");
+  await expect(sizeError).toHaveCount(0);
   await uploadImage.click();
   await expect.poll(() => db.perfumeImage.count({ where: { perfumeId: product.id } })).toBe(1);
 
