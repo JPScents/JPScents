@@ -41,7 +41,7 @@ export function CartCheckoutSummary({ preview = false }: { preview?: boolean }) 
       </div>
       {!preview ? (
         <p className="mt-5 text-xs leading-5 text-jp-text-secondary">
-          Availability is checked again when you place your order. Payment is not taken online.
+          Availability is checked again when you place your order.
         </p>
       ) : null}
       {blockedMessage ? (
