@@ -2,7 +2,15 @@
 
 import { usePerfumeEditor } from "../_hooks/usePerfumeEditor";
 import Image from "next/image";
-import { occasions, scentCharacters, timesOfDay } from "@/modules/catalogue";
+import {
+  MAX_PERFUME_IMAGE_BYTES,
+  MAX_PERFUME_IMAGE_MIB,
+  PERFUME_IMAGE_SIZE_ERROR,
+  occasions,
+  scentCharacters,
+  timesOfDay,
+} from "@/modules/catalogue";
+import { useState } from "react";
 import { PrimaryImageManager } from "./PrimaryImageManager";
 import { ProductPreview } from "./ProductPreview";
 import { StagedVariantManager } from "./StagedVariantManager";
@@ -419,6 +427,8 @@ function CreateImage({
   onPrimaryImageAltChange: (value: string) => void;
   error?: string;
 }) {
+  const [sizeError, setSizeError] = useState("");
+  const imageError = sizeError || error;
   return (
     <div className="mt-4 space-y-3">
       <div className="flex aspect-square items-center justify-center border border-dashed border-jp-admin-border bg-jp-stone">
@@ -438,7 +448,9 @@ function CreateImage({
       <div className="grid gap-1 text-sm font-medium">
         <span>
           Image file{" "}
-          <span className="font-normal text-jp-text-secondary">JPEG, PNG, WebP · 5 MiB max</span>
+          <span className="font-normal text-jp-text-secondary">
+            JPEG, PNG, WebP · {MAX_PERFUME_IMAGE_MIB} MiB max
+          </span>
         </span>
         <input
           className="sr-only"
@@ -447,9 +459,14 @@ function CreateImage({
           name="primaryImage"
           type="file"
           accept="image/jpeg,image/png,image/webp"
+          aria-describedby={imageError ? "new-primary-image-error" : undefined}
           onChange={(event) => {
             const file = event.currentTarget.files?.[0];
-            onPreview(file ? URL.createObjectURL(file) : undefined);
+            const oversized = (file?.size ?? 0) > MAX_PERFUME_IMAGE_BYTES;
+            const message = oversized ? PERFUME_IMAGE_SIZE_ERROR : "";
+            event.currentTarget.setCustomValidity(message);
+            setSizeError(message);
+            onPreview(file && !oversized ? URL.createObjectURL(file) : undefined);
           }}
         />
         <label
@@ -458,9 +475,13 @@ function CreateImage({
         >
           Upload image
         </label>
-        {error ? (
-          <span role="alert" className="text-sm font-normal text-destructive">
-            {error}
+        {imageError ? (
+          <span
+            id="new-primary-image-error"
+            role="alert"
+            className="text-sm font-normal text-destructive"
+          >
+            {imageError}
           </span>
         ) : null}
       </div>

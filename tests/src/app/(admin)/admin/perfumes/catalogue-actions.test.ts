@@ -84,9 +84,12 @@ describe("catalogue mutation boundaries", () => {
 
     expect(validateImageInput(valid, "Amber bottle")).toBeUndefined();
     expect(validateImageInput(valid, "")).toBe("Useful alt text is required.");
-    expect(validateImageInput(invalidType, "Amber bottle")).toBe(
-      "Use JPEG, PNG, or WebP up to 5 MiB.",
-    );
+    expect(validateImageInput(invalidType, "Amber bottle")).toBe("Use JPEG, PNG, or WebP.");
+    const limit = 1024 * 1024;
+    const atLimit = new File([new Uint8Array(limit)], "limit.png", { type: "image/png" });
+    const overLimit = new File([new Uint8Array(limit + 1)], "too-large.png", { type: "image/png" });
+    expect(validateImageInput(atLimit, "Amber bottle")).toBeUndefined();
+    expect(validateImageInput(overLimit, "Amber bottle")).toBe("Choose an image up to 1 MiB.");
   });
 
   it("reports a duplicate slug before attempting any Storage work", async () => {

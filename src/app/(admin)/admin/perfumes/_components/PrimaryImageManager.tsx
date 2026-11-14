@@ -1,8 +1,13 @@
 "use client";
-import type { ImageActionState } from "@/modules/catalogue";
+import {
+  MAX_PERFUME_IMAGE_BYTES,
+  MAX_PERFUME_IMAGE_MIB,
+  PERFUME_IMAGE_SIZE_ERROR,
+  type ImageActionState,
+} from "@/modules/catalogue";
 
 import Image from "next/image";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { removePrimaryImage } from "../_actions/remove-primary-image.action";
 import { savePrimaryImage } from "../_actions/save-primary-image.action";
 
@@ -17,6 +22,7 @@ export function PrimaryImageManager({
 }) {
   const [state, action, pending] = useActionState(savePrimaryImage, initial);
   const [removeState, removeAction, removing] = useActionState(removePrimaryImage, initial);
+  const [sizeError, setSizeError] = useState("");
   return (
     <section className="mt-4 space-y-3">
       <div className="flex aspect-square items-center justify-center border border-dashed border-jp-admin-border bg-jp-stone p-3">
@@ -36,15 +42,13 @@ export function PrimaryImageManager({
         )}
       </div>
       <p className="text-sm text-jp-text-secondary">
-        JPEG, PNG, or WebP. Maximum 5 MiB. Replacing the image updates catalogue cards immediately.
+        JPEG, PNG, or WebP. Maximum {MAX_PERFUME_IMAGE_MIB} MiB. Replacing the image updates
+        catalogue cards immediately.
       </p>
       <form action={action} className="grid gap-3">
         <input type="hidden" name="perfumeId" value={perfumeId} />
         <div className="grid gap-1 text-sm font-medium">
-          <span>
-            Image file{" "}
-            <span className="font-normal text-jp-text-secondary">JPEG, PNG, WebP · 5 MiB max</span>
-          </span>
+          <span>Image file</span>
           <input
             className="sr-only"
             id={`primary-image-${perfumeId}`}
@@ -52,6 +56,13 @@ export function PrimaryImageManager({
             name="image"
             type="file"
             accept="image/jpeg,image/png,image/webp"
+            aria-describedby={sizeError ? `primary-image-size-error-${perfumeId}` : undefined}
+            onChange={({ currentTarget }) => {
+              const oversized = (currentTarget.files?.[0]?.size ?? 0) > MAX_PERFUME_IMAGE_BYTES;
+              const message = oversized ? PERFUME_IMAGE_SIZE_ERROR : "";
+              currentTarget.setCustomValidity(message);
+              setSizeError(message);
+            }}
           />
           <label
             className="flex h-10 cursor-pointer items-center justify-center border border-jp-text-primary bg-[#fbf9f4] px-3 text-sm font-semibold text-jp-text-primary hover:bg-jp-stone focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-jp-admin-action"
@@ -59,6 +70,15 @@ export function PrimaryImageManager({
           >
             {image ? "Choose replacement image" : "Upload image"}
           </label>
+          {sizeError ? (
+            <p
+              id={`primary-image-size-error-${perfumeId}`}
+              role="alert"
+              className="text-destructive"
+            >
+              {sizeError}
+            </p>
+          ) : null}
         </div>
         <label className="grid gap-1 text-sm font-medium">
           Alt text
@@ -70,7 +90,7 @@ export function PrimaryImageManager({
           />
         </label>
         <button
-          disabled={pending}
+          disabled={pending || Boolean(sizeError)}
           className="h-10 bg-jp-admin-action px-4 text-sm font-semibold text-white"
           type="submit"
         >
@@ -90,7 +110,7 @@ export function PrimaryImageManager({
           {state.error ?? removeState.error}
         </p>
       ) : null}
-      {state.ok ? (
+      {state.ok && !sizeError ? (
         <p className="text-sm text-jp-status-confirmed-foreground">Image saved.</p>
       ) : null}
     </section>

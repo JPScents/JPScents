@@ -2,6 +2,11 @@ export { occasions, scentCharacters, timesOfDay } from "./constants/catalogue";
 export { parseVariantInput } from "./parsers/admin/variant-input.parser";
 export { parseNairaToMinor } from "./utils/price";
 export { normalizeSizeValue } from "./utils/size";
+export {
+  MAX_PERFUME_IMAGE_BYTES,
+  MAX_PERFUME_IMAGE_MIB,
+  PERFUME_IMAGE_SIZE_ERROR,
+} from "./validators/image.validator";
 export type {
   Occasion,
   ScentCharacter,

@@ -37,7 +37,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     serverActions: {
-      // The action envelope needs modest headroom above the validated 5 MiB file limit.
+      // The action envelope can include catalogue fields in addition to the image.
       bodySizeLimit: "6mb",
     },
   },
